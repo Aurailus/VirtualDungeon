@@ -14,11 +14,22 @@ class TileMap {
 		this.scene = scene;
 		this.dimensions = {x: xwid, y: ywid};
 
-		this.map = this.scene.add.tilemap(null, 16, 16, 50 * 16, 50 * 16);
+		this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
 		let tileset = this.map.addTilesetImage("tileset", "tileset", 16, 16, 0, 0);
-		this.layer = this.map.createBlankDynamicLayer("layer", "tileset", 0, 0, 50 * 16, 50 * 16, 16, 16);
 
+		this.layer = this.map.createBlankDynamicLayer("layer_0", "tileset", 0, 0, 50*16, 50*16, 16, 16);
 		this.layer.setScale(4, 4);
+		this.layer.setInteractive();
+		
+		// this.map.addTilesetImage("grid_tile", "grid_tile", 16, 16, 0, 0);
+		// this.map.setLayer("grid");
+		// let gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, 50*16, 50*16, 16, 16);
+		// gridlayer.setScale(4, 4);
+		// for (let i = 0; i < xwid; i++) {
+		// 	for (let j = 0; j < ywid; j++) {
+		// 		if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) gridlayer.putTileAt(0, i, j);
+		// 	}
+		// }
 	}
 
 	fillMap(tid?: number): void {
@@ -31,14 +42,15 @@ class TileMap {
 		}
 	}
 
-	setSolid(x: number, y: number, solid: boolean): void {
+	setSolid(x: number, y: number, solid: boolean): boolean {
 		let alreadySolid = this.getSolid(x, y);
-		if (alreadySolid == solid) return;
+		if (alreadySolid == solid) return false;
 
 		if (solid) this.setTile(x, y, this.SOLID);
 		else this.setTile(x, y, 13);
 
 		this.calculateEdgesAround(x, y);
+		return true;
 	}
 
 	getSolid(x: number, y: number) {

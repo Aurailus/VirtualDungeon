@@ -1,89 +1,116 @@
 class MainScene extends Phaser.Scene {
+	TILESET_COUNT = 3;
+
 	map: TileMap;
+	history: HistoryManager;
 
-	cursor: Phaser.GameObjects.Sprite;
-	lastCursorScreenPos: Vec2;
-	lastCursorWorldPos: Vec2;
+	world: WorldView;
+	ui: UIView;
 
-	// world: WorldView;
+	mode: number = 0;
 
-	constructor() {
-		super({key: "MainScene"});
-	}
+	tokens: Token[] = [];
+
+	architect: ArchitectMode;
+	token: TokenMode;
+
+	timeHoldingHistoryKey: number = 0;
+
+	snapKey: 				Phaser.Input.Keyboard.Key;
+	modifierKey: 		Phaser.Input.Keyboard.Key;
+
+	switchModeKey: 	Phaser.Input.Keyboard.Key;
+	undoRedoKey: 		Phaser.Input.Keyboard.Key;
+	redoKeyWin: 		Phaser.Input.Keyboard.Key;
+
+	constructor() { super({key: "MainScene"}); }
 
 	preload(): void {
-		this.cameras.main.setBackgroundColor("#003");
-
 		this.load.image("cursor", "res/cursor.png");
-		this.load.image("tileset", "res/tileset_3.png");
+
+		for (let i = 1; i <= this.TILESET_COUNT; i++)
+			this.load.image("tileset_" + i, "res/tileset_" + i + ".png");
+
+		this.load.image("grid_tile", "res/grid.png");
+
+		this.load.image("player", "res/player.png");
+
+		this.load.spritesheet("ui_mode_switch", "res/button_edit_mode.png", {frameWidth: 39, frameHeight: 18});
+		this.load.spritesheet("ui_history_manipulation", "res/button_undo_redo.png", {frameWidth: 39, frameHeight: 18});
 	}
 
 	create(): void {
-		// Create cursor hover sprite
-		this.cursor = this.add.sprite(0, 0, "cursor");
-		this.cursor.setScale(2, 2);
-		this.cursor.setDepth(1000);
-		this.cursor.setOrigin(0, 0);
+		this.snapKey 			 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+		this.modifierKey   = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
+
+		this.switchModeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+		this.undoRedoKey   = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+		this.redoKeyWin    = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Y);
+
+		this.switchModeKey.addListener('down', () => { this.mode = this.mode == 0 ? 1 : 0 });
+		this.undoRedoKey.addListener('down', () => { 
+			if (!this.modifierKey.isDown) return;
+			this.timeHoldingHistoryKey = 0;
+			this.snapKey.isDown ? this.history.redo() : this.history.undo(); 
+		});
+		this.redoKeyWin.addListener('down', () => {
+			this.timeHoldingHistoryKey = 0; 
+			if (!this.modifierKey.isDown) return;
+			this.history.redo(); 
+		});
+
+		(<Phaser.Renderer.WebGL.WebGLRenderer>this.game.renderer).addPipeline('outline', new OutlinePipeline(this.game));
+
+		this.history = new HistoryManager(this);
+
+		this.world = new WorldView(this);
+		this.ui = new UIView(this);
 
 		this.map = new TileMap("gameMap", this, 300, 300);
 		this.map.fillMap(10);
 
-		// Bind the scroll wheel event
-		this.onWheel = this.onWheel.bind(this);
-		document.documentElement.addEventListener("wheel", this.onWheel);
-		this.events.on('destroy', () => document.documentElement.removeEventListener("wheel", this.onWheel));
+		this.architect = new ArchitectMode(this);
+		this.token = new TokenMode(this);
 
-		// Create UI
-		// let cam = this.cameras.add(0, 0, 512, 512, false, "ui");
-		// cam.setScroll(-10000, -10000);
-		
-		// let spr = this.add.sprite(-10000 + 64, -10000 + 64, "cursor");
-	}
+		let edit = new UIModeSwitchButton(this, 1, 1);
+		this.ui.o.add(edit);
 
-	private onWheel(e: WheelEvent) {
-		let dir = e.deltaY < 0;
-		this.cameras.main.setZoom(this.cameras.main.zoom * (dir ? 1.1 : 0.9));
-	}
+		let history = new UIHistoryManipulation(this, 16, 1);
+		this.ui.o.add(history);
 
-	private handleArchitectMode(cursorScreenPos: Vec2, cursorWorldPos: Vec2) {
-		let selectedTilePos = new Vec2(Math.floor(cursorWorldPos.x / 64), Math.floor(cursorWorldPos.y / 64))
-		this.cursor.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
-
-		if (this.input.mousePointer.leftButtonDown() || this.input.mousePointer.rightButtonDown()) {
-			let change = new Vec2(cursorWorldPos.x - this.lastCursorWorldPos.x, cursorWorldPos.y - this.lastCursorWorldPos.y);
-			let normalizeFactor = Math.sqrt(change.x * change.x + change.y * change.y);
-			change.x /= normalizeFactor;
-			change.y /= normalizeFactor;
-
-			let place = new Vec2(this.lastCursorWorldPos.x, this.lastCursorWorldPos.y);
-
-			while (Math.abs(cursorWorldPos.x - place.x) >= 1 || Math.abs(cursorWorldPos.y - place.y) >= 1) {
-				this.map.setSolid(Math.floor(place.x / 64), Math.floor(place.y / 64), this.input.mousePointer.rightButtonDown());
-				place.x += change.x;
-				place.y += change.y;
-			}
-			this.map.setSolid(selectedTilePos.x, selectedTilePos.y, this.input.mousePointer.rightButtonDown());
-		}
-	}
-
-	private handlePanning(cursorScreenPos: Vec2, cursorWorldPos: Vec2) {
-		if (this.input.mousePointer.middleButtonDown()) {
-			this.cameras.main.scrollX += (this.lastCursorScreenPos.x - cursorScreenPos.x) / this.cameras.main.zoom;
-			this.cameras.main.scrollY += (this.lastCursorScreenPos.y - cursorScreenPos.y) / this.cameras.main.zoom;
-		}
+		this.tokens.push(new Token(this, 64, 64, "player"));
 	}
 
 	update(time: number, delta: number): void {
-		console.log(this.cameras.main.displayWidth - this.cameras.main.width);
-		let cursorScreenPos = new Vec2(this.input.mousePointer.x, this.input.mousePointer.y);
-		let cursorWorldPos = new Vec2(cursorScreenPos.x / this.cameras.main.zoom + this.cameras.main.scrollX - ((this.cameras.main.displayWidth - this.cameras.main.width) / 2), 
-																  cursorScreenPos.y / this.cameras.main.zoom + this.cameras.main.scrollY - ((this.cameras.main.displayHeight - this.cameras.main.height) / 2));
+		this.world.update();
+		this.ui.update();
 
-		this.handleArchitectMode(cursorScreenPos, cursorWorldPos);
-		this.handlePanning(cursorScreenPos, cursorWorldPos);
+		if ((this.redoKeyWin.isDown || this.undoRedoKey.isDown) && this.modifierKey.isDown) {
+			if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 == 0) {
+				if (this.redoKeyWin.isDown) this.history.redo();
+				else if (this.snapKey.isDown) this.history.redo();
+				else this.history.undo();
+			}
+			this.timeHoldingHistoryKey++;
+		}
+		else {
+			this.timeHoldingHistoryKey = 0;
+		}
 
-		this.lastCursorScreenPos = cursorScreenPos;
-		this.lastCursorWorldPos = cursorWorldPos;
+		if (this.mode == 0) {
+			if (this.ui.uiActive) this.architect.cleanup();
+			else {
+				this.architect.update();
+				this.token.cleanup();
+			}
+		}
+		else {
+			if (this.ui.uiActive) this.token.cleanup();
+			else {
+				this.token.update();
+				this.architect.cleanup();
+			}
+		}
 	}
 }
  

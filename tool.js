@@ -11,6 +11,62 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var HistoryElement = /** @class */ (function () {
+    function HistoryElement(scene, type, data) {
+        this.scene = scene;
+        this.type = type;
+        this.data = data;
+    }
+    HistoryElement.prototype.undo = function () {
+        if (this.type == "tile") {
+            for (var _i = 0, _a = this.data; _i < _a.length; _i++) {
+                var tile = _a[_i];
+                this.scene.map.setSolid(tile.pos.x, tile.pos.y, !tile.solid);
+            }
+        }
+        else if (this.type == "token_move") {
+            var data = this.data;
+            data.token.setPosition(data.start.x, data.start.y);
+        }
+    };
+    HistoryElement.prototype.redo = function () {
+        if (this.type == "tile") {
+            for (var _i = 0, _a = this.data; _i < _a.length; _i++) {
+                var tile = _a[_i];
+                this.scene.map.setSolid(tile.pos.x, tile.pos.y, tile.solid);
+            }
+        }
+        else if (this.type == "token_move") {
+            var data = this.data;
+            data.token.setPosition(data.end.x, data.end.y);
+        }
+    };
+    return HistoryElement;
+}());
+var HistoryManager = /** @class */ (function () {
+    function HistoryManager(scene) {
+        this.history = [];
+        this.historyHead = -1;
+        this.scene = scene;
+    }
+    HistoryManager.prototype.push = function (type, data) {
+        this.history.splice(this.historyHead + 1, this.history.length - this.historyHead, new HistoryElement(this.scene, type, data));
+        this.historyHead = this.history.length - 1;
+    };
+    HistoryManager.prototype.undo = function () {
+        if (this.historyHead >= 0) {
+            this.history[this.historyHead].undo();
+            this.historyHead--;
+        }
+    };
+    HistoryManager.prototype.redo = function () {
+        if (this.historyHead < this.history.length - 1) {
+            this.historyHead++;
+            this.history[this.historyHead].redo();
+        }
+    };
+    return HistoryManager;
+}());
 // class IntroScene extends Phaser.Scene {
 // 	stars: Star[] = [];
 // 	pickups: Pickup[] = [];
@@ -216,110 +272,169 @@ var DNDMapper = /** @class */ (function (_super) {
 var MainScene = /** @class */ (function (_super) {
     __extends(MainScene, _super);
     function MainScene() {
-        return _super.call(this, { key: "MainScene" }) || this;
+        var _this = _super.call(this, { key: "MainScene" }) || this;
+        _this.TILESET_COUNT = 3;
+        _this.mode = 0;
+        _this.tokens = [];
+        _this.timeHoldingHistoryKey = 0;
+        return _this;
     }
     MainScene.prototype.preload = function () {
-        this.cameras.main.setBackgroundColor("#003");
         this.load.image("cursor", "res/cursor.png");
-        this.load.image("tileset", "res/tileset_3.png");
+        for (var i = 1; i <= this.TILESET_COUNT; i++)
+            this.load.image("tileset_" + i, "res/tileset_" + i + ".png");
+        this.load.image("grid_tile", "res/grid.png");
+        this.load.image("player", "res/player.png");
+        this.load.spritesheet("ui_mode_switch", "res/button_edit_mode.png", { frameWidth: 39, frameHeight: 18 });
+        this.load.spritesheet("ui_history_manipulation", "res/button_undo_redo.png", { frameWidth: 39, frameHeight: 18 });
     };
     MainScene.prototype.create = function () {
         var _this = this;
-        // Create cursor hover sprite
-        this.cursor = this.add.sprite(0, 0, "cursor");
-        this.cursor.setScale(2, 2);
-        this.cursor.setDepth(1000);
-        this.cursor.setOrigin(0, 0);
+        this.snapKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+        this.modifierKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
+        this.switchModeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+        this.undoRedoKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+        this.redoKeyWin = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Y);
+        this.switchModeKey.addListener('down', function () { _this.mode = _this.mode == 0 ? 1 : 0; });
+        this.undoRedoKey.addListener('down', function () {
+            if (!_this.modifierKey.isDown)
+                return;
+            _this.timeHoldingHistoryKey = 0;
+            _this.snapKey.isDown ? _this.history.redo() : _this.history.undo();
+        });
+        this.redoKeyWin.addListener('down', function () {
+            _this.timeHoldingHistoryKey = 0;
+            if (!_this.modifierKey.isDown)
+                return;
+            _this.history.redo();
+        });
+        this.game.renderer.addPipeline('outline', new OutlinePipeline(this.game));
+        this.history = new HistoryManager(this);
+        this.world = new WorldView(this);
+        this.ui = new UIView(this);
         this.map = new TileMap("gameMap", this, 300, 300);
         this.map.fillMap(10);
-        // Bind the scroll wheel event
-        this.onWheel = this.onWheel.bind(this);
-        document.documentElement.addEventListener("wheel", this.onWheel);
-        this.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
-        // Create UI
-        // let cam = this.cameras.add(0, 0, 512, 512, false, "ui");
-        // cam.setScroll(-10000, -10000);
-        // let spr = this.add.sprite(-10000 + 64, -10000 + 64, "cursor");
-    };
-    MainScene.prototype.onWheel = function (e) {
-        var dir = e.deltaY < 0;
-        this.cameras.main.setZoom(this.cameras.main.zoom * (dir ? 1.1 : 0.9));
-    };
-    MainScene.prototype.handleArchitectMode = function (cursorScreenPos, cursorWorldPos) {
-        var selectedTilePos = new Vec2(Math.floor(cursorWorldPos.x / 64), Math.floor(cursorWorldPos.y / 64));
-        this.cursor.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
-        if (this.input.mousePointer.leftButtonDown() || this.input.mousePointer.rightButtonDown()) {
-            var change = new Vec2(cursorWorldPos.x - this.lastCursorWorldPos.x, cursorWorldPos.y - this.lastCursorWorldPos.y);
-            var normalizeFactor = Math.sqrt(change.x * change.x + change.y * change.y);
-            change.x /= normalizeFactor;
-            change.y /= normalizeFactor;
-            var place = new Vec2(this.lastCursorWorldPos.x, this.lastCursorWorldPos.y);
-            while (Math.abs(cursorWorldPos.x - place.x) >= 1 || Math.abs(cursorWorldPos.y - place.y) >= 1) {
-                this.map.setSolid(Math.floor(place.x / 64), Math.floor(place.y / 64), this.input.mousePointer.rightButtonDown());
-                place.x += change.x;
-                place.y += change.y;
-            }
-            this.map.setSolid(selectedTilePos.x, selectedTilePos.y, this.input.mousePointer.rightButtonDown());
-        }
-    };
-    MainScene.prototype.handlePanning = function (cursorScreenPos, cursorWorldPos) {
-        if (this.input.mousePointer.middleButtonDown()) {
-            this.cameras.main.scrollX += (this.lastCursorScreenPos.x - cursorScreenPos.x) / this.cameras.main.zoom;
-            this.cameras.main.scrollY += (this.lastCursorScreenPos.y - cursorScreenPos.y) / this.cameras.main.zoom;
-        }
+        this.architect = new ArchitectMode(this);
+        this.token = new TokenMode(this);
+        var edit = new UIModeSwitchButton(this, 1, 1);
+        this.ui.o.add(edit);
+        var history = new UIHistoryManipulation(this, 16, 1);
+        this.ui.o.add(history);
+        this.tokens.push(new Token(this, 64, 64, "player"));
     };
     MainScene.prototype.update = function (time, delta) {
-        console.log(this.cameras.main.displayWidth - this.cameras.main.width);
-        var cursorScreenPos = new Vec2(this.input.mousePointer.x, this.input.mousePointer.y);
-        var cursorWorldPos = new Vec2(cursorScreenPos.x / this.cameras.main.zoom + this.cameras.main.scrollX - ((this.cameras.main.displayWidth - this.cameras.main.width) / 2), cursorScreenPos.y / this.cameras.main.zoom + this.cameras.main.scrollY - ((this.cameras.main.displayHeight - this.cameras.main.height) / 2));
-        this.handleArchitectMode(cursorScreenPos, cursorWorldPos);
-        this.handlePanning(cursorScreenPos, cursorWorldPos);
-        this.lastCursorScreenPos = cursorScreenPos;
-        this.lastCursorWorldPos = cursorWorldPos;
+        this.world.update();
+        this.ui.update();
+        if ((this.redoKeyWin.isDown || this.undoRedoKey.isDown) && this.modifierKey.isDown) {
+            if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 == 0) {
+                if (this.redoKeyWin.isDown)
+                    this.history.redo();
+                else if (this.snapKey.isDown)
+                    this.history.redo();
+                else
+                    this.history.undo();
+            }
+            this.timeHoldingHistoryKey++;
+        }
+        else {
+            this.timeHoldingHistoryKey = 0;
+        }
+        if (this.mode == 0) {
+            if (this.ui.uiActive)
+                this.architect.cleanup();
+            else {
+                this.architect.update();
+                this.token.cleanup();
+            }
+        }
+        else {
+            if (this.ui.uiActive)
+                this.token.cleanup();
+            else {
+                this.token.update();
+                this.architect.cleanup();
+            }
+        }
     };
     return MainScene;
 }(Phaser.Scene));
+var OutlinePipeline = /** @class */ (function (_super) {
+    __extends(OutlinePipeline, _super);
+    function OutlinePipeline(game) {
+        var _this = this;
+        var config = { game: game,
+            renderer: game.renderer,
+            fragShader: "\n\t\t\tprecision mediump float;\n\t\t\tuniform sampler2D uMainSampler;\n\t\t\tvarying vec2 outTexCoord;\n\t\t\tvoid main(void) {\n\t\t\t\tvec4 color = texture2D(uMainSampler, outTexCoord);\n\t\t\t\tvec4 colorU = texture2D(uMainSampler, vec2(outTexCoord.x, outTexCoord.y - 0.055));\n\t\t\t\tvec4 colorD = texture2D(uMainSampler, vec2(outTexCoord.x, outTexCoord.y + 0.055));\n\t\t\t\tvec4 colorL = texture2D(uMainSampler, vec2(outTexCoord.x + 0.055, outTexCoord.y));\n\t\t\t\tvec4 colorR = texture2D(uMainSampler, vec2(outTexCoord.x - 0.055, outTexCoord.y));\n\t\t\t\t\n\t\t\t\tgl_FragColor = color;\n\t\t\t\t\n\t\t\t\tif (color.a == 0.0 && (colorU.a != 0.0 || colorD.a != 0.0 || colorL.a != 0.0 || colorR.a != 0.0)  ) {\n\t\t\t\t\tgl_FragColor = vec4(1.0, 1.0, 1.0, .2);\n\t\t\t\t}\n\t\t\t}"
+        };
+        _this = _super.call(this, config) || this;
+        return _this;
+    }
+    return OutlinePipeline;
+}(Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline));
 var TileMap = /** @class */ (function () {
     function TileMap(key, scene, xwid, ywid) {
         this.SOLID = 10;
+        this.layers = [];
         this.key = key;
         this.scene = scene;
         this.dimensions = { x: xwid, y: ywid };
-        this.map = this.scene.add.tilemap(null, 16, 16, 50 * 16, 50 * 16);
-        var tileset = this.map.addTilesetImage("tileset", "tileset", 16, 16, 0, 0);
-        this.layer = this.map.createBlankDynamicLayer("layer", "tileset", 0, 0, 50 * 16, 50 * 16, 16, 16);
-        this.layer.setScale(4, 4);
+        this.solid_at = [];
+        for (var i = 0; i < xwid; i++) {
+            this.solid_at[i] = [];
+            for (var j = 0; j < ywid; j++) {
+                this.solid_at[i][j] = -1;
+            }
+        }
+        this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
+        for (var i = 1; i < this.scene.TILESET_COUNT; i++) {
+            var tileset = this.map.addTilesetImage("tileset_" + i, "tileset " + i, 16, 16, 0, 0);
+            this.map.setLayer("layer_" + i);
+            this.layers[i - 1] = this.map.createBlankDynamicLayer("layer_" + i, "tileset_" + i, 0, 0, 50 * 16, 50 * 16, 16, 16);
+            this.layers[i - 1].setScale(4, 4);
+        }
+        this.layers[0].setInteractive();
+        this.map.addTilesetImage("grid_tile", "grid_tile", 16, 16, 0, 0);
+        this.map.setLayer("grid");
+        var gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, 50 * 16, 50 * 16, 16, 16);
+        gridlayer.setScale(4, 4);
+        for (var i = 0; i < xwid; i++) {
+            for (var j = 0; j < ywid; j++) {
+                if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0))
+                    gridlayer.putTileAt(0, i, j);
+            }
+        }
     }
-    TileMap.prototype.fillMap = function (tid) {
-        if (!tid)
-            tid = this.SOLID;
+    TileMap.prototype.fillMap = function (pid) {
+        if (!pid)
+            pid = 1;
         for (var x = 0; x < this.dimensions.x; x++) {
             for (var y = 0; y < this.dimensions.y; y++) {
-                this.setTile(x, y, tid);
+                this.setTile(x, y, pid, 13);
             }
         }
     };
-    TileMap.prototype.setSolid = function (x, y, solid) {
+    TileMap.prototype.setSolid = function (x, y, palette, solid) {
         var alreadySolid = this.getSolid(x, y);
         if (alreadySolid == solid)
-            return;
+            return false;
         if (solid)
-            this.setTile(x, y, this.SOLID);
+            this.setTile(x, y, 0, this.SOLID);
         else
-            this.setTile(x, y, 13);
+            this.setTile(x, y, 0, 13);
         this.calculateEdgesAround(x, y);
+        return true;
     };
     TileMap.prototype.getSolid = function (x, y) {
-        return this.getTile(x, y) == this.SOLID;
+        return this.getTile(x, y, 0) == this.SOLID;
     };
-    TileMap.prototype.setTile = function (x, y, tid) {
-        this.layer.removeTileAt(x, y, true);
-        this.layer.putTileAt(tid, x, y);
+    TileMap.prototype.setTile = function (x, y, palette, tid) {
+        this.layers[0].removeTileAt(x, y, true);
+        this.layers[0].putTileAt(tid, x, y);
     };
-    TileMap.prototype.getTile = function (x, y) {
+    TileMap.prototype.getTile = function (x, y, palette) {
         if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
             return this.SOLID;
-        return this.layer.getTileAt(x, y, true).index;
+        return this.layers[0].getTileAt(x, y, true).index;
     };
     TileMap.prototype.calculateEdgesAround = function (x, y) {
         for (var i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x + 1, 0); i++) {
@@ -332,7 +447,8 @@ var TileMap = /** @class */ (function () {
         var tiles = [];
         for (var i = -1; i <= 1; i++) {
             for (var j = -1; j <= 1; j++) {
-                tiles.push(this.getTile(x + j, y + i));
+                //TODO: Make this palette independant
+                tiles.push(this.getTile(x + j, y + i, 0));
             }
         }
         return tiles;
@@ -345,7 +461,7 @@ var TileMap = /** @class */ (function () {
         return tiles;
     };
     TileMap.prototype.calculateEdges = function (x, y) {
-        if (this.getTile(x, y) == this.SOLID)
+        if (this.getTile(x, y, 0) == this.SOLID)
             return;
         var adjacents = this.getSurroundingSolid(x, y);
         var tile = 13;
@@ -483,9 +599,64 @@ var TileMap = /** @class */ (function () {
         }
         else if (adjacents[8] /*Bottom right*/)
             tile = 0;
-        this.setTile(x, y, tile);
+        this.setTile(x, y, 0, tile);
     };
     return TileMap;
+}());
+var Token = /** @class */ (function (_super) {
+    __extends(Token, _super);
+    function Token(scene, x, y, tex) {
+        var _this = _super.call(this, scene, x, y) || this;
+        _this.shadow = new Phaser.GameObjects.Sprite(scene, -4, -4, tex);
+        _this.shadow.setOrigin(0, 0);
+        _this.shadow.setScale(4, 1);
+        _this.shadow.setTint(0x000000);
+        _this.shadow.setAlpha(0.1, 0.1, 0.3, 0.3);
+        _this.list.push(_this.shadow);
+        _this.width = _this.shadow.width * 4;
+        _this.height = _this.shadow.height * 4;
+        _this.shadow.y = _this.height - 24;
+        _this.sprite = new Phaser.GameObjects.Sprite(scene, -4, -4, tex);
+        _this.sprite.setOrigin(0, 0);
+        _this.sprite.setScale(4, 4);
+        _this.setPosition(x, y);
+        _this.list.push(_this.sprite);
+        _this.scene.add.existing(_this);
+        return _this;
+    }
+    Token.prototype.toggleOutline = function (outline) {
+        if (outline)
+            this.sprite.setPipeline("outline");
+        else
+            this.sprite.resetPipeline();
+    };
+    Token.prototype.setPosition = function (x, y, z, w) {
+        Phaser.GameObjects.Container.prototype.setPosition.call(this, x * 4, y * 4, z, w);
+        return this;
+    };
+    Token.prototype.getPosition = function () {
+        return new Vec2(this.x / 4, this.y / 4);
+    };
+    return Token;
+}(Phaser.GameObjects.Container));
+var UIView = /** @class */ (function () {
+    function UIView(scene) {
+        this.uiActive = false;
+        this.scene = scene;
+        this.camera = this.scene.cameras.add(0, 0, this.scene.cameras.main.width, this.scene.cameras.main.height, false, "ui_camera");
+        this.camera.scrollX = -10000;
+        this.o = this.scene.add.container(-10000, 0);
+    }
+    UIView.prototype.update = function () {
+        this.uiActive = false;
+        for (var _i = 0, _a = this.o.list; _i < _a.length; _i++) {
+            var o = _a[_i];
+            o.update();
+            if (!this.uiActive && o.mouseIntersects())
+                this.uiActive = true;
+        }
+    };
+    return UIView;
 }());
 function clamp(x, min, max) {
     if (min > max) {
@@ -541,3 +712,272 @@ var Vec3 = /** @class */ (function () {
     }
     return Vec3;
 }());
+var WorldView = /** @class */ (function () {
+    function WorldView(scene) {
+        this.cursorScreen = new Vec2();
+        this.lastCursorScreen = new Vec2();
+        this.cursorWorld = new Vec2();
+        this.lastCursorWorld = new Vec2();
+        this.zoomLevels = [10, 17, 25, 33, 40, 50, 60, 67, 75, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400, 500];
+        this.zoomLevel = 11;
+        this.scene = scene;
+        this.camera = this.scene.cameras.main;
+        this.init();
+    }
+    WorldView.prototype.init = function () {
+        var _this = this;
+        this.camera.setBackgroundColor("#090d24");
+        // Bind the scroll wheel event
+        this.onWheel = this.onWheel.bind(this);
+        document.documentElement.addEventListener("wheel", this.onWheel);
+        this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
+    };
+    WorldView.prototype.onWheel = function (e) {
+        var dir = (e.deltaY < 0 ? 1 : -1);
+        this.zoomLevel = clamp(this.zoomLevel + dir, 0, this.zoomLevels.length - 1);
+        this.camera.setZoom(this.zoomLevels[this.zoomLevel] / 100);
+    };
+    WorldView.prototype.pan = function () {
+        if (this.scene.input.mousePointer.middleButtonDown()) {
+            this.camera.scrollX += Math.round((this.lastCursorScreen.x - this.cursorScreen.x) / this.camera.zoom);
+            this.camera.scrollY += Math.round((this.lastCursorScreen.y - this.cursorScreen.y) / this.camera.zoom);
+        }
+    };
+    WorldView.prototype.update = function () {
+        this.lastCursorScreen = this.cursorScreen;
+        this.lastCursorWorld = this.cursorWorld;
+        this.cursorScreen = new Vec2(this.scene.input.mousePointer.x, this.scene.input.mousePointer.y);
+        this.cursorWorld = new Vec2(this.cursorScreen.x / this.camera.zoom + this.camera.scrollX - ((this.camera.displayWidth - this.camera.width) / 2), this.cursorScreen.y / this.camera.zoom + this.camera.scrollY - ((this.camera.displayHeight - this.camera.height) / 2));
+        this.pan();
+    };
+    return WorldView;
+}());
+var ArchitectMode = /** @class */ (function () {
+    function ArchitectMode(scene) {
+        this.active = false;
+        this.pointerDown = false;
+        this.manipulated = [];
+        this.scene = scene;
+        // Create cursor hover sprite
+        this.cursor = this.scene.add.sprite(0, 0, "cursor");
+        this.cursor.setScale(4, 4);
+        this.cursor.setDepth(1000);
+        this.cursor.setOrigin(0, 0);
+    }
+    ArchitectMode.prototype.update = function () {
+        this.active = true;
+        this.cursor.setVisible(true);
+        var selectedTilePos = new Vec2(Math.floor(this.scene.world.cursorWorld.x / 64), Math.floor(this.scene.world.cursorWorld.y / 64));
+        this.cursor.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
+        this.cursor.setVisible((selectedTilePos.x >= 0 && selectedTilePos.y >= 0 &&
+            selectedTilePos.x < this.scene.map.dimensions.x && selectedTilePos.y < this.scene.map.dimensions.y));
+        if (this.scene.input.activePointer.isDown && !this.pointerDown)
+            this.pointerDown = true;
+        else if (!this.scene.input.activePointer.isDown && this.pointerDown) {
+            if (this.manipulated.length != 0) {
+                this.scene.history.push("tile", this.manipulated);
+                this.manipulated = [];
+            }
+            this.pointerDown = false;
+        }
+        if (this.scene.input.mousePointer.leftButtonDown() || this.scene.input.mousePointer.rightButtonDown()) {
+            var change = new Vec2(this.scene.world.cursorWorld.x - this.scene.world.lastCursorWorld.x, this.scene.world.cursorWorld.y - this.scene.world.lastCursorWorld.y);
+            var normalizeFactor = Math.sqrt(change.x * change.x + change.y * change.y);
+            change.x /= normalizeFactor;
+            change.y /= normalizeFactor;
+            var place = new Vec2(this.scene.world.lastCursorWorld.x, this.scene.world.lastCursorWorld.y);
+            while (Math.abs(this.scene.world.cursorWorld.x - place.x) >= 1 || Math.abs(this.scene.world.cursorWorld.y - place.y) >= 1) {
+                if (this.scene.map.setSolid(Math.floor(place.x / 64), Math.floor(place.y / 64), this.scene.input.mousePointer.rightButtonDown())) {
+                    this.manipulated.push({ pos: new Vec2(Math.floor(place.x / 64), Math.floor(place.y / 64)), solid: this.scene.input.mousePointer.rightButtonDown() });
+                }
+                place.x += change.x;
+                place.y += change.y;
+            }
+            if (this.scene.map.setSolid(selectedTilePos.x, selectedTilePos.y, this.scene.input.mousePointer.rightButtonDown())) {
+                this.manipulated.push({ pos: selectedTilePos, solid: this.scene.input.mousePointer.rightButtonDown() });
+            }
+        }
+    };
+    ArchitectMode.prototype.cleanup = function () {
+        if (!this.active)
+            return;
+        this.active = false;
+        this.cursor.setVisible(false);
+    };
+    return ArchitectMode;
+}());
+var TokenMode = /** @class */ (function () {
+    function TokenMode(scene) {
+        this.active = false;
+        this.currentToken = null;
+        this.pointerDown = false;
+        this.scene = scene;
+    }
+    TokenMode.prototype.update = function () {
+        this.active = true;
+        for (var _i = 0, _a = this.scene.tokens; _i < _a.length; _i++) {
+            var token = _a[_i];
+            if (this.scene.world.cursorWorld.x >= token.x && this.scene.world.cursorWorld.y >= token.y
+                && this.scene.world.cursorWorld.x <= token.x + token.width && this.scene.world.cursorWorld.y <= token.y + token.height) {
+                token.toggleOutline(true);
+                if (this.scene.input.mousePointer.leftButtonDown() && !this.pointerDown && this.currentToken == null) {
+                    this.grabOffset = new Vec2(this.scene.world.cursorWorld.x - token.x, this.scene.world.cursorWorld.y - token.y);
+                    this.startPosition = token.getPosition();
+                    this.currentToken = token;
+                    this.pointerDown = true;
+                }
+            }
+            else
+                token.toggleOutline(false);
+        }
+        if (!this.scene.input.mousePointer.leftButtonDown() && this.pointerDown && this.currentToken != null) {
+            for (var _b = 0, _c = this.scene.tokens; _b < _c.length; _b++) {
+                var token = _c[_b];
+                token.toggleOutline(false);
+            }
+            if (this.currentToken.getPosition().x != this.startPosition.x || this.currentToken.getPosition().y != this.startPosition.y)
+                this.scene.history.push("token_move", { start: this.startPosition, end: this.currentToken.getPosition(), token: this.currentToken });
+            this.currentToken = null;
+            this.pointerDown = false;
+        }
+        if (this.currentToken != null) {
+            var pos = new Vec2(Math.round((this.scene.world.cursorWorld.x - this.grabOffset.x) / 4), Math.round((this.scene.world.cursorWorld.y - this.grabOffset.y) / 4));
+            if (!this.scene.snapKey.isDown) {
+                pos.x = Math.round(pos.x / 16) * 16;
+                pos.y = Math.round(pos.y / 16) * 16;
+            }
+            this.currentToken.setPosition(pos.x, pos.y);
+        }
+    };
+    TokenMode.prototype.cleanup = function () {
+        if (!this.active)
+            return;
+        this.active = false;
+        for (var _i = 0, _a = this.scene.tokens; _i < _a.length; _i++) {
+            var token = _a[_i];
+            token.toggleOutline(false);
+        }
+        this.currentToken = null;
+    };
+    return TokenMode;
+}());
+var UIComponent = /** @class */ (function (_super) {
+    __extends(UIComponent, _super);
+    function UIComponent(scene, x, y, tex) {
+        var _this = _super.call(this, scene, x, y, tex) || this;
+        _this.setOrigin(0, 0);
+        _this.setScale(3, 3);
+        _this.setPos(x * 3, y * 3);
+        _this.scene.add.existing(_this);
+        return _this;
+    }
+    UIComponent.prototype.setPos = function (x, y) {
+        this.setPosition(x * 3, y * 3);
+    };
+    UIComponent.prototype.mouseIntersects = function () {
+        var pointer = this.scene.input.mousePointer;
+        return (pointer.x >= this.x && pointer.y >= this.y && pointer.x <= this.x + this.width * 3 && pointer.y <= this.y + this.height * 3);
+    };
+    UIComponent.prototype.mousePos = function () {
+        var pointer = this.scene.input.mousePointer;
+        return new Vec2(Math.round((pointer.x - this.x) / 3), Math.round((pointer.y - this.y) / 3));
+    };
+    return UIComponent;
+}(Phaser.GameObjects.Sprite));
+var UIHistoryManipulation = /** @class */ (function (_super) {
+    __extends(UIHistoryManipulation, _super);
+    function UIHistoryManipulation(scene, x, y) {
+        var _this = _super.call(this, scene, x, y, "ui_history_manipulation") || this;
+        _this.mouseDown = false;
+        _this.scene = scene;
+        _this.setActive(true);
+        return _this;
+    }
+    UIHistoryManipulation.prototype.update = function () {
+        var hasNext = this.scene.history.historyHead < this.scene.history.history.length - 1;
+        var hasPrev = this.scene.history.historyHead >= 0;
+        if (hasNext && hasPrev) {
+            if (this.mouseIntersects() && this.mousePos().x > 19) {
+                this.setFrame(2);
+                if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+                    this.scene.history.redo();
+                    this.mouseDown = true;
+                }
+            }
+            else if (this.mouseIntersects()) {
+                this.setFrame(5);
+                if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+                    this.scene.history.undo();
+                    this.mouseDown = true;
+                }
+            }
+            else
+                this.setFrame(1);
+        }
+        else if (!hasNext && hasPrev) {
+            if (this.mouseIntersects() && this.mousePos().x <= 19) {
+                this.setFrame(7);
+                if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+                    this.scene.history.undo();
+                    this.mouseDown = true;
+                }
+            }
+            else
+                this.setFrame(3);
+        }
+        else if (hasNext && !hasPrev) {
+            if (this.mouseIntersects() && this.mousePos().x > 19) {
+                this.setFrame(6);
+                if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+                    this.scene.history.redo();
+                    this.mouseDown = true;
+                }
+            }
+            else
+                this.setFrame(0);
+        }
+        else
+            this.setFrame(4);
+        if (!this.scene.input.mousePointer.isDown)
+            this.mouseDown = false;
+    };
+    return UIHistoryManipulation;
+}(UIComponent));
+var UIModeSwitchButton = /** @class */ (function (_super) {
+    __extends(UIModeSwitchButton, _super);
+    function UIModeSwitchButton(scene, x, y) {
+        var _this = _super.call(this, scene, x, y, "ui_mode_switch") || this;
+        _this.scene = scene;
+        _this.setActive(true);
+        return _this;
+    }
+    UIModeSwitchButton.prototype.update = function () {
+        if (this.mouseIntersects()) {
+            if (this.scene.mode == 0) {
+                if (this.mousePos().x > 19) {
+                    this.setFrame(2);
+                    if (this.scene.input.mousePointer.leftButtonDown())
+                        this.scene.mode = 1;
+                }
+                else
+                    this.setFrame(1);
+            }
+            else {
+                if (this.mousePos().x <= 19) {
+                    this.setFrame(3);
+                    if (this.scene.input.mousePointer.leftButtonDown())
+                        this.scene.mode = 0;
+                }
+                else
+                    this.setFrame(0);
+            }
+        }
+        else {
+            if (this.scene.mode == 0)
+                this.setFrame(1);
+            else
+                this.setFrame(0);
+        }
+    };
+    return UIModeSwitchButton;
+}(UIComponent));
