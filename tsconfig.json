@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"rootDirs": [
+			"src/",
+			"src/*"
+		],
+		"typeRoots": [
+			"src/types/",
+			"@types"
+		],
+		"outFile": "./tool.js"
+	},
+	"include": [
+		"src/*",
+		"src/**/*"
+	]
+}
