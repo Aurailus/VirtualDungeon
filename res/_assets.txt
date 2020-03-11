@@ -14,6 +14,7 @@ ui/sidebar_cursor
 ui/sidebar_overlay
 
 FOLDERPREFIX tileset tileset_
-tileset/0
-tileset/1
-tileset/2
+tileset/ground_grass
+tileset/ground_dirt
+tileset/wall_wood
+tileset/wall_stone

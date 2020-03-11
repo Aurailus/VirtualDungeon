@@ -22,7 +22,7 @@ class Vec3 {
 	y: number = 0;
 	z: number = 0;
 
-	constructor(x?: number | {x: number, y: number}, y?: number, z?: number) {
+	constructor(x?: number | {x: number, y: number, z: number}, y?: number, z?: number) {
 		if (x == null) return;
 
 		if (typeof(x) == "number") {
@@ -40,6 +40,37 @@ class Vec3 {
 			this.x = (x as any as {x: number, y:number, z:number}).x;
 			this.y = (x as any as {x: number, y:number, z:number}).y;
 			this.z = (x as any as {x: number, y:number, z:number}).z;
+		}
+	}
+}
+
+class Vec4 {
+	x: number = 0;
+	y: number = 0;
+	z: number = 0;
+	w: number = 0;
+
+	constructor(x?: number | {x: number, y: number}, y?: number, z?: number, w?: number) {
+		if (x == null) return;
+
+		if (typeof(x) == "number") {
+			this.x = x;
+			if (y != null) {
+				this.y = y;
+				this.z = z;
+				this.w = w;
+			}
+			else {
+				this.y = x;
+				this.z = x;
+				this.w = w;
+			}
+		}
+		else {
+			this.x = (x as any).x;
+			this.y = (x as any).y;
+			this.z = (x as any).z;
+			this.w = (x as any).w;
 		}
 	}
 }

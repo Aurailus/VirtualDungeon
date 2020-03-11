@@ -1,7 +1,7 @@
 class MainScene extends Phaser.Scene {
 	TILESET_COUNT = 3;
 
-	map: TileMap;
+	map: Tilemap;
 	history: HistoryManager;
 
 	world: WorldView;
@@ -68,12 +68,27 @@ class MainScene extends Phaser.Scene {
 		this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
 		this.add.existing(this.chat);
 
-		this.map = new TileMap("gameMap", this, 300, 300);
+		this.map = new Tilemap("gameMap", this, 300, 300);
 
 		this.architect = new ArchitectMode(this);
 		this.token = new TokenMode(this);
 
-		let tileset = new TilesetPatcher(this);
+		// let tileset = new TilesetCanvas(this, 16, 16);
+		// tileset.addPalette("tileset_ground_dirt");
+		// tileset.addPalette("tileset_ground_grass");
+		// tileset.addPalette("tileset_wall_wood");
+		// tileset.addPalette("tileset_wall_stone");
+		// // this.add.sprite(-300, 0, "cursor");
+		// setTimeout(() => this.add.sprite(-300, 0, "tileset_16"), 100);
+
+		let map = new TilesetManager(this);
+		map.addTileset("tileset_ground_dirt", false);
+		map.addTileset("tileset_ground_grass", false);
+		map.addTileset("tileset_wall_stone", true);
+		map.addTileset("tileset_wall_wood", true);
+
+		this.add.sprite(-300, 0, "tileset_16_ground");
+		this.add.sprite(-800, 0, "tileset_16_wall");
 	}
 
 	update(time: number, delta: number): void {

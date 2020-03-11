@@ -533,18 +533,45 @@ var TileMap = /** @class */ (function () {
     };
     return TileMap;
 }());
-var TilesetPatcher = /** @class */ (function () {
-    function TilesetPatcher(scene) {
-        var renderTex = new Phaser.GameObjects.RenderTexture(scene, 0, 0, 9 * 16, 7 * 16 * 8);
-        renderTex.drawFrame("tileset_0", 0, 0, 7 * 16 * 0);
-        renderTex.drawFrame("tileset_1", 0, 0, 7 * 16 * 1);
-        renderTex.drawFrame("tileset_2", 0, 0, 7 * 16 * 2);
-        scene.add.existing(renderTex);
-        // scene.textures.addRenderTexture("tileset_16x", renderTex);
-        // let spr = scene.add.sprite(300, 300, "tileset_16x");
-        // console.log(spr);
+var TilesetCanvas = /** @class */ (function () {
+    function TilesetCanvas(manager, res, wall) {
+        this.indexes = [];
+        this.indMap = [];
+        this.manager = manager;
+        this.res = res;
+        this.width = Math.floor(1024 / (9 * this.res));
+        this.height = Math.floor(1024 / (7 * this.res));
+        this.canvas = manager.scene.textures.createCanvas("tileset_" + res + (wall ? "_wall" : "_ground"), 1024, 1024);
     }
-    return TilesetPatcher;
+    TilesetCanvas.prototype.addTileset = function (key) {
+        var x = this.indexes.length % this.width;
+        var y = Math.floor(this.indexes.length / this.width);
+        this.canvas.drawFrame(key, 0, 9 * this.res * x, 7 * this.res * y);
+        this.indMap[this.manager.currentInd] = this.indexes.length;
+        this.indexes.push(this.manager.currentInd++);
+    };
+    return TilesetCanvas;
+}());
+var TilesetManager = /** @class */ (function () {
+    function TilesetManager(scene) {
+        this.tilesets = {};
+        this.locations = {};
+        this.currentInd = 0;
+        this.scene = scene;
+    }
+    TilesetManager.prototype.addTileset = function (key, wall) {
+        var res = this.scene.textures.get(key).getSourceImage(0).width / 9;
+        if (this.tilesets[res] == undefined) {
+            this.tilesets[res] = {
+                wall: new TilesetCanvas(this, res, true),
+                ground: new TilesetCanvas(this, res, false)
+            };
+        }
+        var tilesetCanvas = this.tilesets[res];
+        this.locations[this.currentInd] = { res: res, wall: wall, ind: this.currentInd };
+        tilesetCanvas[wall ? "wall" : "ground"].addTileset(key);
+    };
+    return TilesetManager;
 }());
 var Token = /** @class */ (function (_super) {
     __extends(Token, _super);
@@ -779,6 +806,36 @@ var Vec3 = /** @class */ (function () {
         }
     }
     return Vec3;
+}());
+var Vec4 = /** @class */ (function () {
+    function Vec4(x, y, z, w) {
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
+        this.w = 0;
+        if (x == null)
+            return;
+        if (typeof (x) == "number") {
+            this.x = x;
+            if (y != null) {
+                this.y = y;
+                this.z = z;
+                this.w = w;
+            }
+            else {
+                this.y = x;
+                this.z = x;
+                this.w = w;
+            }
+        }
+        else {
+            this.x = x.x;
+            this.y = x.y;
+            this.z = x.z;
+            this.w = x.w;
+        }
+    }
+    return Vec4;
 }());
 var WorldView = /** @class */ (function () {
     function WorldView(scene) {
@@ -1244,7 +1301,20 @@ var MainScene = /** @class */ (function (_super) {
         this.map = new TileMap("gameMap", this, 300, 300);
         this.architect = new ArchitectMode(this);
         this.token = new TokenMode(this);
-        var tileset = new TilesetPatcher(this);
+        // let tileset = new TilesetCanvas(this, 16, 16);
+        // tileset.addPalette("tileset_ground_dirt");
+        // tileset.addPalette("tileset_ground_grass");
+        // tileset.addPalette("tileset_wall_wood");
+        // tileset.addPalette("tileset_wall_stone");
+        // // this.add.sprite(-300, 0, "cursor");
+        // setTimeout(() => this.add.sprite(-300, 0, "tileset_16"), 100);
+        var map = new TilesetManager(this);
+        map.addTileset("tileset_ground_dirt", false);
+        map.addTileset("tileset_ground_grass", false);
+        map.addTileset("tileset_wall_stone", true);
+        setTimeout(function () { return map.addTileset("tileset_wall_wood", true); }, 1000);
+        this.add.sprite(-300, 0, "tileset_16_ground");
+        this.add.sprite(-800, 0, "tileset_16_wall");
     };
     MainScene.prototype.update = function (time, delta) {
         this.world.update();

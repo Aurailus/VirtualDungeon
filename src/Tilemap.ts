@@ -1,8 +1,8 @@
-class TileMap {
+class Tilemap {
 	scene: MainScene;
 
 	key: string;
-	dimensions: {x: number, y: number}
+	dimensions: {x: number, y: number};
 
 	SOLID: number = 10;
 
@@ -99,7 +99,7 @@ class TileMap {
 	private calculateEdgesAround(x: number, y: number) {
 		for (let i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
 			for (let j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-				let tile = this.calculateEdges(i, j);
+				let tile = this.calculateSmartTile(i, j);
 				if (tile != -1) this.setTile(i, j, this.palette_at[i][j], tile);
 			}
 		}
@@ -115,7 +115,7 @@ class TileMap {
 		return solid;
 	}
 
-	private calculateEdges(x: number, y: number): number {
+	private calculateSmartTile(x: number, y: number): number {
 		if (this.getSolid(x, y) != -1) return -1;
 
 		let adjacents = this.getSurroundingSolid(x, y);
