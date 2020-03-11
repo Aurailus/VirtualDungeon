@@ -1,12 +1,10 @@
 <html lang="en">
 	<head>
+		<link rel="icon" href="/favicon.ico">
 		<title>DND Mapper</title>
-		<script src="lib/phaser.min.js"></script>
-		<script src="lib/jquery.min.js"></script>
-		<script src="tool.js"></script>
 		<style>
 			html, body {
-				background-color: #333;
+				background-color: #000;
 				margin: 0;
 				height: 100vh;
 				display: block;
@@ -16,7 +14,19 @@
 				width: 100%;
 				height: 100%;
 			}
+			@charset "utf-8";
+			@font-face {
+			  font-family: Zepha;
+			  src: url(/res/Zepha.ttf) format("truetype");
+			}
 		</style>
+		<script src="lib/phaser.min.js"></script>
+		<script src="lib/jquery.min.js"></script>
+		<script src="tool.js"></script>
 	</head>
-	<body><div id="game"></div></body>
+	<body>
+		<div id="game" />
+
+		<!-- <p>The quick brown fox jumps over the lazy dog. How dare it? I mean, what gives it the fucking right to jump over whatever it wants to? Somebody needs to teach that fox some manners! The dog would have never done that to it. Fuck man, society is fucking gay.</p> -->
+	</body>
 </html>

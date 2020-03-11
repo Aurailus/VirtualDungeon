@@ -4,6 +4,7 @@ class UIComponent extends Phaser.GameObjects.Sprite {
 		this.setOrigin(0, 0);
 		this.setScale(3, 3);
 		this.setPos(x * 3, y * 3);
+		this.setActive(true);
 
 		this.scene.add.existing(this);
 	}

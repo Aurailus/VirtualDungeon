@@ -1,0 +1,46 @@
+interface TokenFileProps {
+	name: string,
+	key: string,
+	file: string,
+	split_by?: number
+}
+
+const TOKENS: TokenFileProps[] = [
+	{ name: "Armor 1",												  key: "tkn_armor_1", 								file: "res/token/armor_1", 							split_by: 18 },
+	{ name: "Cadin 1", 													key: "tkn_cadin_1", 								file: "res/token/cadin_1", 							split_by: 18 },
+	{ name: "Cadin 2", 													key: "tkn_cadin_2", 								file: "res/token/cadin_2", 							split_by: 18 },
+	{ name: "Cadin 3", 													key: "tkn_cadin_3", 								file: "res/token/cadin_3", 							split_by: 18 },
+	{ name: "Cleric F", 												key: "tkn_cleric_f", 								file: "res/token/cleric_female", 				split_by: 18 },
+	{ name: "Cleric M", 												key: "tkn_cleric_m", 								file: "res/token/cleric_male",					split_by: 18 },
+	{ name: "Dragonfolk 1", 										key: "tkn_dragonfolk_1", 						file: "res/token/dragonfolk_1", 				split_by: 18 },
+	{ name: "Dragonfolk 2", 										key: "tkn_dragonfolk_2", 						file: "res/token/dragonfolk_2", 				split_by: 18 },
+	{ name: "Dragonfolk 3", 										key: "tkn_dragonfolk_3", 						file: "res/token/dragonfolk_3", 				split_by: 18 },
+	{ name: "Tori 1", 													key: "tkn_tori_1", 									file: "res/token/tori_1", 							split_by: 18 },
+	{ name: "Tori 2", 													key: "tkn_tori_2", 									file: "res/token/tori_2", 							split_by: 18 },
+	{ name: "Tori 3", 													key: "tkn_tori_3", 									file: "res/token/tori_3", 							split_by: 18 },
+	{ name: "Tori 4", 													key: "tkn_tori_4", 									file: "res/token/tori_4",				 				split_by: 18 },
+	{ name: "Dragonfolk Knight 1", 							key: "tkn_dragonknight_1", 					file: "res/token/dragonfolk_knight_1", 	split_by: 18 },
+	{ name: "Dragonfolk Knight 2", 							key: "tkn_dragonknight_2", 					file: "res/token/dragonfolk_knight_2", 	split_by: 18 },
+	{ name: "Dragonfolk Knight 3", 							key: "tkn_dragonknight_3", 					file: "res/token/dragonfolk_knight_3", 	split_by: 18 },
+	{ name: "Druid M", 													key: "tkn_druid_m", 								file: "res/token/druid_male", 					split_by: 18 },
+	{ name: "Feline 1", 												key: "tkn_feline_1",								file: "res/token/feline_1", 						split_by: 18 },
+	{ name: "Knight 1", 												key: "tkn_knight_1", 								file: "res/token/knight_1", 						split_by: 18 },
+	{ name: "Robot 1", 													key: "tkn_robot_1", 								file: "res/token/robot_1", 							split_by: 18 },
+	{ name: "Rockfriend Green", 								key: "tkn_rockfriend_g", 						file: "res/token/rockfriend_1", 				split_by: 18 },
+	{ name: "Rockfriend Blue", 									key: "tkn_rockfriend_b", 						file: "res/token/rockfriend_2", 				split_by: 18 },
+	{ name: "Rockfriend Red", 									key: "tkn_rockfriend_r", 						file: "res/token/rockfriend_3", 				split_by: 18 },
+	{ name: "Rockfriend Teal", 									key: "tkn_rockfriend_t", 						file: "res/token/rockfriend_4", 				split_by: 18 },
+	{ name: "Wizard F", 												key: "tkn_wizard_f", 								file: "res/token/wizard_female", 				split_by: 18 },
+	{ name: "Wizard M", 												key: "tkn_wizard_m",								file: "res/token/wizard_male", 					split_by: 18 },
+	{ name: "Cloaked Person",										key: "tkn_cloaked_person",					file: "res/token/cloaked_person", 			split_by: 18 },
+	{ name: "Dwarf M 1",												key: "tkn_dwarf_m_1",								file: "res/token/dwarf_m_1",  					split_by: 18 },
+	{ name: "Dwarf M 2",												key: "tkn_dwarf_m_2",								file: "res/token/dwarf_m_2",  					split_by: 18 },
+	{ name: "Skeleton",													key: "tkn_skeleton",								file: "res/token/skeleton",	  					split_by: 18 },
+
+	{ name: "Naexi",														key: "tkn_naexi",										file: "res/token/naexi_human_noweapon", split_by: 18 },
+	{ name: "Naexi w/ Yklwa",										key: "tkn_naexi_yklwa",							file: "res/token/naexi_human_yklwa",  	split_by: 18 },
+	{ name: "Naexi Anthro Form",								key: "tkn_naexi_anthro",						file: "res/token/naexi_anthro",	  			split_by: 18 },
+
+	{ name: "bones", 														key: "tkn_bones", 									file: "res/token/bones"		 },
+	{ name: "treasure", 												key: "tkn_treasure", 								file: "res/token/treasure" },
+];

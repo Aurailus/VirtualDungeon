@@ -10,7 +10,7 @@ window.onload = () => {
 		parent: "game",
 		backgroundColor: "#000000",
 		antialias: false,
-		scene: [MainScene, LoadScene],
+		scene: [GetAssetsScene, LoadScene, MainScene],
 		physics: {
 			default: "arcade",
 			arcade: {

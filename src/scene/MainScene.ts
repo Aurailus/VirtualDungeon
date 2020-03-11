@@ -14,7 +14,11 @@ class MainScene extends Phaser.Scene {
 	architect: ArchitectMode;
 	token: TokenMode;
 
+	chat: Chat;
+
 	timeHoldingHistoryKey: number = 0;
+	activePalette: number = 0;
+	activeToken: string = "tkn_treasure";
 
 	snapKey: 				Phaser.Input.Keyboard.Key;
 	modifierKey: 		Phaser.Input.Keyboard.Key;
@@ -26,17 +30,11 @@ class MainScene extends Phaser.Scene {
 	constructor() { super({key: "MainScene"}); }
 
 	preload(): void {
-		this.load.image("cursor", "res/cursor.png");
-
-		for (let i = 1; i <= this.TILESET_COUNT; i++)
-			this.load.image("tileset_" + i, "res/tileset_" + i + ".png");
-
-		this.load.image("grid_tile", "res/grid.png");
-
-		this.load.image("player", "res/player.png");
-
-		this.load.spritesheet("ui_mode_switch", "res/button_edit_mode.png", {frameWidth: 39, frameHeight: 18});
-		this.load.spritesheet("ui_history_manipulation", "res/button_undo_redo.png", {frameWidth: 39, frameHeight: 18});
+		window.addEventListener('resize', () => {
+			let frame = document.getElementById("game");
+			this.game.scale.resize(frame.offsetWidth, frame.offsetHeight);
+			this.chat.x = -10000 + this.cameras.main.width - 309;
+		});
 	}
 
 	create(): void {
@@ -47,13 +45,13 @@ class MainScene extends Phaser.Scene {
 		this.undoRedoKey   = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
 		this.redoKeyWin    = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Y);
 
-		this.switchModeKey.addListener('down', () => { this.mode = this.mode == 0 ? 1 : 0 });
-		this.undoRedoKey.addListener('down', () => { 
+		this.switchModeKey.addListener("down", () => { this.mode = this.mode == 0 ? 1 : 0 });
+		this.undoRedoKey.addListener("down", () => { 
 			if (!this.modifierKey.isDown) return;
 			this.timeHoldingHistoryKey = 0;
 			this.snapKey.isDown ? this.history.redo() : this.history.undo(); 
 		});
-		this.redoKeyWin.addListener('down', () => {
+		this.redoKeyWin.addListener("down", () => {
 			this.timeHoldingHistoryKey = 0; 
 			if (!this.modifierKey.isDown) return;
 			this.history.redo(); 
@@ -65,25 +63,23 @@ class MainScene extends Phaser.Scene {
 
 		this.world = new WorldView(this);
 		this.ui = new UIView(this);
+		this.ui.createElements();
+
+		this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
+		this.add.existing(this.chat);
 
 		this.map = new TileMap("gameMap", this, 300, 300);
-		this.map.fillMap(10);
 
 		this.architect = new ArchitectMode(this);
 		this.token = new TokenMode(this);
 
-		let edit = new UIModeSwitchButton(this, 1, 1);
-		this.ui.o.add(edit);
-
-		let history = new UIHistoryManipulation(this, 16, 1);
-		this.ui.o.add(history);
-
-		this.tokens.push(new Token(this, 64, 64, "player"));
+		let tileset = new TilesetPatcher(this);
 	}
 
 	update(time: number, delta: number): void {
 		this.world.update();
 		this.ui.update();
+		this.chat.update();
 
 		if ((this.redoKeyWin.isDown || this.undoRedoKey.isDown) && this.modifierKey.isDown) {
 			if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 == 0) {

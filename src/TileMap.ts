@@ -1,5 +1,5 @@
 class TileMap {
-	scene: Phaser.Scene;
+	scene: MainScene;
 
 	key: string;
 	dimensions: {x: number, y: number}
@@ -7,94 +7,116 @@ class TileMap {
 	SOLID: number = 10;
 
 	map: Phaser.Tilemaps.Tilemap;
-	layer: Phaser.Tilemaps.DynamicTilemapLayer;
+	layers: (Phaser.Tilemaps.DynamicTilemapLayer | null)[] = [];
 
-	constructor(key: string, scene: Phaser.Scene, xwid: number, ywid: number) {
+	solid_at: boolean[][];
+	palette_at: number[][];
+
+	constructor(key: string, scene: MainScene, xwid: number, ywid: number) {
 		this.key = key;
 		this.scene = scene;
 		this.dimensions = {x: xwid, y: ywid};
 
+		this.solid_at = [];
+		this.palette_at = [];
+		for (let i = 0; i < xwid; i++) {
+			this.solid_at[i] = [];
+			this.palette_at[i] = [];
+			for (let j = 0; j < ywid; j++) {
+				this.solid_at[i][j] = false;
+				this.palette_at[i][j] = 1;
+			}
+		}
+
 		this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
-		let tileset = this.map.addTilesetImage("tileset", "tileset", 16, 16, 0, 0);
 
-		this.layer = this.map.createBlankDynamicLayer("layer_0", "tileset", 0, 0, 50*16, 50*16, 16, 16);
-		this.layer.setScale(4, 4);
-		this.layer.setInteractive();
+		for (let i = 0; i < this.scene.TILESET_COUNT; i++) {
+			let tileset = this.map.addTilesetImage("tileset_" + i, "tileset_" + i, 16, 16, 0, 0);
+
+			this.layers[i] = null;
+		}
+		this.createLayer(0);
+		this.layers[0].setInteractive();
 		
-		// this.map.addTilesetImage("grid_tile", "grid_tile", 16, 16, 0, 0);
-		// this.map.setLayer("grid");
-		// let gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, 50*16, 50*16, 16, 16);
-		// gridlayer.setScale(4, 4);
-		// for (let i = 0; i < xwid; i++) {
-		// 	for (let j = 0; j < ywid; j++) {
-		// 		if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) gridlayer.putTileAt(0, i, j);
-		// 	}
-		// }
-	}
-
-	fillMap(tid?: number): void {
-		if (!tid) tid = this.SOLID;
+		this.map.addTilesetImage("grid_tile", "grid_tile", 16, 16, 0, 0);
+		this.map.setLayer("grid");
+		let gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, 50*16, 50*16, 16, 16);
+		gridlayer.setScale(4, 4);
+		gridlayer.setDepth(500);
+		for (let i = 0; i < xwid; i++) {
+			for (let j = 0; j < ywid; j++) {
+				if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) gridlayer.putTileAt(0, i, j);
+			}
+		}
 
 		for (let x = 0; x < this.dimensions.x; x ++) {
 			for (let y = 0; y < this.dimensions.y; y ++) {
-				this.setTile(x, y, tid);
+				this.setTile(x, y, 1, 13);
 			}
 		}
 	}
 
-	setSolid(x: number, y: number, solid: boolean): boolean {
-		let alreadySolid = this.getSolid(x, y);
-		if (alreadySolid == solid) return false;
+	private createLayer(palette: number) {
+		this.map.setLayer("layer_" + palette);
+		this.layers[palette] = this.map.createBlankDynamicLayer("layer_" + palette, "tileset_" + palette, 0, 0, 50*16, 50*16, 16, 16);
+		this.layers[palette].setScale(4, 4);
+		this.layers[palette].setDepth(-500 + palette);
+	}
 
-		if (solid) this.setTile(x, y, this.SOLID);
-		else this.setTile(x, y, 13);
+	setSolid(x: number, y: number, palette: number, solid: boolean): boolean {
+		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return false;
 
+		let oldPalette = this.palette_at[x][y];
+		let wasSolid 	 = this.solid_at[x][y];
+
+		if (wasSolid == solid && palette == oldPalette) return false;
+		
+		this.setTile(x, y, palette, (solid ? this.SOLID : 13));
 		this.calculateEdgesAround(x, y);
+
 		return true;
 	}
 
-	getSolid(x: number, y: number) {
-		return this.getTile(x, y) == this.SOLID;
+	getSolid(x: number, y: number): number {
+		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return -1;
+		return (this.solid_at[x][y]) ? this.palette_at[x][y] : -1;
 	}
 
-	private setTile(x: number, y: number, tid: number): void {
-		this.layer.removeTileAt(x, y, true);
-		this.layer.putTileAt(tid, x, y);
+	getPalette(x: number, y: number): number {
+		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return -1;
+		return this.palette_at[x][y];
 	}
 
-	private getTile(x: number, y: number): number {
-		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return this.SOLID;
-		return this.layer.getTileAt(x, y, true).index;
+	private setTile(x: number, y: number, palette: number, tid: number): void {
+		if (this.layers[palette] == null) this.createLayer(palette);
+
+		this.layers[this.palette_at[x][y]].removeTileAt(x, y, true);
+		this.layers[palette].putTileAt(tid, x, y);
+		this.palette_at[x][y] = palette;
+		this.solid_at[x][y] = tid == this.SOLID;
 	}
 
 	private calculateEdgesAround(x: number, y: number) {
-		for (let i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x + 1, 0); i++) {
-			for (let j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y + 1, 0); j++) {
-				this.calculateEdges(i, j);
+		for (let i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
+			for (let j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
+				let tile = this.calculateEdges(i, j);
+				if (tile != -1) this.setTile(i, j, this.palette_at[i][j], tile);
 			}
 		}
-	}
-
-	private getSurroundingTiles(x: number, y: number): number[] {
-		let tiles: number[] = [];
-		for (let i = -1; i <= 1; i++) {
-			for (let j = -1; j <= 1; j++) {
-				tiles.push(this.getTile(x + j, y + i));
-			}
-		}
-		return tiles;
 	}
 
 	private getSurroundingSolid(x: number, y: number): boolean[] {
-		let tiles: (number|boolean)[] = this.getSurroundingTiles(x, y);
-		for (let i = 0; i < 9; i++) {
-			tiles[i] = (tiles[i] == this.SOLID);
+		let solid: boolean[] = [];
+		for (let i = -1; i <= 1; i++) {
+			for (let j = -1; j <= 1; j++) {
+				solid.push(this.getSolid(x + j, y + i) != -1);
+			}
 		}
-		return tiles as boolean[];
+		return solid;
 	}
 
-	private calculateEdges(x: number, y: number): void {
-		if (this.getTile(x, y) == this.SOLID) return;
+	private calculateEdges(x: number, y: number): number {
+		if (this.getSolid(x, y) != -1) return -1;
 
 		let adjacents = this.getSurroundingSolid(x, y);
 		let tile = 13;
@@ -188,7 +210,7 @@ class TileMap {
 		}
 		else if (adjacents[8] /*Bottom right*/) tile = 0;
 
-		this.setTile(x, y, tile);
+		return tile;
 	}
 }
  

@@ -1,0 +1,19 @@
+cursor
+grid_tile
+
+FOLDERPREFIX ui ui_
+ui/button_grid
+ui/button_side_menu 21 18
+ui/history_manipulation 39 18
+ui/mode_switch 39 18
+ui/quick_selector
+ui/text_box 100 6
+ui/text_input 100 6
+ui/sidebar_bg 68 21
+ui/sidebar_cursor
+ui/sidebar_overlay
+
+FOLDERPREFIX tileset tileset_
+tileset/0
+tileset/1
+tileset/2
