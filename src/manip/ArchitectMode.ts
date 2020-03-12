@@ -183,7 +183,7 @@ class ArchitectMode {
 	}
 
 	placeTileAndPushManip(manipPos: Vec2, solid: boolean) {
-		let tile = solid ? 1 : -1;
+		let tile = solid ? this.scene.activeTileset : -1;
 
 		let lastWall = this.scene.map.getWall(manipPos.x, manipPos.y);
 		if (tile == lastWall) return;

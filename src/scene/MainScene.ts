@@ -1,6 +1,4 @@
 class MainScene extends Phaser.Scene {
-	TILESET_COUNT = 3;
-
 	map: Tilemap;
 	history: HistoryManager;
 
@@ -17,7 +15,7 @@ class MainScene extends Phaser.Scene {
 	chat: Chat;
 
 	timeHoldingHistoryKey: number = 0;
-	activePalette: number = 0;
+	activeTileset: number = 0;
 	activeToken: string = "tkn_treasure";
 
 	snapKey: 				Phaser.Input.Keyboard.Key;

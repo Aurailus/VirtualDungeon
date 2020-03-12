@@ -314,17 +314,9 @@ var Tilemap = /** @class */ (function () {
             }
         }
         this.manager = new TilesetManager(scene);
-        for (var _i = 0, WALLS_1 = WALLS; _i < WALLS_1.length; _i++) {
-            var tileset = WALLS_1[_i];
-            this.manager.addTileset(tileset.key, true);
-        }
-        for (var _a = 0, GROUNDS_1 = GROUNDS; _a < GROUNDS_1.length; _a++) {
-            var tileset = GROUNDS_1[_a];
-            this.manager.addTileset(tileset.key, false);
-        }
         this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
-        for (var _b = 0, _c = Object.keys(this.manager.tilesets); _b < _c.length; _b++) {
-            var res = _c[_b];
+        for (var _i = 0, _a = Object.keys(this.manager.canvases); _i < _a.length; _i++) {
+            var res = _a[_i];
             this.createLayers(parseInt(res));
         }
         for (var x = 0; x < this.dimensions.x; x++) {
@@ -367,7 +359,7 @@ var Tilemap = /** @class */ (function () {
             this.wallAt[x][y] = -1;
         }
         if (tileset != -1) {
-            this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.tilesets[this.manager.locations[tileset].res].wall.getGlobalIndex(54, tileset), x, y);
+            this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(54, tileset), x, y);
             this.wallAt[x][y] = tileset;
         }
         this.calculateSmartTilesAround(x, y);
@@ -378,7 +370,7 @@ var Tilemap = /** @class */ (function () {
             this.layers[this.manager.locations[tileset].res].wall.removeTileAt(x, y, true);
             this.wallAt[x][y] = -1;
         }
-        this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.tilesets[this.manager.locations[tileset].res].wall.getGlobalIndex(tile, tileset), x, y);
+        this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(tile, tileset), x, y);
         this.wallAt[x][y] = tileset;
     };
     Tilemap.prototype.getWall = function (x, y) {
@@ -390,9 +382,11 @@ var Tilemap = /** @class */ (function () {
     Tilemap.prototype.calculateSmartTilesAround = function (x, y) {
         for (var i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
             for (var j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-                var tile = this.calculateSmartTile(i, j);
-                if (tile != -1)
-                    this.setWallRaw(i, j, this.wallAt[i][j], tile);
+                var wall = this.calculateWallSmart(i, j);
+                if (wall != -1)
+                    this.setWallRaw(i, j, this.wallAt[i][j], wall);
+                // let floor = this.calculateFloorSmart(i, j);
+                // if (floor != -1) this.setFloorRaw(i, j, this.floorAt[i][j], floor);
             }
         }
     };
@@ -405,7 +399,7 @@ var Tilemap = /** @class */ (function () {
         }
         return solid;
     };
-    Tilemap.prototype.calculateSmartTile = function (x, y) {
+    Tilemap.prototype.calculateWallSmart = function (x, y) {
         var wall = this.getWall(x, y);
         if (wall == -1)
             return -1;
@@ -592,22 +586,32 @@ var TilesetCanvas = /** @class */ (function () {
 }());
 var TilesetManager = /** @class */ (function () {
     function TilesetManager(scene) {
-        this.tilesets = {};
-        this.locations = {};
         this.currentInd = 0;
+        this.canvases = {};
+        this.locations = {};
+        this.indexes = {};
         this.scene = scene;
+        for (var _i = 0, WALLS_1 = WALLS; _i < WALLS_1.length; _i++) {
+            var tileset = WALLS_1[_i];
+            this.addTileset(tileset.key, true);
+        }
+        for (var _a = 0, GROUNDS_1 = GROUNDS; _a < GROUNDS_1.length; _a++) {
+            var tileset = GROUNDS_1[_a];
+            this.addTileset(tileset.key, false);
+        }
     }
     TilesetManager.prototype.addTileset = function (key, wall) {
         var res = this.scene.textures.get(key).getSourceImage(0).width / 9;
-        if (this.tilesets[res] == undefined) {
-            this.tilesets[res] = {
+        if (this.canvases[res] == undefined) {
+            this.canvases[res] = {
                 wall: new TilesetCanvas(this, res, true),
                 ground: new TilesetCanvas(this, res, false)
             };
         }
-        var tilesetCanvas = this.tilesets[res];
-        this.locations[this.currentInd] = { res: res, wall: wall, ind: this.currentInd };
-        tilesetCanvas[wall ? "wall" : "ground"].addTileset(key);
+        var canvas = this.canvases[res];
+        this.locations[this.currentInd] = { res: res, wall: wall, ind: this.currentInd, key: key };
+        this.indexes[key] = this.currentInd;
+        canvas[wall ? "wall" : "ground"].addTileset(key);
     };
     return TilesetManager;
 }());
@@ -1114,7 +1118,7 @@ var ArchitectMode = /** @class */ (function () {
         }
     };
     ArchitectMode.prototype.placeTileAndPushManip = function (manipPos, solid) {
-        var tile = solid ? 1 : -1;
+        var tile = solid ? this.scene.activeTileset : -1;
         var lastWall = this.scene.map.getWall(manipPos.x, manipPos.y);
         if (tile == lastWall)
             return;
@@ -1303,11 +1307,10 @@ var MainScene = /** @class */ (function (_super) {
     __extends(MainScene, _super);
     function MainScene() {
         var _this = _super.call(this, { key: "MainScene" }) || this;
-        _this.TILESET_COUNT = 3;
         _this.mode = 0;
         _this.tokens = [];
         _this.timeHoldingHistoryKey = 0;
-        _this.activePalette = 0;
+        _this.activeTileset = 0;
         _this.activeToken = "tkn_treasure";
         return _this;
     }
@@ -1705,7 +1708,8 @@ var UITileSidebar = /** @class */ (function (_super) {
         return _this;
     }
     UITileSidebar.prototype.elemClick = function (x, y) {
-        this.scene.activePalette = this.elems[x + y * 3];
+        console.log(this.scene.map.manager.indexes[this.elems[x + y * 3]]);
+        this.scene.activeTileset = this.scene.map.manager.indexes[this.elems[x + y * 3]];
     };
     UITileSidebar.prototype.addTileset = function (tileset) {
         var p = this.elems.length;

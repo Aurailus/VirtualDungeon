@@ -13,7 +13,8 @@ class UITileSidebar extends UISidebar {
 	}
 
 	elemClick(x: number, y: number): void {
-		this.scene.activePalette = this.elems[x + y * 3];
+		console.log( this.scene.map.manager.indexes[this.elems[x + y * 3]]);
+		this.scene.activeTileset = this.scene.map.manager.indexes[this.elems[x + y * 3]];
 	}
 
 	addTileset(tileset: string) {

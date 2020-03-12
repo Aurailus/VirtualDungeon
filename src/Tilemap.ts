@@ -27,12 +27,10 @@ class Tilemap {
 		}
 
 		this.manager = new TilesetManager(scene);
-		for (let tileset of WALLS  ) this.manager.addTileset(tileset.key, true);
-		for (let tileset of GROUNDS) this.manager.addTileset(tileset.key, false);
 
 		this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
 
-		for (let res of Object.keys(this.manager.tilesets)) this.createLayers(parseInt(res));
+		for (let res of Object.keys(this.manager.canvases)) this.createLayers(parseInt(res));
 
 		for (let x = 0; x < this.dimensions.x; x ++) {
 			for (let y = 0; y < this.dimensions.y; y ++) {
@@ -83,7 +81,7 @@ class Tilemap {
 
 		if (tileset != -1) {
 			this.layers[this.manager.locations[tileset].res].wall.putTileAt(
-				this.manager.tilesets[this.manager.locations[tileset].res].wall.getGlobalIndex(54, tileset), x, y);
+				this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(54, tileset), x, y);
 			this.wallAt[x][y] = tileset;
 		}
 		
@@ -98,7 +96,7 @@ class Tilemap {
 		}
 
 		this.layers[this.manager.locations[tileset].res].wall.putTileAt(
-			this.manager.tilesets[this.manager.locations[tileset].res].wall.getGlobalIndex(tile, tileset), x, y);
+			this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(tile, tileset), x, y);
 		this.wallAt[x][y] = tileset;
 	}
 
@@ -113,8 +111,11 @@ class Tilemap {
 	private calculateSmartTilesAround(x: number, y: number) {
 		for (let i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
 			for (let j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-				let tile = this.calculateSmartTile(i, j);
-				if (tile != -1) this.setWallRaw(i, j, this.wallAt[i][j], tile);
+				let wall = this.calculateWallSmart(i, j);
+				if (wall != -1) this.setWallRaw(i, j, this.wallAt[i][j], wall);
+
+				// let floor = this.calculateFloorSmart(i, j);
+				// if (floor != -1) this.setFloorRaw(i, j, this.floorAt[i][j], floor);
 			}
 		}
 	}
@@ -129,7 +130,7 @@ class Tilemap {
 		return solid;
 	}
 
-	private calculateSmartTile(x: number, y: number): number {
+	private calculateWallSmart(x: number, y: number): number {
 		let wall = this.getWall(x, y); 
 		if (wall == -1) return -1;
 

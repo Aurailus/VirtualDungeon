@@ -12,9 +12,3 @@ ui/text_input 100 6
 ui/sidebar_bg 68 21
 ui/sidebar_cursor
 ui/sidebar_overlay
-
-FOLDERPREFIX tileset tileset_
-tileset/ground_grass
-tileset/ground_dirt
-tileset/wall_wood
-tileset/wall_stone
