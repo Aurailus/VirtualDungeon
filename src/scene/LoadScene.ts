@@ -23,11 +23,11 @@ class LoadScene extends Phaser.Scene {
 		}
 
 		for (let t of WALLS) {
-			this.load.image(t.key, t.file + ".png");
+			this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.res, frameHeight: t.res});
 		}
 
 		for (let t of GROUNDS) {
-			this.load.image(t.key, t.file + ".png");
+			this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.res, frameHeight: t.res});
 		}
 	}
 

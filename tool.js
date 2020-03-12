@@ -271,140 +271,13 @@ var OutlinePipeline = /** @class */ (function (_super) {
     }
     return OutlinePipeline;
 }(Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline));
-var TextInput = /** @class */ (function (_super) {
-    __extends(TextInput, _super);
-    function TextInput(scene, x, y) {
-        var _this = _super.call(this, scene, x, y, " ", "ui_text_input") || this;
-        _this.text = "";
-        document.addEventListener("keydown", function (e) {
-            var code = e.keyCode;
-            if (code == 8) {
-                _this.text = _this.text.substr(0, _this.text.length - 1);
-                _this.setText(_this.text);
-                return;
-            }
-            else if (code == 13) {
-                //Send
-                return;
-            }
-            else if (e.key.length != 1)
-                return;
-            _this.text += e.key;
-            _this.setText(_this.text.length == 0 ? " " : _this.text);
-        });
-        return _this;
-    }
-    return TextInput;
-}(ChatBox));
-var Tilemap = /** @class */ (function () {
-    function Tilemap(key, scene, xwid, ywid) {
-        this.dimensions = new Vec2();
-        this.layers = {};
-        this.SOLID = 10;
-        this.scene = scene;
-        this.dimensions = new Vec2(xwid, ywid);
-        this.groundAt = [];
-        this.wallAt = [];
-        for (var i = 0; i < xwid; i++) {
-            this.groundAt[i] = [];
-            this.wallAt[i] = [];
-            for (var j = 0; j < ywid; j++) {
-                this.groundAt[i][j] = -1;
-                this.wallAt[i][j] = -1;
-            }
-        }
-        this.manager = new TilesetManager(scene);
-        this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
-        for (var _i = 0, _a = Object.keys(this.manager.canvases); _i < _a.length; _i++) {
-            var res = _a[_i];
-            this.createLayers(parseInt(res));
-        }
-        for (var x = 0; x < this.dimensions.x; x++) {
-            for (var y = 0; y < this.dimensions.y; y++) {
-                this.layers[16].ground.putTileAt(3, x, y);
-            }
-        }
-        this.map.addTilesetImage("grid_tile", "grid_tile", 16, 16, 0, 0);
-        this.map.setLayer("grid");
-        var gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, this.dimensions.x, this.dimensions.y, 16, 16);
-        gridlayer.setScale(4, 4);
-        gridlayer.setDepth(500);
-        for (var i = 0; i < xwid; i++) {
-            for (var j = 0; j < ywid; j++) {
-                if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0))
-                    gridlayer.putTileAt(0, i, j);
-            }
-        }
-    }
-    Tilemap.prototype.createLayers = function (res) {
-        this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 0, 0);
-        this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 0, 0);
-        this.map.setLayer("layer_" + res + "_ground");
-        var ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", "tileset_" + res + "_ground", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
-        ground.setScale(4 / (res / 16), 4 / (res / 16));
-        ground.setDepth(-1000 + res);
-        this.map.setLayer("layer_" + res + "_wall");
-        var wall = this.map.createBlankDynamicLayer("layer_" + res + "_wall", "tileset_" + res + "_wall", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
-        wall.setScale(4 / (res / 16), 4 / (res / 16));
-        wall.setDepth(-500 + res);
-        this.layers[res] = { ground: ground, wall: wall };
-    };
-    Tilemap.prototype.setWall = function (x, y, tileset) {
-        if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
-            return false;
-        if (this.wallAt[x][y] == tileset)
-            return false;
-        if (this.wallAt[x][y] != -1) {
-            this.layers[this.manager.locations[this.wallAt[x][y]].res].wall.removeTileAt(x, y, true);
-            this.wallAt[x][y] = -1;
-        }
-        if (tileset != -1) {
-            this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(54, tileset), x, y);
-            this.wallAt[x][y] = tileset;
-        }
-        this.calculateSmartTilesAround(x, y);
-        return true;
-    };
-    Tilemap.prototype.setWallRaw = function (x, y, tileset, tile) {
-        if (this.wallAt[x][y] != -1) {
-            this.layers[this.manager.locations[tileset].res].wall.removeTileAt(x, y, true);
-            this.wallAt[x][y] = -1;
-        }
-        this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(tile, tileset), x, y);
-        this.wallAt[x][y] = tileset;
-    };
-    Tilemap.prototype.getWall = function (x, y) {
-        return this.wallAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
-    };
-    Tilemap.prototype.getGround = function (x, y) {
-        return this.groundAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
-    };
-    Tilemap.prototype.calculateSmartTilesAround = function (x, y) {
-        for (var i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
-            for (var j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-                var wall = this.calculateWallSmart(i, j);
-                if (wall != -1)
-                    this.setWallRaw(i, j, this.wallAt[i][j], wall);
-                // let floor = this.calculateFloorSmart(i, j);
-                // if (floor != -1) this.setFloorRaw(i, j, this.floorAt[i][j], floor);
-            }
-        }
-    };
-    Tilemap.prototype.getWallsAround = function (x, y) {
-        var solid = [];
-        for (var i = -1; i <= 1; i++) {
-            for (var j = -1; j <= 1; j++) {
-                solid.push(this.getWall(x + j, y + i) != -1);
-            }
-        }
-        return solid;
-    };
-    Tilemap.prototype.calculateWallSmart = function (x, y) {
-        var wall = this.getWall(x, y);
-        if (wall == -1)
-            return -1;
+var SmartTiler;
+(function (SmartTiler) {
+    function wall(walls, current) {
         var TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
-        var empty = this.getWallsAround(x, y).map(function (b) { return !b; });
+        if (current == -1)
+            return -1;
+        var empty = walls.map(function (b) { return !b; });
         var tile = 54;
         if (empty[T]) {
             if (empty[B]) {
@@ -547,11 +420,296 @@ var Tilemap = /** @class */ (function () {
         else if (empty[BR])
             tile = 18;
         else {
-            if (wall >= 54 && wall <= 60)
+            if (current >= 54 && current <= 60)
                 return -1;
             tile = 54 + Math.floor(Math.random() * 6);
         }
         return tile;
+    }
+    SmartTiler.wall = wall;
+    function ground(walls, current) {
+        var TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
+        if (current == -1)
+            return -1;
+        var tile = 10;
+        if (walls[C])
+            tile = 10;
+        else if (walls[B]) {
+            if (walls[T]) {
+                if (walls[R]) {
+                    if (walls[L])
+                        tile = 49;
+                    else
+                        tile = 26;
+                }
+                else if (walls[L])
+                    tile = 8;
+                else
+                    tile = 17;
+            }
+            else if (walls[L]) {
+                if (walls[R])
+                    tile = 48;
+                else if (walls[TR])
+                    tile = 45;
+                else
+                    tile = 21;
+            }
+            else if (walls[R]) {
+                if (walls[TL])
+                    tile = 47;
+                else
+                    tile = 23;
+            }
+            else if (walls[TL]) {
+                if (walls[TR])
+                    tile = 46;
+                else
+                    tile = 41;
+            }
+            else if (walls[TR])
+                tile = 40;
+            else
+                tile = 1;
+        }
+        else if (walls[T]) {
+            if (walls[L]) {
+                if (walls[R])
+                    tile = 30;
+                else if (walls[BR])
+                    tile = 27;
+                else
+                    tile = 3;
+            }
+            else if (walls[R]) {
+                if (walls[BL])
+                    tile = 29;
+                else
+                    tile = 5;
+            }
+            else if (walls[BL]) {
+                if (walls[BR])
+                    tile = 28;
+                else
+                    tile = 32;
+            }
+            else if (walls[BR])
+                tile = 31;
+            else
+                tile = 19;
+        }
+        else if (walls[L]) {
+            if (walls[R])
+                tile = 39;
+            else if (walls[TR]) {
+                if (walls[BR])
+                    tile = 36;
+                else
+                    tile = 51;
+            }
+            else if (walls[BR])
+                tile = 42;
+            else
+                tile = 11;
+        }
+        else if (walls[R]) {
+            if (walls[TL]) {
+                if (walls[BL])
+                    tile = 38;
+                else
+                    tile = 52;
+            }
+            else if (walls[BL])
+                tile = 43;
+            else
+                tile = 9;
+        }
+        else if (walls[TL]) {
+            if (walls[TR]) {
+                if (walls[BL]) {
+                    if (walls[BR])
+                        tile = 37;
+                    else
+                        tile = 6;
+                }
+                else if (walls[BR])
+                    tile = 7;
+                else
+                    tile = 4;
+            }
+            else if (walls[BL]) {
+                if (walls[BR])
+                    tile = 15;
+                else
+                    tile = 12;
+            }
+            else if (walls[BR])
+                tile = 33;
+            else
+                tile = 20;
+        }
+        else if (walls[TR]) {
+            if (walls[BL]) {
+                if (walls[BR])
+                    tile = 16;
+                else
+                    tile = 34;
+            }
+            else if (walls[BR])
+                tile = 14;
+            else
+                tile = 18;
+        }
+        else if (walls[BL]) {
+            if (walls[BR])
+                tile = 22;
+            else
+                tile = 2;
+        }
+        else if (walls[BR])
+            tile = 0;
+        else {
+            if (current >= 54 && current <= 60)
+                return -1;
+            tile = 54 + Math.floor(Math.random() * 6);
+        }
+        return tile;
+    }
+    SmartTiler.ground = ground;
+})(SmartTiler || (SmartTiler = {}));
+var TextInput = /** @class */ (function (_super) {
+    __extends(TextInput, _super);
+    function TextInput(scene, x, y) {
+        var _this = _super.call(this, scene, x, y, " ", "ui_text_input") || this;
+        _this.text = "";
+        document.addEventListener("keydown", function (e) {
+            var code = e.keyCode;
+            if (code == 8) {
+                _this.text = _this.text.substr(0, _this.text.length - 1);
+                _this.setText(_this.text);
+                return;
+            }
+            else if (code == 13) {
+                //Send
+                return;
+            }
+            else if (e.key.length != 1)
+                return;
+            _this.text += e.key;
+            _this.setText(_this.text.length == 0 ? " " : _this.text);
+        });
+        return _this;
+    }
+    return TextInput;
+}(ChatBox));
+var Tilemap = /** @class */ (function () {
+    function Tilemap(key, scene, xwid, ywid) {
+        this.dimensions = new Vec2();
+        this.layers = {};
+        this.scene = scene;
+        this.dimensions = new Vec2(xwid, ywid);
+        this.groundAt = [];
+        this.wallAt = [];
+        for (var i = 0; i < xwid; i++) {
+            this.groundAt[i] = [];
+            this.wallAt[i] = [];
+            for (var j = 0; j < ywid; j++) {
+                this.groundAt[i][j] = -1;
+                this.wallAt[i][j] = -1;
+            }
+        }
+        this.manager = new TilesetManager(scene);
+        this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
+        for (var _i = 0, _a = Object.keys(this.manager.canvases); _i < _a.length; _i++) {
+            var res = _a[_i];
+            this.createLayers(parseInt(res));
+        }
+        for (var x = 0; x < this.dimensions.x; x++) {
+            for (var y = 0; y < this.dimensions.y; y++) {
+                this.setTileRaw(x, y, 1, 54 + Math.floor(Math.random() * 6), 0 /* GROUND */);
+            }
+        }
+        this.map.addTilesetImage("grid_tile", "grid_tile", 16, 16, 0, 0);
+        this.map.setLayer("grid");
+        var gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, this.dimensions.x, this.dimensions.y, 16, 16);
+        gridlayer.setScale(4, 4);
+        gridlayer.setDepth(500);
+        for (var i = 0; i < xwid; i++) {
+            for (var j = 0; j < ywid; j++) {
+                if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0))
+                    gridlayer.putTileAt(0, i, j);
+            }
+        }
+    }
+    Tilemap.prototype.createLayers = function (res) {
+        this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 0, 4);
+        this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 0, 4);
+        this.map.setLayer("layer_" + res + "_ground");
+        var ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", "tileset_" + res + "_ground", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
+        ground.setScale(4 / (res / 16), 4 / (res / 16));
+        ground.setDepth(-1000 + res);
+        this.map.setLayer("layer_" + res + "_wall");
+        var wall = this.map.createBlankDynamicLayer("layer_" + res + "_wall", "tileset_" + res + "_wall", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
+        wall.setScale(4 / (res / 16), 4 / (res / 16));
+        wall.setDepth(-500 + res);
+        this.layers[res] = [ground, wall];
+    };
+    Tilemap.prototype.getWall = function (x, y) {
+        return this.wallAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
+    };
+    Tilemap.prototype.setWall = function (x, y, tileset) {
+        return this.setTile(x, y, tileset, 1 /* WALL */);
+    };
+    Tilemap.prototype.getGround = function (x, y) {
+        return this.groundAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
+    };
+    Tilemap.prototype.setGround = function (x, y, tileset) {
+        return this.setTile(x, y, tileset, 0 /* GROUND */);
+    };
+    Tilemap.prototype.setTile = function (x, y, tileset, layer) {
+        if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
+            return false;
+        var arr = (layer == 0 /* GROUND */ ? this.groundAt : this.wallAt);
+        if (arr[x][y] == tileset)
+            return false;
+        if (arr[x][y] != -1)
+            this.layers[this.manager.getTilesetRes(arr[x][y])][layer].removeTileAt(x, y, true);
+        if (tileset != -1)
+            this.layers[this.manager.getTilesetRes(tileset)][layer].putTileAt(this.manager.getGlobalTileIndex(tileset, (layer == 0 /* GROUND */ ? 54 : 13), layer), x, y);
+        arr[x][y] = tileset;
+        this.calculateSmartTilesAround(x, y);
+        return true;
+    };
+    Tilemap.prototype.setTileRaw = function (x, y, tileset, tile, layer) {
+        var arr = (layer == 0 /* GROUND */ ? this.groundAt : this.wallAt);
+        var loc = this.manager.locations[tileset].res;
+        if (arr[x][y] != -1) {
+            this.layers[loc][layer].removeTileAt(x, y, true);
+            arr[x][y] = -1;
+        }
+        this.layers[loc][layer].putTileAt(this.manager.canvases[loc][layer].getGlobalIndex(tileset, tile), x, y);
+        arr[x][y] = tileset;
+    };
+    Tilemap.prototype.calculateSmartTilesAround = function (x, y) {
+        for (var i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
+            for (var j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
+                var wall = SmartTiler.wall(this.getWallsAround(i, j), this.wallAt[i][j]);
+                if (wall != -1)
+                    this.setTileRaw(i, j, this.wallAt[i][j], wall, 1 /* WALL */);
+                var ground = SmartTiler.ground(this.getWallsAround(i, j), this.groundAt[i][j]);
+                if (ground != -1)
+                    this.setTileRaw(i, j, this.groundAt[i][j], ground, 0 /* GROUND */);
+            }
+        }
+    };
+    Tilemap.prototype.getWallsAround = function (x, y) {
+        var solid = [];
+        for (var i = -1; i <= 1; i++) {
+            for (var j = -1; j <= 1; j++) {
+                solid.push(this.getWall(x + j, y + i) != -1);
+            }
+        }
+        return solid;
     };
     return Tilemap;
 }());
@@ -559,28 +717,42 @@ var TilesetCanvas = /** @class */ (function () {
     function TilesetCanvas(manager, res, wall) {
         this.indexes = [];
         this.indMap = [];
+        this.pad = 2;
         this.manager = manager;
         this.res = res;
-        this.width = Math.floor(1024 / this.res / 9);
-        this.height = Math.floor(1024 / this.res / 7);
-        this.canvas = manager.scene.textures.createCanvas("tileset_" + res + (wall ? "_wall" : "_ground"), this.width * 9 * this.res, this.height * 7 * this.res);
+        this.width = Math.floor(1024 / ((this.res + this.pad * 2) * 9));
+        this.height = Math.floor(1024 / ((this.res + this.pad * 2) * 7));
+        this.canvas = manager.scene.textures.createCanvas("tileset_" + res + (wall ? "_wall" : "_ground"), this.width * 9 * (this.res + this.pad * 2) - 2, this.height * 7 * (this.res + this.pad * 2) - 2);
     }
     TilesetCanvas.prototype.addTileset = function (key) {
         var x = this.indexes.length % this.width;
         var y = Math.floor(this.indexes.length / this.width);
-        this.canvas.drawFrame(key, 0, 9 * this.res * x, 7 * this.res * y);
+        this.drawTileset(key, x, y);
         this.indMap[this.manager.currentInd] = this.indexes.length;
         this.indexes.push(this.manager.currentInd++);
     };
-    TilesetCanvas.prototype.getGlobalIndex = function (local, tileset) {
-        var lX = local % 9;
-        var lY = Math.floor(local / 9);
+    TilesetCanvas.prototype.getGlobalIndex = function (tileset, tile) {
+        var lX = tile % 9;
+        var lY = Math.floor(tile / 9);
         var gX = tileset % this.width;
         var gY = Math.floor(tileset / this.width);
         var xx = lX + gX * 9;
         var yy = lY + gY * 9;
-        // console.log(lX, lY, this.width);
         return yy * this.width * 9 + xx;
+    };
+    TilesetCanvas.prototype.drawTileset = function (key, x, y) {
+        // this.canvas.drawFrame(key, 0, 9*this.res * x, 7*this.res * y);
+        for (var i = 0; i < 9; i++) {
+            for (var j = 0; j < 7; j++) {
+                var frame = i + j * 9;
+                for (var r = 0; r < 4; r++) {
+                    var xo = r < 2 ? -this.pad : +this.pad;
+                    var yo = r % 2 == 0 ? -this.pad : +this.pad;
+                    this.canvas.drawFrame(key, frame, 9 * (this.res + this.pad * 2) * x + i * (this.res + this.pad * 2) + xo, 7 * (this.res + this.pad * 2) * y + j * (this.res + this.pad * 2) + yo);
+                }
+                this.canvas.drawFrame(key, frame, 9 * (this.res + this.pad * 2) * x + i * (this.res + this.pad * 2), 7 * (this.res + this.pad * 2) * y + j * (this.res + this.pad * 2));
+            }
+        }
     };
     return TilesetCanvas;
 }());
@@ -593,25 +765,27 @@ var TilesetManager = /** @class */ (function () {
         this.scene = scene;
         for (var _i = 0, WALLS_1 = WALLS; _i < WALLS_1.length; _i++) {
             var tileset = WALLS_1[_i];
-            this.addTileset(tileset.key, true);
+            this.addTileset(tileset.key, 1 /* WALL */);
         }
         for (var _a = 0, GROUNDS_1 = GROUNDS; _a < GROUNDS_1.length; _a++) {
             var tileset = GROUNDS_1[_a];
-            this.addTileset(tileset.key, false);
+            this.addTileset(tileset.key, 0 /* GROUND */);
         }
     }
-    TilesetManager.prototype.addTileset = function (key, wall) {
+    TilesetManager.prototype.addTileset = function (key, layer) {
         var res = this.scene.textures.get(key).getSourceImage(0).width / 9;
-        if (this.canvases[res] == undefined) {
-            this.canvases[res] = {
-                wall: new TilesetCanvas(this, res, true),
-                ground: new TilesetCanvas(this, res, false)
-            };
-        }
+        if (this.canvases[res] == undefined)
+            this.canvases[res] = [new TilesetCanvas(this, res, false), new TilesetCanvas(this, res, true)];
         var canvas = this.canvases[res];
-        this.locations[this.currentInd] = { res: res, wall: wall, ind: this.currentInd, key: key };
+        this.locations[this.currentInd] = { res: res, layer: layer, ind: this.currentInd, key: key };
         this.indexes[key] = this.currentInd;
-        canvas[wall ? "wall" : "ground"].addTileset(key);
+        canvas[layer].addTileset(key);
+    };
+    TilesetManager.prototype.getTilesetRes = function (tileset) {
+        return this.locations[tileset].res;
+    };
+    TilesetManager.prototype.getGlobalTileIndex = function (tileset, tile, layer) {
+        return this.canvases[this.getTilesetRes(tileset)][layer].getGlobalIndex(tileset, tile);
     };
     return TilesetManager;
 }());
@@ -921,10 +1095,18 @@ var WorldView = /** @class */ (function () {
 var WALLS = [
     { name: "Dungeon Wall", key: "wall_dungeon", file: "res/tileset/wall_dungeon", res: 16 },
     { name: "Wood Wall", key: "wall_wood", file: "res/tileset/wall_wood", res: 16 },
+    { name: "Dungeon Wall", key: "wall_dungeon_2", file: "res/tileset/wall_dungeon", res: 16 },
+    { name: "Wood Wall", key: "wall_wood_2", file: "res/tileset/wall_wood", res: 16 },
+    { name: "Dungeon Wall", key: "wall_dungeon_3", file: "res/tileset/wall_dungeon", res: 16 },
+    { name: "Wood Wall", key: "wall_wood_3", file: "res/tileset/wall_wood", res: 16 },
 ];
 var GROUNDS = [
     { name: "Cave Floor", key: "ground_cave", file: "res/tileset/ground_cave", res: 16 },
     { name: "Lawn", key: "ground_wood", file: "res/tileset/ground_grass", res: 16 },
+    { name: "Cave Floor", key: "ground_cave_2", file: "res/tileset/ground_cave", res: 16 },
+    { name: "Lawn", key: "ground_wood_2", file: "res/tileset/ground_grass", res: 16 },
+    { name: "Cave Floor", key: "ground_cave_3", file: "res/tileset/ground_cave", res: 16 },
+    { name: "Lawn", key: "ground_wood_3", file: "res/tileset/ground_grass", res: 16 },
 ];
 var TOKENS = [
     { name: "Armor 1", key: "tkn_armor_1", file: "res/token/armor_1", split_by: 18 },
@@ -1285,11 +1467,11 @@ var LoadScene = /** @class */ (function (_super) {
         }
         for (var _c = 0, WALLS_2 = WALLS; _c < WALLS_2.length; _c++) {
             var t = WALLS_2[_c];
-            this.load.image(t.key, t.file + ".png");
+            this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.res, frameHeight: t.res });
         }
         for (var _d = 0, GROUNDS_2 = GROUNDS; _d < GROUNDS_2.length; _d++) {
             var t = GROUNDS_2[_d];
-            this.load.image(t.key, t.file + ".png");
+            this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.res, frameHeight: t.res });
         }
     };
     LoadScene.prototype.create = function () {
@@ -1350,6 +1532,10 @@ var MainScene = /** @class */ (function (_super) {
         this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
         this.add.existing(this.chat);
         this.map = new Tilemap("gameMap", this, 300, 300);
+        var bg = this.add.sprite(-300, 0, "cursor");
+        bg.setScale(this.textures.get("tileset_16_ground").getSourceImage(0).width / 16, this.textures.get("tileset_16_ground").getSourceImage(0).height / 16);
+        this.add.sprite(-300, 0, "tileset_16_ground");
+        this.add.sprite(-300, 600, "tileset_16_wall");
         this.architect = new ArchitectMode(this);
         this.token = new TokenMode(this);
     };
@@ -1676,7 +1862,7 @@ var UITileSelector = /** @class */ (function (_super) {
             var slot = Math.floor(mousePos.y / 20);
             if (slot < 0 || slot >= this.tiles.length)
                 return;
-            this.scene.activePalette = this.tiles[slot];
+            this.scene.activeTileset = this.tiles[slot];
             this.positionSelect(slot);
         }
     };

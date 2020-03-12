@@ -4,9 +4,7 @@ class Tilemap {
 	dimensions: Vec2 = new Vec2();
 
 	manager: TilesetManager;
-	layers: {[key: number]: {wall: Phaser.Tilemaps.DynamicTilemapLayer, ground: Phaser.Tilemaps.DynamicTilemapLayer}} = {};
-
-	SOLID: number = 10;
+	layers: {[key: number]: Phaser.Tilemaps.DynamicTilemapLayer[]} = {};
 
 	groundAt: number[][];
 	wallAt:   number[][];
@@ -34,7 +32,7 @@ class Tilemap {
 
 		for (let x = 0; x < this.dimensions.x; x ++) {
 			for (let y = 0; y < this.dimensions.y; y ++) {
-				this.layers[16].ground.putTileAt(3, x, y);
+				this.setTileRaw(x, y, 1, 54 + Math.floor(Math.random() * 6), Layer.GROUND);
 			}
 		}
 		
@@ -51,8 +49,8 @@ class Tilemap {
 	}
 
 	private createLayers(res: number) {
-		this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 0, 0);
-		this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 0, 0);
+		this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 0, 4);
+		this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 0, 4);
 
 		this.map.setLayer("layer_" + res + "_ground");
 		let ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", 
@@ -66,56 +64,62 @@ class Tilemap {
 		wall.setScale(4 / (res / 16), 4 / (res / 16));
 		wall.setDepth(-500 + res);
 
-		this.layers[res] = { ground: ground, wall: wall };
-	}
-
-	setWall(x: number, y: number, tileset: number): boolean {
-		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return false;
-
-		if (this.wallAt[x][y] == tileset) return false;
-
-		if (this.wallAt[x][y] != -1) {
-			this.layers[this.manager.locations[this.wallAt[x][y]].res].wall.removeTileAt(x, y, true);
-			this.wallAt[x][y] = -1;
-		}
-
-		if (tileset != -1) {
-			this.layers[this.manager.locations[tileset].res].wall.putTileAt(
-				this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(54, tileset), x, y);
-			this.wallAt[x][y] = tileset;
-		}
-		
-		this.calculateSmartTilesAround(x, y);
-		return true;
-	}
-
-	private setWallRaw(x: number, y: number, tileset: number, tile: number) {
-		if (this.wallAt[x][y] != -1) {
-			this.layers[this.manager.locations[tileset].res].wall.removeTileAt(x, y, true);
-			this.wallAt[x][y] = -1;
-		}
-
-		this.layers[this.manager.locations[tileset].res].wall.putTileAt(
-			this.manager.canvases[this.manager.locations[tileset].res].wall.getGlobalIndex(tile, tileset), x, y);
-		this.wallAt[x][y] = tileset;
+		this.layers[res] = [ground, wall];
 	}
 
 	getWall(x: number, y: number): number {
 		return this.wallAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
 	}
 
+	setWall(x: number, y: number, tileset: number): boolean {
+		return this.setTile(x, y, tileset, Layer.WALL);
+	}
+
 	getGround(x: number, y: number): number {
 		return this.groundAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
+	}
+
+	setGround(x: number, y: number, tileset: number): boolean {
+		return this.setTile(x, y, tileset, Layer.GROUND);
+	}
+
+	private setTile(x: number, y: number, tileset: number, layer: Layer): boolean {
+		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return false;
+		
+		let arr = (layer == Layer.GROUND ? this.groundAt : this.wallAt);
+		if (arr[x][y] == tileset) return false;
+
+		if (arr[x][y] != -1) this.layers[this.manager.getTilesetRes(arr[x][y])][layer].removeTileAt(x, y, true);
+		if (tileset != -1) this.layers[this.manager.getTilesetRes(tileset)][layer].putTileAt(
+			this.manager.getGlobalTileIndex(tileset, (layer == Layer.GROUND ? 54 : 13), layer), x, y);
+
+		arr[x][y] = tileset;
+		
+		this.calculateSmartTilesAround(x, y);
+		return true;
+	}
+
+	private setTileRaw(x: number, y: number, tileset: number, tile: number, layer: Layer): void {
+		let arr = (layer == Layer.GROUND ? this.groundAt : this.wallAt);
+		let loc = this.manager.locations[tileset].res;
+
+		if (arr[x][y] != -1) {
+			this.layers[loc][layer].removeTileAt(x, y, true);
+			arr[x][y] = -1;
+		}
+
+		this.layers[loc][layer].putTileAt(this.manager.canvases[loc][layer].getGlobalIndex(tileset, tile), x, y);
+		arr[x][y] = tileset;
 	}
 
 	private calculateSmartTilesAround(x: number, y: number) {
 		for (let i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
 			for (let j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-				let wall = this.calculateWallSmart(i, j);
-				if (wall != -1) this.setWallRaw(i, j, this.wallAt[i][j], wall);
+				let wall = SmartTiler.wall(this.getWallsAround(i, j), this.wallAt[i][j]);
+				if (wall != -1) this.setTileRaw(i, j, this.wallAt[i][j], wall, Layer.WALL);
 
-				// let floor = this.calculateFloorSmart(i, j);
-				// if (floor != -1) this.setFloorRaw(i, j, this.floorAt[i][j], floor);
+				let ground = SmartTiler.ground(this.getWallsAround(i, j), this.groundAt[i][j]);
+				if (ground != -1) this.setTileRaw(i, j, this.groundAt[i][j], ground, Layer.GROUND);
 			}
 		}
 	}
@@ -128,117 +132,6 @@ class Tilemap {
 			}
 		}
 		return solid;
-	}
-
-	private calculateWallSmart(x: number, y: number): number {
-		let wall = this.getWall(x, y); 
-		if (wall == -1) return -1;
-
-		const TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
-
-		let empty = this.getWallsAround(x, y).map(b => !b);
-		let tile = 54;
-
-		if (empty[T]) {
-			if (empty[B]) {
-				if (empty[L]) {
-					if (empty[R]) tile = 33;
-					else tile = 15; 
-				}
-				else if (empty[R]) tile = 5;
-				else tile = 2;
-			}
-			else if (empty[L]) {
-				if (empty[R]) tile = 14;
-				else if (empty[BR]) tile = 0;
-				else tile = 7;
-			}
-			else if (empty[R]) {
-				if (empty[BL]) tile = 1;
-				else tile = 8;
-			}
-			else {
-				if (empty[BL]) {
-					if (empty[BR]) tile = 3;
-					else tile = 40;
-				}
-				else if (empty[BR]) tile = 41;
-				else tile = 31;
-			}
-		}
-		else if (empty[B]) {
-			if (empty[L]) {
-				if (empty[R]) tile = 6;
-				else if (empty[TR]) tile = 9;
-				else tile = 16;
-			}
-			else if (empty[R]) {
-				if (empty[TL]) tile = 10;
-				else tile = 17;
-			}
-			else {
-				if (empty[TL]) {
-					if (empty[TR]) tile = 4;
-					else tile = 49;
-				}
-				else if (empty[TR]) tile = 50;
-				else tile = 32;
-			}
-		}
-		else if (empty[L]) {
-			if (empty[R]) tile = 11;
-			else {
-				if (empty[TR]) {
-					if (empty[BR]) tile = 12;
-					else tile = 38;
-				}
-				else if (empty[BR]) tile = 47;
-				else tile = 22;
-			}
-		}
-		else if (empty[R]) {
-			if (empty[TL]) {
-				if (empty[BL]) tile = 13;
-				else tile = 39;
-			}
-			else if (empty[BL]) tile = 48;
-			else tile = 23;
-		}
-		else if (empty[TL]) {
-			if (empty[TR]) {
-				if (empty[BL]) {
-					if (empty[BR]) tile = 25;
-					else tile = 36;
-				}
-				else if (empty[BR]) tile = 37; 
-				else tile = 21;
-			}
-			else if (empty[BL]) {
-				if (empty[BR]) tile = 45;
-				else tile = 30;
-			}
-			else if (empty[BR]) tile = 51;
-			else tile = 21;
-		}
-		else if (empty[TR]) {
-			if (empty[BL]) {
-				if (empty[BR]) tile = 46;
-				else tile = 42;
-			}
-			else if (empty[BR]) tile = 29;
-			else tile = 27;
-		}
-		else if (empty[BL]) {
-			if (empty[BR]) tile = 20;
-			else tile = 19;
-		}
-		else if (empty[BR]) tile = 18;
-		else {
-			if (wall >= 54 && wall <= 60) return -1;
-			tile = 54 + Math.floor(Math.random() * 6);
-		}
-
-		return tile;
 	}
 }
  
