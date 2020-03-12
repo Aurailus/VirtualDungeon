@@ -140,7 +140,7 @@ var HistoryElement = /** @class */ (function () {
         if (this.type == "tile") {
             for (var _i = 0, _a = this.data; _i < _a.length; _i++) {
                 var tile = _a[_i];
-                this.scene.map.setSolid(tile.pos.x, tile.pos.y, tile.oldPalette, tile.oldSolid);
+                this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.lastWall);
             }
         }
         else if (this.type == "token_modify") {
@@ -173,7 +173,7 @@ var HistoryElement = /** @class */ (function () {
         if (this.type == "tile") {
             for (var _i = 0, _a = this.data; _i < _a.length; _i++) {
                 var tile = _a[_i];
-                this.scene.map.setSolid(tile.pos.x, tile.pos.y, tile.palette, tile.solid);
+                this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.wall);
             }
         }
         else if (this.type == "token_modify") {
@@ -296,33 +296,45 @@ var TextInput = /** @class */ (function (_super) {
     }
     return TextInput;
 }(ChatBox));
-var TileMap = /** @class */ (function () {
-    function TileMap(key, scene, xwid, ywid) {
+var Tilemap = /** @class */ (function () {
+    function Tilemap(key, scene, xwid, ywid) {
+        this.dimensions = new Vec2();
+        this.layers = {};
         this.SOLID = 10;
-        this.layers = [];
-        this.key = key;
         this.scene = scene;
-        this.dimensions = { x: xwid, y: ywid };
-        this.solid_at = [];
-        this.palette_at = [];
+        this.dimensions = new Vec2(xwid, ywid);
+        this.groundAt = [];
+        this.wallAt = [];
         for (var i = 0; i < xwid; i++) {
-            this.solid_at[i] = [];
-            this.palette_at[i] = [];
+            this.groundAt[i] = [];
+            this.wallAt[i] = [];
             for (var j = 0; j < ywid; j++) {
-                this.solid_at[i][j] = false;
-                this.palette_at[i][j] = 1;
+                this.groundAt[i][j] = -1;
+                this.wallAt[i][j] = -1;
             }
         }
-        this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
-        for (var i = 0; i < this.scene.TILESET_COUNT; i++) {
-            var tileset = this.map.addTilesetImage("tileset_" + i, "tileset_" + i, 16, 16, 0, 0);
-            this.layers[i] = null;
+        this.manager = new TilesetManager(scene);
+        for (var _i = 0, WALLS_1 = WALLS; _i < WALLS_1.length; _i++) {
+            var tileset = WALLS_1[_i];
+            this.manager.addTileset(tileset.key, true);
         }
-        this.createLayer(0);
-        this.layers[0].setInteractive();
+        for (var _a = 0, GROUNDS_1 = GROUNDS; _a < GROUNDS_1.length; _a++) {
+            var tileset = GROUNDS_1[_a];
+            this.manager.addTileset(tileset.key, false);
+        }
+        this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
+        for (var _b = 0, _c = Object.keys(this.manager.tilesets); _b < _c.length; _b++) {
+            var res = _c[_b];
+            this.createLayers(parseInt(res));
+        }
+        for (var x = 0; x < this.dimensions.x; x++) {
+            for (var y = 0; y < this.dimensions.y; y++) {
+                this.layers[16].ground.putTileAt(3, x, y);
+            }
+        }
         this.map.addTilesetImage("grid_tile", "grid_tile", 16, 16, 0, 0);
         this.map.setLayer("grid");
-        var gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, 50 * 16, 50 * 16, 16, 16);
+        var gridlayer = this.map.createBlankDynamicLayer("grid", "grid_tile", 0, 0, this.dimensions.x, this.dimensions.y, 16, 16);
         gridlayer.setScale(4, 4);
         gridlayer.setDepth(500);
         for (var i = 0; i < xwid; i++) {
@@ -331,207 +343,223 @@ var TileMap = /** @class */ (function () {
                     gridlayer.putTileAt(0, i, j);
             }
         }
-        for (var x = 0; x < this.dimensions.x; x++) {
-            for (var y = 0; y < this.dimensions.y; y++) {
-                this.setTile(x, y, 1, 13);
-            }
-        }
     }
-    TileMap.prototype.createLayer = function (palette) {
-        this.map.setLayer("layer_" + palette);
-        this.layers[palette] = this.map.createBlankDynamicLayer("layer_" + palette, "tileset_" + palette, 0, 0, 50 * 16, 50 * 16, 16, 16);
-        this.layers[palette].setScale(4, 4);
-        this.layers[palette].setDepth(-500 + palette);
+    Tilemap.prototype.createLayers = function (res) {
+        this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 0, 0);
+        this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 0, 0);
+        this.map.setLayer("layer_" + res + "_ground");
+        var ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", "tileset_" + res + "_ground", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
+        ground.setScale(4 / (res / 16), 4 / (res / 16));
+        ground.setDepth(-1000 + res);
+        this.map.setLayer("layer_" + res + "_wall");
+        var wall = this.map.createBlankDynamicLayer("layer_" + res + "_wall", "tileset_" + res + "_wall", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
+        wall.setScale(4 / (res / 16), 4 / (res / 16));
+        wall.setDepth(-500 + res);
+        this.layers[res] = { ground: ground, wall: wall };
     };
-    TileMap.prototype.setSolid = function (x, y, palette, solid) {
+    Tilemap.prototype.setWall = function (x, y, tileset) {
         if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
             return false;
-        var oldPalette = this.palette_at[x][y];
-        var wasSolid = this.solid_at[x][y];
-        if (wasSolid == solid && palette == oldPalette)
+        if (this.wallAt[x][y] == tileset)
             return false;
-        this.setTile(x, y, palette, (solid ? this.SOLID : 13));
-        this.calculateEdgesAround(x, y);
+        if (this.wallAt[x][y] != -1) {
+            this.layers[this.manager.locations[this.wallAt[x][y]].res].wall.removeTileAt(x, y, true);
+            this.wallAt[x][y] = -1;
+        }
+        if (tileset != -1) {
+            this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.tilesets[this.manager.locations[tileset].res].wall.getGlobalIndex(54, tileset), x, y);
+            this.wallAt[x][y] = tileset;
+        }
+        this.calculateSmartTilesAround(x, y);
         return true;
     };
-    TileMap.prototype.getSolid = function (x, y) {
-        if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
-            return -1;
-        return (this.solid_at[x][y]) ? this.palette_at[x][y] : -1;
+    Tilemap.prototype.setWallRaw = function (x, y, tileset, tile) {
+        if (this.wallAt[x][y] != -1) {
+            this.layers[this.manager.locations[tileset].res].wall.removeTileAt(x, y, true);
+            this.wallAt[x][y] = -1;
+        }
+        this.layers[this.manager.locations[tileset].res].wall.putTileAt(this.manager.tilesets[this.manager.locations[tileset].res].wall.getGlobalIndex(tile, tileset), x, y);
+        this.wallAt[x][y] = tileset;
     };
-    TileMap.prototype.getPalette = function (x, y) {
-        if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
-            return -1;
-        return this.palette_at[x][y];
+    Tilemap.prototype.getWall = function (x, y) {
+        return this.wallAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
     };
-    TileMap.prototype.setTile = function (x, y, palette, tid) {
-        if (this.layers[palette] == null)
-            this.createLayer(palette);
-        this.layers[this.palette_at[x][y]].removeTileAt(x, y, true);
-        this.layers[palette].putTileAt(tid, x, y);
-        this.palette_at[x][y] = palette;
-        this.solid_at[x][y] = tid == this.SOLID;
+    Tilemap.prototype.getGround = function (x, y) {
+        return this.groundAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
     };
-    TileMap.prototype.calculateEdgesAround = function (x, y) {
+    Tilemap.prototype.calculateSmartTilesAround = function (x, y) {
         for (var i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
             for (var j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-                var tile = this.calculateEdges(i, j);
+                var tile = this.calculateSmartTile(i, j);
                 if (tile != -1)
-                    this.setTile(i, j, this.palette_at[i][j], tile);
+                    this.setWallRaw(i, j, this.wallAt[i][j], tile);
             }
         }
     };
-    TileMap.prototype.getSurroundingSolid = function (x, y) {
+    Tilemap.prototype.getWallsAround = function (x, y) {
         var solid = [];
         for (var i = -1; i <= 1; i++) {
             for (var j = -1; j <= 1; j++) {
-                solid.push(this.getSolid(x + j, y + i) != -1);
+                solid.push(this.getWall(x + j, y + i) != -1);
             }
         }
         return solid;
     };
-    TileMap.prototype.calculateEdges = function (x, y) {
-        if (this.getSolid(x, y) != -1)
+    Tilemap.prototype.calculateSmartTile = function (x, y) {
+        var wall = this.getWall(x, y);
+        if (wall == -1)
             return -1;
-        var adjacents = this.getSurroundingSolid(x, y);
-        var tile = 13;
-        if (adjacents[7] /*Bottom*/) {
-            if (adjacents[1] /*Top*/) {
-                if (adjacents[5] /*Right*/) {
-                    if (adjacents[3] /*Left*/)
-                        tile = 49;
+        var TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
+        var empty = this.getWallsAround(x, y).map(function (b) { return !b; });
+        var tile = 54;
+        if (empty[T]) {
+            if (empty[B]) {
+                if (empty[L]) {
+                    if (empty[R])
+                        tile = 33;
                     else
-                        tile = 59;
+                        tile = 15;
                 }
-                else if (adjacents[3] /*Left*/)
-                    tile = 57;
-                else
-                    tile = 58;
-            }
-            else if (adjacents[3] /*Left*/) {
-                if (adjacents[5] /*Right*/)
-                    tile = 48;
-                else if (adjacents[2] /*Top right*/)
-                    tile = 45;
-                else
-                    tile = 21;
-            }
-            else if (adjacents[5] /*Right*/) {
-                if (adjacents[0] /*Top left*/)
-                    tile = 47;
-                else
-                    tile = 23;
-            }
-            else if (adjacents[0] /*Top left*/) {
-                if (adjacents[2] /*Top Right*/)
-                    tile = 46;
-                else
-                    tile = 41;
-            }
-            else if (adjacents[2] /*Top Right*/)
-                tile = 40;
-            else
-                tile = 1;
-        }
-        else if (adjacents[1] /*Top*/) {
-            if (adjacents[3] /*Left*/) {
-                if (adjacents[5] /*Right*/)
-                    tile = 30;
-                else if (adjacents[8] /*Bottom right*/)
-                    tile = 27;
-                else
-                    tile = 3;
-            }
-            else if (adjacents[5] /*Right*/) {
-                if (adjacents[6] /*Bottom left*/)
-                    tile = 29;
-                else
+                else if (empty[R])
                     tile = 5;
+                else
+                    tile = 2;
             }
-            else if (adjacents[6] /*Bottom left*/) {
-                if (adjacents[8] /*Bottom right*/)
-                    tile = 28;
+            else if (empty[L]) {
+                if (empty[R])
+                    tile = 14;
+                else if (empty[BR])
+                    tile = 0;
+                else
+                    tile = 7;
+            }
+            else if (empty[R]) {
+                if (empty[BL])
+                    tile = 1;
+                else
+                    tile = 8;
+            }
+            else {
+                if (empty[BL]) {
+                    if (empty[BR])
+                        tile = 3;
+                    else
+                        tile = 40;
+                }
+                else if (empty[BR])
+                    tile = 41;
+                else
+                    tile = 31;
+            }
+        }
+        else if (empty[B]) {
+            if (empty[L]) {
+                if (empty[R])
+                    tile = 6;
+                else if (empty[TR])
+                    tile = 9;
+                else
+                    tile = 16;
+            }
+            else if (empty[R]) {
+                if (empty[TL])
+                    tile = 10;
+                else
+                    tile = 17;
+            }
+            else {
+                if (empty[TL]) {
+                    if (empty[TR])
+                        tile = 4;
+                    else
+                        tile = 49;
+                }
+                else if (empty[TR])
+                    tile = 50;
                 else
                     tile = 32;
             }
-            else if (adjacents[8] /*Bottom right*/)
-                tile = 31;
+        }
+        else if (empty[L]) {
+            if (empty[R])
+                tile = 11;
+            else {
+                if (empty[TR]) {
+                    if (empty[BR])
+                        tile = 12;
+                    else
+                        tile = 38;
+                }
+                else if (empty[BR])
+                    tile = 47;
+                else
+                    tile = 22;
+            }
+        }
+        else if (empty[R]) {
+            if (empty[TL]) {
+                if (empty[BL])
+                    tile = 13;
+                else
+                    tile = 39;
+            }
+            else if (empty[BL])
+                tile = 48;
+            else
+                tile = 23;
+        }
+        else if (empty[TL]) {
+            if (empty[TR]) {
+                if (empty[BL]) {
+                    if (empty[BR])
+                        tile = 25;
+                    else
+                        tile = 36;
+                }
+                else if (empty[BR])
+                    tile = 37;
+                else
+                    tile = 21;
+            }
+            else if (empty[BL]) {
+                if (empty[BR])
+                    tile = 45;
+                else
+                    tile = 30;
+            }
+            else if (empty[BR])
+                tile = 51;
+            else
+                tile = 21;
+        }
+        else if (empty[TR]) {
+            if (empty[BL]) {
+                if (empty[BR])
+                    tile = 46;
+                else
+                    tile = 42;
+            }
+            else if (empty[BR])
+                tile = 29;
+            else
+                tile = 27;
+        }
+        else if (empty[BL]) {
+            if (empty[BR])
+                tile = 20;
             else
                 tile = 19;
         }
-        else if (adjacents[3] /*Left*/) {
-            if (adjacents[5] /*Right*/)
-                tile = 39;
-            else if (adjacents[2] /*Top right*/) {
-                if (adjacents[8] /*Bottom right*/)
-                    tile = 36;
-                else
-                    tile = 51;
-            }
-            else if (adjacents[8] /*Bottom right*/)
-                tile = 42;
-            else
-                tile = 11;
+        else if (empty[BR])
+            tile = 18;
+        else {
+            if (wall >= 54 && wall <= 60)
+                return -1;
+            tile = 54 + Math.floor(Math.random() * 6);
         }
-        else if (adjacents[5] /*Right*/) {
-            if (adjacents[0] /*Top left*/) {
-                if (adjacents[6] /*Bottom left*/)
-                    tile = 38;
-                else
-                    tile = 52;
-            }
-            else if (adjacents[6] /*Bottom left*/)
-                tile = 43;
-            else
-                tile = 9;
-        }
-        else if (adjacents[0] /*Top Left*/) {
-            if (adjacents[2] /*Top right*/) {
-                if (adjacents[6] /*Bottom left*/) {
-                    if (adjacents[8] /*Bottom right*/)
-                        tile = 37;
-                    else
-                        tile = 6;
-                }
-                else if (adjacents[8] /*Bottom right*/)
-                    tile = 7;
-                else
-                    tile = 4;
-            }
-            else if (adjacents[6] /*Bottom left*/) {
-                if (adjacents[8] /*Bottom right*/)
-                    tile = 15;
-                else
-                    tile = 12;
-            }
-            else if (adjacents[8] /*Bottom right*/)
-                tile = 33;
-            else
-                tile = 20;
-        }
-        else if (adjacents[2] /*Top right*/) {
-            if (adjacents[6] /*Bottom left*/) {
-                if (adjacents[8] /*Bottom right*/)
-                    tile = 16;
-                else
-                    tile = 34;
-            }
-            else if (adjacents[8] /*Bottom right*/)
-                tile = 14;
-            else
-                tile = 18;
-        }
-        else if (adjacents[6] /*Bottom left*/) {
-            if (adjacents[8] /*Bottom Right*/)
-                tile = 22;
-            else
-                tile = 2;
-        }
-        else if (adjacents[8] /*Bottom right*/)
-            tile = 0;
         return tile;
     };
-    return TileMap;
+    return Tilemap;
 }());
 var TilesetCanvas = /** @class */ (function () {
     function TilesetCanvas(manager, res, wall) {
@@ -539,9 +567,9 @@ var TilesetCanvas = /** @class */ (function () {
         this.indMap = [];
         this.manager = manager;
         this.res = res;
-        this.width = Math.floor(1024 / (9 * this.res));
-        this.height = Math.floor(1024 / (7 * this.res));
-        this.canvas = manager.scene.textures.createCanvas("tileset_" + res + (wall ? "_wall" : "_ground"), 1024, 1024);
+        this.width = Math.floor(1024 / this.res / 9);
+        this.height = Math.floor(1024 / this.res / 7);
+        this.canvas = manager.scene.textures.createCanvas("tileset_" + res + (wall ? "_wall" : "_ground"), this.width * 9 * this.res, this.height * 7 * this.res);
     }
     TilesetCanvas.prototype.addTileset = function (key) {
         var x = this.indexes.length % this.width;
@@ -549,6 +577,16 @@ var TilesetCanvas = /** @class */ (function () {
         this.canvas.drawFrame(key, 0, 9 * this.res * x, 7 * this.res * y);
         this.indMap[this.manager.currentInd] = this.indexes.length;
         this.indexes.push(this.manager.currentInd++);
+    };
+    TilesetCanvas.prototype.getGlobalIndex = function (local, tileset) {
+        var lX = local % 9;
+        var lY = Math.floor(local / 9);
+        var gX = tileset % this.width;
+        var gY = Math.floor(tileset / this.width);
+        var xx = lX + gX * 9;
+        var yy = lY + gY * 9;
+        // console.log(lX, lY, this.width);
+        return yy * this.width * 9 + xx;
     };
     return TilesetCanvas;
 }());
@@ -678,9 +716,6 @@ var UIView = /** @class */ (function () {
         }
         this.tileSidebar = new UITileSidebar(this.scene, 0, 0);
         this.o.add(this.tileSidebar);
-        this.tileSidebar.addPalette(0);
-        this.tileSidebar.addPalette(1);
-        this.tileSidebar.addPalette(2);
     };
     UIView.prototype.update = function () {
         this.uiActive = false;
@@ -879,6 +914,14 @@ var WorldView = /** @class */ (function () {
     };
     return WorldView;
 }());
+var WALLS = [
+    { name: "Dungeon Wall", key: "wall_dungeon", file: "res/tileset/wall_dungeon", res: 16 },
+    { name: "Wood Wall", key: "wall_wood", file: "res/tileset/wall_wood", res: 16 },
+];
+var GROUNDS = [
+    { name: "Cave Floor", key: "ground_cave", file: "res/tileset/ground_cave", res: 16 },
+    { name: "Lawn", key: "ground_wood", file: "res/tileset/ground_grass", res: 16 },
+];
 var TOKENS = [
     { name: "Armor 1", key: "tkn_armor_1", file: "res/token/armor_1", split_by: 18 },
     { name: "Cadin 1", key: "tkn_cadin_1", file: "res/token/cadin_1", split_by: 18 },
@@ -1071,17 +1114,15 @@ var ArchitectMode = /** @class */ (function () {
         }
     };
     ArchitectMode.prototype.placeTileAndPushManip = function (manipPos, solid) {
-        var wasSolid = this.scene.map.getSolid(manipPos.x, manipPos.y) != -1;
-        var lastPalette = this.scene.map.getPalette(manipPos.x, manipPos.y);
-        var changed = this.scene.map.setSolid(manipPos.x, manipPos.y, this.scene.activePalette, solid);
-        if (!changed)
+        var tile = solid ? 1 : -1;
+        var lastWall = this.scene.map.getWall(manipPos.x, manipPos.y);
+        if (tile == lastWall)
             return;
+        this.scene.map.setWall(manipPos.x, manipPos.y, tile);
         this.manipulated.push({
             pos: manipPos,
-            solid: solid,
-            oldSolid: wasSolid,
-            palette: this.scene.activePalette,
-            oldPalette: lastPalette
+            lastWall: lastWall,
+            wall: tile
         });
     };
     ArchitectMode.prototype.cleanup = function () {
@@ -1223,7 +1264,6 @@ var LoadScene = /** @class */ (function (_super) {
         this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2, "splash");
         this.load.bitmapFont('font1x', '/res/font/font1.png', '/res/font/font1.fnt');
         this.load.bitmapFont('font2x', '/res/font/font2.png', '/res/font/font2.fnt');
-        this.load.bitmapFont('font3x', '/res/font/font3.png', '/res/font/font3.fnt');
         for (var _i = 0, _a = this.cache.text.get("assets").split("\n"); _i < _a.length; _i++) {
             var s = _a[_i];
             var tokens = s.split(" ");
@@ -1238,6 +1278,14 @@ var LoadScene = /** @class */ (function (_super) {
                 this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.split_by, frameHeight: t.split_by });
             else
                 this.load.image(t.key, t.file + ".png");
+        }
+        for (var _c = 0, WALLS_2 = WALLS; _c < WALLS_2.length; _c++) {
+            var t = WALLS_2[_c];
+            this.load.image(t.key, t.file + ".png");
+        }
+        for (var _d = 0, GROUNDS_2 = GROUNDS; _d < GROUNDS_2.length; _d++) {
+            var t = GROUNDS_2[_d];
+            this.load.image(t.key, t.file + ".png");
         }
     };
     LoadScene.prototype.create = function () {
@@ -1298,23 +1346,9 @@ var MainScene = /** @class */ (function (_super) {
         this.ui.createElements();
         this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
         this.add.existing(this.chat);
-        this.map = new TileMap("gameMap", this, 300, 300);
+        this.map = new Tilemap("gameMap", this, 300, 300);
         this.architect = new ArchitectMode(this);
         this.token = new TokenMode(this);
-        // let tileset = new TilesetCanvas(this, 16, 16);
-        // tileset.addPalette("tileset_ground_dirt");
-        // tileset.addPalette("tileset_ground_grass");
-        // tileset.addPalette("tileset_wall_wood");
-        // tileset.addPalette("tileset_wall_stone");
-        // // this.add.sprite(-300, 0, "cursor");
-        // setTimeout(() => this.add.sprite(-300, 0, "tileset_16"), 100);
-        var map = new TilesetManager(this);
-        map.addTileset("tileset_ground_dirt", false);
-        map.addTileset("tileset_ground_grass", false);
-        map.addTileset("tileset_wall_stone", true);
-        setTimeout(function () { return map.addTileset("tileset_wall_wood", true); }, 1000);
-        this.add.sprite(-300, 0, "tileset_16_ground");
-        this.add.sprite(-800, 0, "tileset_16_wall");
     };
     MainScene.prototype.update = function (time, delta) {
         this.world.update();
@@ -1659,20 +1693,29 @@ var UITileSelector = /** @class */ (function (_super) {
 var UITileSidebar = /** @class */ (function (_super) {
     __extends(UITileSidebar, _super);
     function UITileSidebar(scene, x, y) {
-        return _super.call(this, scene, x, y) || this;
+        var _this = _super.call(this, scene, x, y) || this;
+        for (var _i = 0, WALLS_3 = WALLS; _i < WALLS_3.length; _i++) {
+            var tileset = WALLS_3[_i];
+            _this.addTileset(tileset.key);
+        }
+        for (var _a = 0, GROUNDS_3 = GROUNDS; _a < GROUNDS_3.length; _a++) {
+            var tileset = GROUNDS_3[_a];
+            _this.addTileset(tileset.key);
+        }
+        return _this;
     }
     UITileSidebar.prototype.elemClick = function (x, y) {
         this.scene.activePalette = this.elems[x + y * 3];
     };
-    UITileSidebar.prototype.addPalette = function (tile) {
+    UITileSidebar.prototype.addTileset = function (tileset) {
         var p = this.elems.length;
         var x = p % 3;
         var y = Math.floor(p / 3);
-        this.elems.push(tile);
-        var spr = new Phaser.GameObjects.Sprite(this.scene, 12 + x * 21 * 3 - 22 * 2, 12 + y * 21 * 3 - 22 * 2, "tileset_" + tile);
+        this.elems.push(tileset);
+        var spr = new Phaser.GameObjects.Sprite(this.scene, 12 + x * 21 * 3 - 187, 12 + y * 21 * 3 - 2, tileset);
         spr.setOrigin(0, 0);
-        spr.setCrop(21, 21, 26, 26);
-        spr.setScale(2);
+        spr.setCrop(112, 0, 32, 32);
+        spr.setScale(1.65);
         this.sprites.push(spr);
         this.list.push(spr);
         var spr2 = new Phaser.GameObjects.Sprite(this.scene, 9 + x * 21 * 3, 9 + y * 21 * 3, "ui_sidebar_overlay");

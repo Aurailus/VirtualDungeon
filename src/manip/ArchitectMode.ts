@@ -10,7 +10,7 @@ class ArchitectMode {
 	pointerDown: boolean = false;
 	pointerPrimaryDown: boolean = false;
 
-	manipulated: {pos: Vec2, solid: boolean, oldSolid: boolean, palette: number, oldPalette: number}[] = [];
+	manipulated: {pos: Vec2, lastWall: number, wall: number}[] = [];
 
 	constructor(scene: MainScene) {
 		this.scene = scene;
@@ -183,20 +183,19 @@ class ArchitectMode {
 	}
 
 	placeTileAndPushManip(manipPos: Vec2, solid: boolean) {
-		let wasSolid 		= this.scene.map.getSolid  (manipPos.x, manipPos.y) != -1;
-		let lastPalette = this.scene.map.getPalette(manipPos.x, manipPos.y);
+		let tile = solid ? 1 : -1;
 
+		let lastWall = this.scene.map.getWall(manipPos.x, manipPos.y);
+		if (tile == lastWall) return;
 
-		let changed = this.scene.map.setSolid(manipPos.x, manipPos.y, this.scene.activePalette, solid); 
-		if (!changed) return;
+		this.scene.map.setWall(manipPos.x, manipPos.y, tile);
 
 		this.manipulated.push({
 			pos: manipPos, 
-			solid: solid,
-			oldSolid: wasSolid, 
-			palette: this.scene.activePalette, 
-			oldPalette: lastPalette
+			lastWall: lastWall, 
+			wall: tile
 		});
+
 	}
 
 	cleanup() {

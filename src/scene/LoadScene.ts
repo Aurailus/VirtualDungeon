@@ -10,7 +10,6 @@ class LoadScene extends Phaser.Scene {
 
 		this.load.bitmapFont('font1x', '/res/font/font1.png', '/res/font/font1.fnt');
 		this.load.bitmapFont('font2x', '/res/font/font2.png', '/res/font/font2.fnt');
-		this.load.bitmapFont('font3x', '/res/font/font3.png', '/res/font/font3.fnt');
 
 		for (let s of this.cache.text.get("assets").split("\n")) {
 			let tokens = s.split(" ");
@@ -21,6 +20,14 @@ class LoadScene extends Phaser.Scene {
 		for (let t of TOKENS) {
 			if (t.split_by != undefined) this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.split_by, frameHeight: t.split_by});
 			else this.load.image(t.key, t.file + ".png");
+		}
+
+		for (let t of WALLS) {
+			this.load.image(t.key, t.file + ".png");
+		}
+
+		for (let t of GROUNDS) {
+			this.load.image(t.key, t.file + ".png");
 		}
 	}
 

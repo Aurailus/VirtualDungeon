@@ -30,9 +30,6 @@ class UIView {
 
 		this.tileSidebar = new UITileSidebar(this.scene, 0, 0);
 		this.o.add(this.tileSidebar);
-		this.tileSidebar.addPalette(0);
-		this.tileSidebar.addPalette(1);
-		this.tileSidebar.addPalette(2);
 
 	}
 
