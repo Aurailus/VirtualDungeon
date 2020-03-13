@@ -26,6 +26,10 @@ class InputManager {
 			this.keys[letter] = scene.input.keyboard.addKey(letter);
 		}
 
+		for (let i = 0; i <= 9; i++) {
+			this.keys[i+""] = scene.input.keyboard.addKey(i+"");
+		}
+
 		for (let key in this.keys) {
 			this.keysDown[key] = false;
 			this.keysDownLast[key] = false;

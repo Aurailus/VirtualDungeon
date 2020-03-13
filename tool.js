@@ -379,7 +379,7 @@ var WorldView = /** @class */ (function () {
         this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
     };
     WorldView.prototype.onWheel = function (e) {
-        if (!this.scene.token.movingToken) {
+        if (!this.scene.token.movingTokens) {
             var dir = (e.deltaY < 0 ? 1 : -1);
             this.zoomLevel = clamp(this.zoomLevel + dir, 0, this.zoomLevels.length - 1);
             this.camera.setZoom(this.zoomLevels[this.zoomLevel] / 100);
@@ -416,29 +416,32 @@ var HistoryElement = /** @class */ (function () {
         }
         else if (this.type == "token_modify") {
             var data = this.data;
-            var uuid = JSON.parse(this.data.old).uuid;
-            for (var _b = 0, _c = this.scene.tokens; _b < _c.length; _b++) {
-                var token_1 = _c[_b];
-                if (token_1.uuid == uuid) {
-                    token_1.loadSerializedData(this.data.old);
-                    return;
+            console.log(data.old.length);
+            for (var i = 0; i < data.old.length; i++) {
+                var uuid = JSON.parse(this.data.old[i]).uuid;
+                var found = false;
+                for (var _b = 0, _c = this.scene.tokens; _b < _c.length; _b++) {
+                    var token_1 = _c[_b];
+                    if (token_1.uuid == uuid) {
+                        token_1.loadSerializedData(this.data.old[i]);
+                        found = true;
+                        break;
+                    }
                 }
+                if (found)
+                    continue;
+                var token = new Token(this.scene, 0, 0, "");
+                token.loadSerializedData(this.data.old[i]);
+                this.scene.add.existing(token);
+                this.scene.tokens.push(token);
             }
-            var token = new Token(this.scene, 0, 0, "");
-            token.loadSerializedData(this.data.old);
-            this.scene.add.existing(token);
-            this.scene.tokens.push(token);
         }
         else if (this.type == "token_create") {
             var uuid = JSON.parse(this.data.data).uuid;
             for (var i = 0; i < this.scene.tokens.length; i++) {
                 if (this.scene.tokens[i].uuid == uuid) {
-                    if (this.scene.token.selectedToken == this.scene.tokens[i])
-                        this.scene.token.selectedToken = null;
-                    if (this.scene.token.hoveredToken == this.scene.tokens[i])
-                        this.scene.token.hoveredToken = null;
-                    this.scene.tokens[i].destroy();
-                    this.scene.tokens.splice(i, 1);
+                    this.scene.token.removeToken(this.scene.tokens[i]);
+                    break;
                 }
             }
         }
@@ -453,18 +456,25 @@ var HistoryElement = /** @class */ (function () {
         }
         else if (this.type == "token_modify") {
             var data = this.data;
-            var uuid = JSON.parse(this.data.old).uuid;
-            for (var _b = 0, _c = this.scene.tokens; _b < _c.length; _b++) {
-                var token_2 = _c[_b];
-                if (token_2.uuid == uuid) {
-                    token_2.loadSerializedData(this.data.new);
-                    return;
+            console.log(data.new.length);
+            for (var i = 0; i < data.new.length; i++) {
+                var uuid = JSON.parse(this.data.new[i]).uuid;
+                var found = false;
+                for (var _b = 0, _c = this.scene.tokens; _b < _c.length; _b++) {
+                    var token_2 = _c[_b];
+                    if (token_2.uuid == uuid) {
+                        token_2.loadSerializedData(this.data.new[i]);
+                        found = true;
+                        break;
+                    }
                 }
+                if (found)
+                    continue;
+                var token = new Token(this.scene, 0, 0, "");
+                token.loadSerializedData(this.data.new[i]);
+                this.scene.add.existing(token);
+                this.scene.tokens.push(token);
             }
-            var token = new Token(this.scene, 0, 0, "");
-            token.loadSerializedData(this.data.new);
-            this.scene.add.existing(token);
-            this.scene.tokens.push(token);
         }
         else if (this.type == "token_create") {
             var data = JSON.parse(this.data.data);
@@ -623,23 +633,22 @@ var TextInput = /** @class */ (function (_super) {
     function TextInput(scene, x, y) {
         var _this = _super.call(this, scene, x, y, " ", "ui_text_input") || this;
         _this.text = "";
-        document.addEventListener("keydown", function (e) {
-            var code = e.keyCode;
-            if (code == 8) {
-                _this.text = _this.text.substr(0, _this.text.length - 1);
-                _this.setText(_this.text);
-                return;
-            }
-            else if (code == 13) {
-                //Send
-                return;
-            }
-            else if (e.key.length != 1)
-                return;
-            _this.text += e.key;
-            _this.setText(_this.text.length == 0 ? " " : _this.text);
-        });
         return _this;
+        // document.addEventListener("keydown", (e) => {
+        // 	let code = e.keyCode;
+        // 	if (code == 8) {
+        // 		this.text = this.text.substr(0, this.text.length - 1);
+        // 		this.setText(this.text);
+        // 		return;
+        // 	}
+        // 	else if (code == 13) {
+        // 		//Send
+        // 		return;
+        // 	}
+        // 	else if (e.key.length != 1) return;
+        // 	this.text += e.key;
+        // 	this.setText(this.text.length == 0 ? " " : this.text);
+        // })
     }
     return TextInput;
 }(ChatBox));
@@ -663,6 +672,9 @@ var UIView = /** @class */ (function () {
         }
         this.tileSidebar = new UITileSidebar(this.scene, 0, 0);
         this.o.add(this.tileSidebar);
+        this.tokenProps = new UITokenProps(this.scene, 24, 0);
+        this.tokenProps.y = this.camera.height - 400 - 9;
+        this.o.add(this.tokenProps);
     };
     UIView.prototype.update = function () {
         this.uiActive = false;
@@ -702,12 +714,29 @@ var UIView = /** @class */ (function () {
             duration: 300,
             repeat: 0
         });
+        this.scene.tweens.add({
+            targets: this.tokenProps,
+            alpha: 0,
+            y: this.camera.height,
+            ease: 'Cubic',
+            duration: 300,
+            repeat: 0
+        });
     };
     UIView.prototype.displayToken = function () {
         this.o.bringToTop(this.tokenSidebar);
         this.scene.tweens.add({
             targets: this.tokenSidebar,
             x: 0,
+            ease: 'Cubic',
+            duration: 300,
+            repeat: 0
+        });
+        this.o.bringToTop(this.tokenProps);
+        this.scene.tweens.add({
+            targets: this.tokenProps,
+            alpha: 1,
+            y: this.camera.height - 400 - 9,
             ease: 'Cubic',
             duration: 300,
             repeat: 0
@@ -1067,6 +1096,43 @@ var UITileSidebar = /** @class */ (function (_super) {
     };
     return UITileSidebar;
 }(UISidebar));
+var UITokenProps = /** @class */ (function (_super) {
+    __extends(UITokenProps, _super);
+    function UITokenProps(scene, x, y) {
+        var _this = _super.call(this, scene, x, y) || this;
+        var dims = new Vec2(300, 400);
+        var e = new Phaser.GameObjects.Sprite(scene, 0, 0, "ui_background_9x", 0);
+        e.setScale(3, 3);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, 8 * 3, 0, "ui_background_9x", 1);
+        e.setScale((dims.x - 16 * 3) / 8, 3);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, dims.x - 8 * 3, 0, "ui_background_9x", 2);
+        e.setScale(3);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, 0, 8 * 3, "ui_background_9x", 3);
+        e.setScale(3, (dims.y - 16 * 3) / 8);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, 8 * 3, 8 * 3, "ui_background_9x", 4);
+        e.setScale((dims.x - 16 * 3) / 8, (dims.y - 16 * 3) / 8);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, dims.x - 8 * 3, 8 * 3, "ui_background_9x", 5);
+        e.setScale(3, (dims.y - 16 * 3) / 8);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, 0, (dims.y - 8 * 3), "ui_background_9x", 6);
+        e.setScale(3);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, 8 * 3, (dims.y - 8 * 3), "ui_background_9x", 7);
+        e.setScale((dims.x - 16 * 3) / 8, 3);
+        _this.add(e);
+        e = new Phaser.GameObjects.Sprite(scene, dims.x - 8 * 3, (dims.y - 8 * 3), "ui_background_9x", 8);
+        e.setScale(3);
+        _this.add(e);
+        _this.list.forEach(function (e) { return e.setOrigin(0, 0); });
+        return _this;
+    }
+    return UITokenProps;
+}(UIContainer));
 var UITokenSelector = /** @class */ (function (_super) {
     __extends(UITokenSelector, _super);
     function UITokenSelector(scene, x, y) {
@@ -1126,18 +1192,15 @@ var UITokenSidebar = /** @class */ (function (_super) {
     }
     UITokenSidebar.prototype.update = function () {
         _super.prototype.update.call(this);
-        if (this.scene.token.selectedTokenType != "") {
-            if (this.cursorMode.mouseIntersects()) {
-                this.cursorMode.setFrame(1);
-                if (this.scene.i.mouseLeftPressed()) {
-                    this.toggleSelectMode(true);
-                }
-            }
-            else
-                this.cursorMode.setFrame(0);
-        }
+        if (this.scene.token.selectedTokenType == "")
+            this.cursorMode.setFrame(0);
         else
             this.cursorMode.setFrame(2);
+        if (this.cursorMode.mouseIntersects()) {
+            this.cursorMode.setFrame(1);
+            if (this.scene.i.mouseLeftPressed())
+                this.toggleSelectMode(this.scene.token.selectedTokenType != "");
+        }
         if (this.scene.i.keyPressed('S'))
             this.toggleSelectMode(this.scene.token.selectedTokenType != "");
     };
@@ -1364,11 +1427,14 @@ var TokenMode = /** @class */ (function () {
     function TokenMode(scene) {
         var _this = this;
         this.active = false;
+        this.primitives = [];
         this.selectedTokenType = "";
         this.hoveredToken = null;
-        this.selectedToken = null;
-        this.prevSerialized = "";
-        this.movingToken = null;
+        this.selectedTokens = [];
+        this.startTilePos = null;
+        this.prevSerialized = [];
+        this.movingTokens = null;
+        this.movedTokens = false;
         this.scene = scene;
         this.onWheel = this.onWheel.bind(this);
         document.documentElement.addEventListener("wheel", this.onWheel);
@@ -1378,25 +1444,45 @@ var TokenMode = /** @class */ (function () {
         this.cursor.setScale(4, 4);
         this.cursor.setDepth(1000);
         this.cursor.setOrigin(0, 0);
+        this.cursor.setVisible(false);
+        this.tokenPreview = new Token(scene, 0, 0, "");
+        this.scene.add.existing(this.tokenPreview);
+        this.tokenPreview.setVisible(false);
+        this.tokenPreview.setAlpha(0.2);
     }
     TokenMode.prototype.onWheel = function (e) {
-        if (this.movingToken) {
-            var dir = e.deltaY > 0 ? 1 : -1;
-            var frame = this.selectedToken.getFrame() + dir;
-            if (frame < 0)
-                frame += this.selectedToken.frameCount();
-            frame %= this.selectedToken.frameCount();
-            this.selectedToken.setFrame(frame);
+        if (this.movingTokens) {
+            var dir_1 = e.deltaY > 0 ? 1 : -1;
+            this.selectedTokens.forEach(function (token) {
+                var frame = token.getFrame() + dir_1;
+                if (frame < 0)
+                    frame += token.frameCount();
+                frame %= token.frameCount();
+                token.setFrame(frame);
+            });
         }
     };
     TokenMode.prototype.update = function () {
         this.active = true;
-        if (!this.movingToken)
-            this.selecting();
-        else
+        var selectedTilePos = new Vec2(Math.floor(this.scene.world.cursorWorld.x / 64), Math.floor(this.scene.world.cursorWorld.y / 64));
+        if (this.movingTokens)
             this.moving();
-        if (this.selectedToken != null && !this.movingToken)
+        if (!this.movingTokens)
+            this.selecting();
+        if (this.selectedTokens.length > 0 && !this.movingTokens)
             this.tokenMoveControls();
+        this.tokenPreview.setPosition(selectedTilePos.x * 16, selectedTilePos.y * 16);
+        this.cursor.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
+        if (this.selectedTokenType == "")
+            this.tokenPreview.setVisible(false);
+        if (this.selectedTokenType != "")
+            this.cursor.setVisible(false);
+        if (this.selectedTokenType != "")
+            this.tokenPreview.setVisible(this.hoveredToken == null);
+        if (this.selectedTokenType == "")
+            this.cursor.setVisible(this.hoveredToken == null);
+        if (this.tokenPreview.sprite.texture.key != this.selectedTokenType)
+            this.tokenPreview.setTexture(this.selectedTokenType);
     };
     TokenMode.prototype.tokenMoveControls = function () {
         if (this.scene.i.keyPressed('UP')) {
@@ -1412,21 +1498,40 @@ var TokenMode = /** @class */ (function () {
             this.moveToken(16, 0, 3);
         }
     };
+    TokenMode.prototype.selectedIncludes = function (t) {
+        for (var _i = 0, _a = this.selectedTokens; _i < _a.length; _i++) {
+            var token = _a[_i];
+            if (token == t)
+                return true;
+        }
+        return false;
+    };
     TokenMode.prototype.moveToken = function (x, y, frame) {
-        this.prevSerialized = this.selectedToken.serialize();
-        this.selectedToken.x += x * 4;
-        this.selectedToken.y += y * 4;
-        this.selectedToken.setFrame(frame);
-        if (JSON.stringify(this.selectedToken.serialize()) != JSON.stringify(this.prevSerialized))
-            this.scene.history.push("token_modify", { old: this.prevSerialized, new: this.selectedToken.serialize() });
+        var prevSerialized = [];
+        this.selectedTokens.forEach(function (token) {
+            prevSerialized.push(token.serialize());
+            token.x += x * 4;
+            token.y += y * 4;
+            token.setFrame(frame);
+        });
+        var identical = true;
+        var currSerialized = [];
+        for (var s = 0; s < prevSerialized.length; s++) {
+            currSerialized.push(this.selectedTokens[s].serialize());
+            if (prevSerialized[s] != currSerialized[s])
+                identical = false;
+        }
+        if (!identical)
+            this.scene.history.push("token_modify", { old: prevSerialized, new: currSerialized });
     };
     TokenMode.prototype.selecting = function () {
         var cursor = this.scene.world.cursorWorld;
+        var clickedAddedThisFrame = false;
         // Find the currently hovered token, and remove all outlines. 
         this.hoveredToken = null;
         for (var i = this.scene.tokens.length - 1; i >= 0; i--) {
             var token = this.scene.tokens[i];
-            if (cursor.x >= token.x && cursor.y >= token.y && cursor.x <= token.x + token.width && cursor.y <= token.y + token.height) {
+            if (cursor.x >= token.x && cursor.y >= token.y && cursor.x <= token.x + token.width - 8 && cursor.y <= token.y + token.height - 8) {
                 this.hoveredToken = token;
                 break;
             }
@@ -1439,63 +1544,167 @@ var TokenMode = /** @class */ (function () {
         }
         if (this.hoveredToken != null)
             this.hoveredToken.setHovered(true);
-        // Make cursor visible
-        this.cursor.setVisible(this.hoveredToken == null);
-        var selectedTilePos = new Vec2(Math.floor(this.scene.world.cursorWorld.x / 64), Math.floor(this.scene.world.cursorWorld.y / 64));
-        this.cursor.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
-        // Left mouse interaction
         if (this.scene.i.mouseLeftPressed()) {
-            if (this.selectedToken != null && this.hoveredToken == this.selectedToken) {
-                // Start moving token if clicking on selected token.
-                this.startMovingToken();
+            // Start moving if left pressed down on selected token
+            if (this.selectedIncludes(this.hoveredToken)) {
+                this.startMovingTokens();
             }
-            else if (this.selectedToken != null && this.hoveredToken != this.selectedToken) {
-                // Deselect selected token and select hovered token if it exists.
-                this.selectedToken.setSelected(false);
-                this.selectedToken = null;
-            }
-            if (this.selectedToken == null) {
-                if (this.hoveredToken != null) {
-                    // Change selection
-                    this.hoveredToken.setSelected(true);
-                    this.selectedToken = this.hoveredToken;
-                    this.startMovingToken();
-                }
-                else if (this.selectedTokenType != "") {
-                    // Place token
+            else if (this.hoveredToken == null) {
+                // Create a new token and move
+                if (this.selectedTokenType != "") {
                     var token = this.createToken();
-                    this.selectedToken = token;
-                    this.selectedToken.setSelected(true);
-                    this.startMovingToken();
+                    if (this.scene.i.keyDown('CTRL')) {
+                        if (!this.selectedIncludes(token))
+                            this.selectedTokens.push(token);
+                    }
+                    else {
+                        this.selectedTokens.forEach(function (t) { return t.setSelected(false); });
+                        this.selectedTokens = [token];
+                    }
+                    this.clickedLastFrame = true;
+                    clickedAddedThisFrame = true;
+                    token.setSelected(true);
+                    this.startMovingTokens();
+                }
+                // Start a rectangle selection
+                else {
+                    this.startTilePos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
                 }
             }
+            // Selecting existing token to move
+            else if (this.hoveredToken != null) {
+                if (this.scene.i.keyDown('CTRL')) {
+                    this.clickedLastFrame = true;
+                    clickedAddedThisFrame = true;
+                    if (!this.selectedIncludes(this.hoveredToken))
+                        this.selectedTokens.push(this.hoveredToken);
+                    this.hoveredToken.setSelected(true);
+                    this.startMovingTokens();
+                }
+                else {
+                    this.selectedTokens.forEach(function (t) { return t.setSelected(false); });
+                    this.selectedTokens = [this.hoveredToken];
+                    this.clickedLastFrame = true;
+                    clickedAddedThisFrame = true;
+                    this.hoveredToken.setSelected(true);
+                    this.startMovingTokens();
+                }
+            }
+        }
+        if (this.scene.i.mouseLeftReleased()) {
+            // Deselect current token if CTRL is down, or deselect all and select current token.
+            if (this.startTilePos != null) {
+                this.primitives.forEach(function (v) { return v.destroy(); });
+                this.primitives = [];
+                var selectedTilePos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+                var a = new Vec2(Math.min(this.startTilePos.x, selectedTilePos.x), Math.min(this.startTilePos.y, selectedTilePos.y));
+                var b = new Vec2(Math.max(this.startTilePos.x, selectedTilePos.x), Math.max(this.startTilePos.y, selectedTilePos.y));
+                if (!this.scene.i.keyDown('CTRL')) {
+                    for (var _b = 0, _c = this.selectedTokens; _b < _c.length; _b++) {
+                        var s = _c[_b];
+                        s.setSelected(false);
+                    }
+                    this.selectedTokens = [];
+                }
+                for (var _d = 0, _e = this.scene.tokens; _d < _e.length; _d++) {
+                    var token = _e[_d];
+                    var tokenTilePos = new Vec2(Math.floor(token.x / 64), Math.floor(token.y / 64));
+                    if (tokenTilePos.x >= a.x && tokenTilePos.y >= a.y && tokenTilePos.x <= b.x && tokenTilePos.y <= b.y) {
+                        var selected = this.scene.i.keyDown('CTRL') ? !this.selectedIncludes(token) : true;
+                        token.setSelected(selected);
+                        if (selected && !this.selectedIncludes(token))
+                            this.selectedTokens.push(token);
+                        else if (!selected && this.selectedIncludes(token)) {
+                            for (var i = 0; i < this.selectedTokens.length; i++) {
+                                if (this.selectedTokens[i] == token)
+                                    this.selectedTokens.splice(i, 1);
+                            }
+                        }
+                    }
+                }
+                this.startTilePos = null;
+                this.clickedLastFrame = true;
+                clickedAddedThisFrame = true;
+            }
+            else if (!this.movedTokens && !this.clickedLastFrame && this.selectedIncludes(this.hoveredToken)) {
+                if (this.scene.i.keyDown('CTRL')) {
+                    for (var i = 0; i < this.selectedTokens.length; i++) {
+                        if (this.selectedTokens[i] == this.hoveredToken) {
+                            this.selectedTokens[i].setSelected(false);
+                            this.selectedTokens.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    this.selectedTokens.forEach(function (t) { return t.setSelected(false); });
+                    this.selectedTokens = [this.hoveredToken];
+                    this.hoveredToken.setSelected(true);
+                    this.startMovingTokens();
+                }
+            }
+            this.movedTokens = false;
+        }
+        if (!clickedAddedThisFrame)
+            this.clickedLastFrame = null;
+        if (this.scene.i.mouseLeftDown())
+            this.updateRectangleSelect();
+    };
+    TokenMode.prototype.updateRectangleSelect = function () {
+        var cursor = this.scene.world.cursorWorld;
+        var selectedTilePos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+        this.primitives.forEach(function (v) { return v.destroy(); });
+        this.primitives = [];
+        if (this.startTilePos != null) {
+            var a = new Vec2(Math.min(this.startTilePos.x, selectedTilePos.x), Math.min(this.startTilePos.y, selectedTilePos.y));
+            var b = new Vec2(Math.max(this.startTilePos.x, selectedTilePos.x), Math.max(this.startTilePos.y, selectedTilePos.y));
+            var fac = 0.03;
+            this.primitives.push(this.scene.add.line(0, 0, a.x + fac, a.y + fac, b.x + 1 - fac, a.y + fac, 0xffffff, 1));
+            this.primitives.push(this.scene.add.line(0, 0, a.x + fac, a.y + fac / 2, a.x + fac, b.y + 1 - fac / 2, 0xffffff, 1));
+            this.primitives.push(this.scene.add.line(0, 0, a.x + fac, b.y + 1 - fac, b.x + 1 - fac, b.y + 1 - fac, 0xffffff, 1));
+            this.primitives.push(this.scene.add.line(0, 0, b.x + 1 - fac, a.y + fac / 2, b.x + 1 - fac, b.y + 1 - fac / 2, 0xffffff, 1));
+            this.primitives.forEach(function (v) {
+                v.setOrigin(0, 0);
+                v.setScale(64, 64);
+                v.setLineWidth(0.03);
+                v.setDepth(300);
+            });
         }
     };
     TokenMode.prototype.moving = function () {
-        var cursor = this.scene.world.cursorWorld;
         this.cursor.setVisible(false);
-        if (this.selectedToken != null) {
-            var pos = new Vec2(Math.round(cursor.x / 4), Math.round(cursor.y / 4));
-            if (this.scene.i.keyDown('shift')) {
-                pos = new Vec2(Math.round((cursor.x - this.grabOffset.x) / 4), Math.round((cursor.y - this.grabOffset.y) / 4));
-            }
-            else {
-                pos.x = Math.round((pos.x - this.selectedToken.sprite.width / 2) / 16) * 16;
-                pos.y = Math.round((pos.y - this.selectedToken.sprite.height / 2) / 16) * 16;
-            }
-            this.selectedToken.setPosition(pos.x, pos.y);
+        var cursor = this.scene.world.cursorWorld;
+        if (this.selectedTokens.length > 0) {
             if (!this.scene.i.mouseLeftDown()) {
-                this.movingToken = false;
-                if (JSON.stringify(this.selectedToken.serialize()) != JSON.stringify(this.prevSerialized))
-                    this.scene.history.push("token_modify", { old: this.prevSerialized, new: this.selectedToken.serialize() });
+                this.movingTokens = false;
+                var identical = true;
+                var currSerialized = [];
+                for (var s = 0; s < this.selectedTokens.length; s++) {
+                    currSerialized.push(this.selectedTokens[s].serialize());
+                    if (this.prevSerialized[s] != currSerialized[s])
+                        identical = false;
+                }
+                if (!identical)
+                    this.scene.history.push("token_modify", { old: this.prevSerialized, new: currSerialized });
+                return;
             }
+            var newTileGrabPos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+            var offset_1 = new Vec2(newTileGrabPos.x - this.tileGrabPos.x, newTileGrabPos.y - this.tileGrabPos.y);
+            if (offset_1.x == 0 && offset_1.y == 0)
+                return;
+            this.movedTokens = true;
+            this.tileGrabPos = newTileGrabPos;
+            this.selectedTokens.forEach(function (tkn) { return tkn.setPosition(tkn.x / 4 + offset_1.x * 16, tkn.y / 4 + offset_1.y * 16); });
         }
     };
-    TokenMode.prototype.startMovingToken = function () {
-        this.movingToken = true;
+    TokenMode.prototype.startMovingTokens = function () {
+        var _this = this;
+        this.movedTokens = false;
+        this.movingTokens = true;
         var cursor = this.scene.world.cursorWorld;
-        this.grabOffset = new Vec2(cursor.x - this.selectedToken.x, cursor.y - this.selectedToken.y);
-        this.prevSerialized = this.selectedToken.serialize();
+        this.tileGrabPos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+        this.prevSerialized = [];
+        this.selectedTokens.forEach(function (t) { return _this.prevSerialized.push(t.serialize()); });
     };
     TokenMode.prototype.createToken = function () {
         var token = new Token(this.scene, Math.floor(this.scene.world.cursorWorld.x / 4 / 16) * 16, Math.floor(this.scene.world.cursorWorld.y / 4 / 16) * 16, this.selectedTokenType);
@@ -1504,18 +1713,31 @@ var TokenMode = /** @class */ (function () {
         this.scene.history.push("token_create", { data: token.serialize() });
         return token;
     };
+    TokenMode.prototype.removeToken = function (t) {
+        for (var i = 0; i < this.selectedTokens.length; i++)
+            if (this.selectedTokens[i] == t)
+                this.selectedTokens.splice(i, 1);
+        for (var i = 0; i < this.scene.tokens.length; i++)
+            if (this.scene.tokens[i] == t)
+                this.scene.tokens.splice(i, 1);
+        if (this.scene.token.hoveredToken == t)
+            this.scene.token.hoveredToken = null;
+        t.destroy();
+    };
     TokenMode.prototype.cleanup = function () {
         if (!this.active)
             return;
         this.active = false;
-        if (this.selectedToken != null)
-            this.selectedToken.setSelected(false);
+        this.selectedTokens.forEach(function (t) { return t.setSelected(false); });
+        this.selectedTokens = [];
         if (this.hoveredToken != null)
             this.hoveredToken.setHovered(false);
-        this.selectedToken = null;
         this.hoveredToken = null;
-        this.movingToken = false;
+        this.primitives.forEach(function (e) { return e.destroy(); });
+        this.primitives = [];
         this.cursor.setVisible(false);
+        this.tokenPreview.setVisible(false);
+        this.movingTokens = false;
     };
     return TokenMode;
 }());
@@ -2058,6 +2280,9 @@ var InputManager = /** @class */ (function () {
         for (var i = 0; i < 26; i++) {
             var letter = (i + 10).toString(36).toUpperCase();
             this.keys[letter] = scene.input.keyboard.addKey(letter);
+        }
+        for (var i = 0; i <= 9; i++) {
+            this.keys[i + ""] = scene.input.keyboard.addKey(i + "");
         }
         for (var key in this.keys) {
             this.keysDown[key] = false;

@@ -27,7 +27,7 @@ class Token extends Phaser.GameObjects.Container {
 		this.uuid = generateId(32);
 	}
 
-	private setTexture(tex: string) {
+	setTexture(tex: string) {
 		if (this.shadow != null) this.shadow.setTexture(tex);
 		else {
 			this.shadow = new Phaser.GameObjects.Sprite(this.scene, -4, -4, tex);

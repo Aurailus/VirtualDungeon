@@ -9,6 +9,7 @@ class UIView {
 
 	tileSidebar: UITileSidebar;
 	tokenSidebar: UITokenSidebar;
+	tokenProps: UITokenProps;
 
 	constructor(scene: MapScene) {
 		this.scene = scene;
@@ -30,6 +31,10 @@ class UIView {
 
 		this.tileSidebar = new UITileSidebar(this.scene, 0, 0);
 		this.o.add(this.tileSidebar);
+
+		this.tokenProps = new UITokenProps(this.scene, 24, 0);
+		this.tokenProps.y = this.camera.height - 400 - 9;
+		this.o.add(this.tokenProps);
 
 	}
 
@@ -72,6 +77,15 @@ class UIView {
 			duration: 300,
 			repeat: 0
 		});
+
+		this.scene.tweens.add({
+			targets: this.tokenProps,
+			alpha: 0,
+			y: this.camera.height,
+			ease: 'Cubic',
+			duration: 300,
+			repeat: 0
+		});
 	}
 
 	displayToken() {
@@ -79,6 +93,16 @@ class UIView {
 		this.scene.tweens.add({
 			targets: this.tokenSidebar,
 			x: 0,
+			ease: 'Cubic',
+			duration: 300,
+			repeat: 0
+		});
+
+		this.o.bringToTop(this.tokenProps);
+		this.scene.tweens.add({
+			targets: this.tokenProps,
+			alpha: 1,
+			y: this.camera.height - 400 - 9,
 			ease: 'Cubic',
 			duration: 300,
 			repeat: 0

@@ -45,7 +45,7 @@ class Tilemap {
 			for (let j = 0; j < ywid; j++) {
 				if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) gridlayer.putTileAt(0, i, j);
 			}
-		}
+		}	
 	}
 
 	private createLayers(res: number) {

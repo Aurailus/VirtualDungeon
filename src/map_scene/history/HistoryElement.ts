@@ -16,28 +16,36 @@ class HistoryElement {
 				this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.lastWall);
 		}
 		else if (this.type == "token_modify") {
-			let data = this.data as { old: string, new: string };
-			let uuid = JSON.parse(this.data.old).uuid;
-			
-			for (let token of this.scene.tokens) {
-				if (token.uuid == uuid) {
-					token.loadSerializedData(this.data.old);
-					return;
+			let data = this.data as { old: string[], new: string[] };
+
+			console.log(data.old.length);
+
+			for (let i = 0; i < data.old.length; i++) {
+				let uuid = JSON.parse(this.data.old[i]).uuid;
+					
+				let found = false;
+				for (let token of this.scene.tokens) {
+					if (token.uuid == uuid) {
+						token.loadSerializedData(this.data.old[i]);
+						found = true;
+						break;
+					}
 				}
+
+				if (found) continue;
+
+				let token = new Token(this.scene, 0, 0, "");
+				token.loadSerializedData(this.data.old[i]);
+				this.scene.add.existing(token);
+				this.scene.tokens.push(token);
 			}
-			let token = new Token(this.scene, 0, 0, "");
-			token.loadSerializedData(this.data.old);
-			this.scene.add.existing(token);
-			this.scene.tokens.push(token);
 		}
 		else if (this.type == "token_create") {
 			let uuid = JSON.parse(this.data.data).uuid;
 			for (let i = 0; i < this.scene.tokens.length; i++) {
 				if (this.scene.tokens[i].uuid == uuid) {
-					if (this.scene.token.selectedToken == this.scene.tokens[i]) this.scene.token.selectedToken = null;
-					if (this.scene.token.hoveredToken == this.scene.tokens[i]) this.scene.token.hoveredToken = null;
-					this.scene.tokens[i].destroy();
-					this.scene.tokens.splice(i, 1);
+					this.scene.token.removeToken(this.scene.tokens[i]);
+					break;
 				}
 			}
 		}
@@ -50,19 +58,29 @@ class HistoryElement {
 				this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.wall);
 		}
 		else if (this.type == "token_modify") {
-			let data = this.data as { old: string, new: string };
-			let uuid = JSON.parse(this.data.old).uuid;
+			let data = this.data as { old: string[], new: string[] };
 
-			for (let token of this.scene.tokens) {
-				if (token.uuid == uuid) {
-					token.loadSerializedData(this.data.new);
-					return;
+			console.log(data.new.length);
+
+			for (let i = 0; i < data.new.length; i++) {
+				let uuid = JSON.parse(this.data.new[i]).uuid;
+					
+				let found = false;
+				for (let token of this.scene.tokens) {
+					if (token.uuid == uuid) {
+						token.loadSerializedData(this.data.new[i]);
+						found = true;
+						break;
+					}
 				}
+
+				if (found) continue;
+
+				let token = new Token(this.scene, 0, 0, "");
+				token.loadSerializedData(this.data.new[i]);
+				this.scene.add.existing(token);
+				this.scene.tokens.push(token);
 			}
-			let token = new Token(this.scene, 0, 0, "");
-			token.loadSerializedData(this.data.new);
-			this.scene.add.existing(token);
-			this.scene.tokens.push(token);
 		}
 		else if (this.type == "token_create") {
 			let data = JSON.parse(this.data.data);

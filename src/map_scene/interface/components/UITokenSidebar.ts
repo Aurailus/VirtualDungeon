@@ -14,16 +14,13 @@ class UITokenSidebar extends UISidebar {
 	update() {
 		super.update();
 
-		if (this.scene.token.selectedTokenType != "") {
-			if (this.cursorMode.mouseIntersects()) {
-				this.cursorMode.setFrame(1);
-				if (this.scene.i.mouseLeftPressed()) {
-					this.toggleSelectMode(true);
-				}
-			}
-			else this.cursorMode.setFrame(0);
-		}
+		if (this.scene.token.selectedTokenType == "") this.cursorMode.setFrame(0);
 		else this.cursorMode.setFrame(2);
+		
+		if (this.cursorMode.mouseIntersects()) {
+			this.cursorMode.setFrame(1);
+			if (this.scene.i.mouseLeftPressed()) this.toggleSelectMode(this.scene.token.selectedTokenType != "");
+		}
 
 		if (this.scene.i.keyPressed('S')) this.toggleSelectMode(this.scene.token.selectedTokenType != "");
 	}
