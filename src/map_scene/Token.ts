@@ -17,6 +17,9 @@ class Token extends Phaser.GameObjects.Container {
 	width: number;
 	height: number;
 
+	hovered: boolean;
+	selected: boolean;
+
 	constructor(scene: Phaser.Scene, x: number, y: number, tex: string) {
 		super(scene, x, y);
 		this.setTexture(tex);
@@ -37,7 +40,7 @@ class Token extends Phaser.GameObjects.Container {
 
 		this.width = this.shadow.width * 4;
 		this.height = this.shadow.height * 4;
-		this.shadow.y = this.height - 24;
+		this.shadow.y = this.height - 26;
 
 		if (this.sprite != null) this.sprite.setTexture(tex);
 		else {
@@ -63,12 +66,30 @@ class Token extends Phaser.GameObjects.Container {
 		return Object.keys(this.sprite.texture.frames).length - 1;
 	}
 
-	toggleOutline(outline: boolean) {
-		if (outline) {
+	setHovered(hovered: boolean) {
+		if (this.hovered == hovered) return;
+		this.hovered = hovered;
+
+		if (!hovered && !this.selected) {
+			this.sprite.resetPipeline();
+			return;
+		}
+
+		if (!this.selected) this.sprite.setPipeline("brighten");
+	}
+
+	setSelected(selected: boolean) {
+		if (this.selected == selected) return;
+		this.selected = selected;
+
+		if (!selected) {
+			if (!this.hovered) this.sprite.resetPipeline();
+			else this.sprite.setPipeline("brighten");
+		}
+		else {
 			this.sprite.setPipeline("outline");
 			this.sprite.pipeline.setFloat1("tex_size", this.sprite.texture.source[0].width);
 		}
-		else this.sprite.resetPipeline();
 	}
 
 	setPosition(x?: number, y?: number, z?: number, w?: number): this {
@@ -80,8 +101,8 @@ class Token extends Phaser.GameObjects.Container {
 		return new Vec2(this.x / 4, this.y / 4);
 	}
 
-	// For converting token to / from serialized data
 
+	// Serialization Methods
 	serialize(): string {
 		return JSON.stringify(({
 			uuid: this.uuid,

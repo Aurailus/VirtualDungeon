@@ -1,7 +1,7 @@
 class UISideMenuButton extends UIComponent {
-	scene: MainScene;
+	scene: MapScene;
 
-	constructor(scene: MainScene, x: number, y: number) {
+	constructor(scene: MapScene, x: number, y: number) {
 		super(scene, x, y, "ui_button_side_menu");
 		this.scene = scene;
 		this.setActive(true);

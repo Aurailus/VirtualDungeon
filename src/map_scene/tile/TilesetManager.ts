@@ -4,14 +4,14 @@ const enum Layer {
 }
 
 class TilesetManager {
-	scene: MainScene;
+	scene: MapScene;
 	currentInd: number = 0;
 
 	canvases:  {[key: number /*Resolution*/	]: TilesetCanvas[] } = {};
 	locations: {[key: number /*Index*/			]: { res: number, layer: Layer, ind: number, key: string }} = {};
 	indexes:   {[key: string /*Tileset Key*/]: number} = {};
 
-	constructor(scene: MainScene) {
+	constructor(scene: MapScene) {
 		this.scene = scene;
 
 		for (let tileset of WALLS  ) this.addTileset(tileset.key, Layer.WALL);

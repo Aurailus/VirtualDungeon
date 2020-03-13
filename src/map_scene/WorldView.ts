@@ -1,5 +1,5 @@
 class WorldView {
-	scene: MainScene;
+	scene: MapScene;
 	camera: Phaser.Cameras.Scene2D.Camera;
 
 	cursorScreen: Vec2 = new Vec2();
@@ -10,7 +10,7 @@ class WorldView {
 	zoomLevels: number[] = [10, 17, 25, 33, 40, 50, 60, 67, 75, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400, 500];
 	zoomLevel = 11;
 
-	constructor(scene: MainScene) {
+	constructor(scene: MapScene) {
 		this.scene = scene;
 		this.camera = this.scene.cameras.main;
 
@@ -27,7 +27,7 @@ class WorldView {
 	}
 
 	private onWheel(e: WheelEvent) {
-		if (!(this.scene.mode == 1 && this.scene.token.currentToken != null)) {
+		if (!this.scene.token.movingToken) {
 			let dir = (e.deltaY < 0 ? 1 : -1);
 			this.zoomLevel = clamp(this.zoomLevel + dir, 0, this.zoomLevels.length - 1);
 			this.camera.setZoom(this.zoomLevels[this.zoomLevel] / 100);

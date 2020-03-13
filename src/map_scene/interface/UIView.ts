@@ -1,5 +1,5 @@
 class UIView {
-	scene: MainScene;
+	scene: MapScene;
 	camera: Phaser.Cameras.Scene2D.Camera;
 
 	o: Phaser.GameObjects.Container;
@@ -10,7 +10,7 @@ class UIView {
 	tileSidebar: UITileSidebar;
 	tokenSidebar: UITokenSidebar;
 
-	constructor(scene: MainScene) {
+	constructor(scene: MapScene) {
 		this.scene = scene;
 		this.camera = this.scene.cameras.add(0, 0, this.scene.cameras.main.width, this.scene.cameras.main.height, false, "ui_camera");
 		this.camera.scrollX = -10000;

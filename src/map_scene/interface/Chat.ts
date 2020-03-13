@@ -3,7 +3,7 @@ class Chat extends Phaser.GameObjects.Container {
 	messageContainer: Phaser.GameObjects.Container;
 	messages: ChatBox[] = [];
 
-	constructor(scene: MainScene, x: number, y: number) {
+	constructor(scene: MapScene, x: number, y: number) {
 		super(scene, x, y);
 
 		this.textInput = new TextInput(scene, 0, 0);

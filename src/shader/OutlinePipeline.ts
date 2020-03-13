@@ -19,8 +19,8 @@ class OutlinePipeline extends Phaser.Renderer.WebGL.Pipelines.TextureTintPipelin
 				vec4 colorL = texture2D(uMainSampler, vec2(outTexCoord.x + factor, outTexCoord.y));
 				vec4 colorR = texture2D(uMainSampler, vec2(outTexCoord.x - factor, outTexCoord.y));
 				
-				if (color.a == 0.0 && (colorU.a != 0.0 || colorD.a != 0.0 || colorL.a != 0.0 || colorR.a != 0.0)  ) {
-					gl_FragColor = vec4(1.0, 1.0, 1.0, .2);
+				if (color.a == 0.0 && (colorU.a != 0.0 || colorD.a != 0.0 || colorL.a != 0.0 || colorR.a != 0.0)) {
+					gl_FragColor = vec4(1.0, 1.0, 1.0, 1);
 				}
 				else {
 					if (color.a == 0.0) discard;

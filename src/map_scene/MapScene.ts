@@ -1,31 +1,21 @@
-class MainScene extends Phaser.Scene {
-	map: Tilemap;
+class MapScene extends Phaser.Scene {
+	i: InputManager;
 	history: HistoryManager;
-
-	world: WorldView;
-	ui: UIView;
-
-	mode: number = 0;
-
-	tokens: Token[] = [];
-
 	architect: ArchitectMode;
 	token: TokenMode;
 
+	world: WorldView;
+	map: Tilemap;
+	ui: UIView;
 	chat: Chat;
+
+	mode: number = 0;
+	tokens: Token[] = [];
 
 	timeHoldingHistoryKey: number = 0;
 	activeTileset: number = 0;
-	activeToken: string = "tkn_treasure";
 
-	snapKey: 				Phaser.Input.Keyboard.Key;
-	modifierKey: 		Phaser.Input.Keyboard.Key;
-
-	switchModeKey: 	Phaser.Input.Keyboard.Key;
-	undoRedoKey: 		Phaser.Input.Keyboard.Key;
-	redoKeyWin: 		Phaser.Input.Keyboard.Key;
-
-	constructor() { super({key: "MainScene"}); }
+	constructor() { super({key: "MapScene"}); }
 
 	preload(): void {
 		window.addEventListener('resize', () => {
@@ -36,26 +26,10 @@ class MainScene extends Phaser.Scene {
 	}
 
 	create(): void {
-		this.snapKey 			 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-		this.modifierKey   = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
-
-		this.switchModeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
-		this.undoRedoKey   = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-		this.redoKeyWin    = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Y);
-
-		this.switchModeKey.addListener("down", () => { this.mode = this.mode == 0 ? 1 : 0 });
-		this.undoRedoKey.addListener("down", () => { 
-			if (!this.modifierKey.isDown) return;
-			this.timeHoldingHistoryKey = 0;
-			this.snapKey.isDown ? this.history.redo() : this.history.undo(); 
-		});
-		this.redoKeyWin.addListener("down", () => {
-			this.timeHoldingHistoryKey = 0; 
-			if (!this.modifierKey.isDown) return;
-			this.history.redo(); 
-		});
+		this.i = new InputManager(this);
 
 		(<Phaser.Renderer.WebGL.WebGLRenderer>this.game.renderer).addPipeline('outline', new OutlinePipeline(this.game));
+		(<Phaser.Renderer.WebGL.WebGLRenderer>this.game.renderer).addPipeline('brighten', new BrightenPipeline(this.game));
 
 		this.history = new HistoryManager(this);
 
@@ -73,14 +47,27 @@ class MainScene extends Phaser.Scene {
 	}
 
 	update(time: number, delta: number): void {
+		this.i.update();
+
 		this.world.update();
 		this.ui.update();
 		this.chat.update();
 
-		if ((this.redoKeyWin.isDown || this.undoRedoKey.isDown) && this.modifierKey.isDown) {
+		if (this.i.keyPressed('TAB')) this.mode = (this.mode == 0 ? 1 : 0);
+		
+		if (this.i.keyPressed('Z')) {
+			this.timeHoldingHistoryKey = 0;
+			if (!this.i.keyDown('SHIFT')) this.history.undo();
+			else this.history.redo();
+		}
+		if (this.i.keyPressed('Y')) {
+			this.timeHoldingHistoryKey = 0;
+			this.history.redo();
+		}
+
+		if (this.i.keyDown('Z') || this.i.keyDown('Y')) {
 			if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 == 0) {
-				if (this.redoKeyWin.isDown) this.history.redo();
-				else if (this.snapKey.isDown) this.history.redo();
+				if (this.i.keyDown('Y') || (this.i.keyDown('Z') && this.i.keyDown('SHIFT'))) this.history.redo();
 				else this.history.undo();
 			}
 			this.timeHoldingHistoryKey++;

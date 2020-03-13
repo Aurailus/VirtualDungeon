@@ -1,6 +1,6 @@
-class GetAssetsScene extends Phaser.Scene {
+class InitScene extends Phaser.Scene {
 	constructor() {
-		super({key: "GetAssetsScene"});
+		super({key: "InitScene"});
 	}
 
 	preload(): void {
@@ -38,8 +38,8 @@ class GetAssetsScene extends Phaser.Scene {
 		this.cache.text.add("assets", assetsParsed);
 		
 		this.game.scene.start('LoadScene');
-		this.game.scene.stop('GetAssetsScene');
-		this.game.scene.swapPosition('LoadScene', 'GetAssetsScene');
+		this.game.scene.stop('InitScene');
+		this.game.scene.swapPosition('LoadScene', 'InitScene');
 	}
 }
  

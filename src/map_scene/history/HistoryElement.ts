@@ -1,9 +1,9 @@
 class HistoryElement {
-	scene: MainScene;
+	scene: MapScene;
 	type: string;
 	data: any;
 
-	constructor(scene: MainScene, type: string, data: any) {
+	constructor(scene: MapScene, type: string, data: any) {
 		this.scene = scene;
 		this.type = type;
 		this.data = data;
@@ -34,6 +34,8 @@ class HistoryElement {
 			let uuid = JSON.parse(this.data.data).uuid;
 			for (let i = 0; i < this.scene.tokens.length; i++) {
 				if (this.scene.tokens[i].uuid == uuid) {
+					if (this.scene.token.selectedToken == this.scene.tokens[i]) this.scene.token.selectedToken = null;
+					if (this.scene.token.hoveredToken == this.scene.tokens[i]) this.scene.token.hoveredToken = null;
 					this.scene.tokens[i].destroy();
 					this.scene.tokens.splice(i, 1);
 				}

@@ -1,5 +1,5 @@
 class ArchitectMode {
-	scene: MainScene;
+	scene: MapScene;
 	active: boolean = false;
 
 	cursor: Phaser.GameObjects.Sprite;
@@ -12,7 +12,7 @@ class ArchitectMode {
 
 	manipulated: {pos: Vec2, lastWall: number, wall: number}[] = [];
 
-	constructor(scene: MainScene) {
+	constructor(scene: MapScene) {
 		this.scene = scene;
 
 		// Create cursor hover sprite
@@ -20,11 +20,6 @@ class ArchitectMode {
 		this.cursor.setScale(4, 4);
 		this.cursor.setDepth(1000);
 		this.cursor.setOrigin(0, 0);
-
-		this.scene.snapKey.addListener("down", () => { if (!this.scene.input.activePointer.isDown) this.placeMode = "line" });
-		this.scene.modifierKey.addListener("down", () => { if (!this.scene.input.activePointer.isDown) this.placeMode = "rect" });
-		this.scene.snapKey.addListener("up", () => { if (!this.scene.input.activePointer.isDown) this.placeMode = "brush" });
-		this.scene.modifierKey.addListener("up", () => { if (!this.scene.input.activePointer.isDown) this.placeMode = "brush" });
 	}
 
 	update() {
@@ -51,6 +46,12 @@ class ArchitectMode {
 				this.drawRect(selectedTilePos);
 				break;
 			}
+		}
+		if (!this.scene.i.mouseDown()) {
+			if (this.scene.i.keyDown('SHIFT')) this.placeMode = "line";
+			if (this.scene.i.keyDown('CTRL')) this.placeMode = "rect";
+			if (!this.scene.i.keyDown('SHIFT') && this.placeMode == "line") this.placeMode = "brush";
+			if (!this.scene.i.keyDown('CTRL') && this.placeMode == "rect") this.placeMode = "brush";
 		}
 
 		// Push history to HistoryManager

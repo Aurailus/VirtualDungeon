@@ -35,9 +35,9 @@ class LoadScene extends Phaser.Scene {
 		this.cache.text.remove("assets");
 		
 		setTimeout(() => {
-			this.game.scene.start('MainScene');
+			this.game.scene.start('MapScene');
 			this.game.scene.stop('LoadScene');
-			this.game.scene.swapPosition('MainScene', 'LoadScene');
+			this.game.scene.swapPosition('MapScene', 'LoadScene');
 		}, 50)
 	}
 }

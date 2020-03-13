@@ -1,10 +1,10 @@
 class HistoryManager {
-	scene: MainScene;
+	scene: MapScene;
 
 	history: HistoryElement[] = [];
 	historyHead: number = -1;
 
-	constructor(scene: MainScene) {
+	constructor(scene: MapScene) {
 		this.scene = scene;
 	}
 

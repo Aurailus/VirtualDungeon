@@ -1,5 +1,5 @@
 class UISidebar extends UIContainer {
-	scene: MainScene;
+	scene: MapScene;
 
 	backgrounds: Phaser.GameObjects.Sprite[] = [];
 	
@@ -11,7 +11,7 @@ class UISidebar extends UIContainer {
 
 	hoveredElem: Vec2 | null = null;
 
-	constructor(scene: MainScene, x: number, y: number) {
+	constructor(scene: MapScene, x: number, y: number) {
 		super(scene, x, y);
 		this.scene = scene;
 
@@ -24,9 +24,10 @@ class UISidebar extends UIContainer {
 			this.list.push(background);
 		}
 
-		this.activeSpriteCursor = new Phaser.GameObjects.Sprite(this.scene, 9, 9, "ui_sidebar_cursor");
+		this.activeSpriteCursor = new Phaser.GameObjects.Sprite(this.scene, 9, 9 + 21 * 3, "ui_sidebar_cursor");
 		this.activeSpriteCursor.setScale(3);
 		this.activeSpriteCursor.setOrigin(0);
+		this.activeSpriteCursor.setVisible(false);
 		this.list.push(this.activeSpriteCursor);
 
 		this.hoverSpriteCursor = new Phaser.GameObjects.Sprite(this.scene, 3, 3, "ui_sidebar_cursor");
@@ -49,13 +50,13 @@ class UISidebar extends UIContainer {
 				let mousePos = this.mousePos();
 
 				let x = Math.floor(mousePos.x / 21);
-				let y = Math.floor(mousePos.y / 21);
+				let y = Math.floor(mousePos.y / 21) - 1;
 
 				hovered = this.sprites[x + y * 3];
 
 				if (hovered != undefined) {
 					this.hoverSpriteCursor.setVisible(true);
-					this.hoverSpriteCursor.setPosition(9 + x * 21 * 3, 9 + y * 21 * 3);
+					this.hoverSpriteCursor.setPosition(9 + x * 21 * 3, 9 + (y + 1) * 21 * 3);
 				}
 				else {
 					this.hoverSpriteCursor.setVisible(false);
@@ -75,7 +76,8 @@ class UISidebar extends UIContainer {
 				this.hoveredElem = new Vec2(x, y);
 
 				if (this.scene.input.mousePointer.leftButtonDown()) {
-					this.activeSpriteCursor.setPosition(9 + x * 21 * 3, 9 + y * 21 * 3);
+					this.activeSpriteCursor.setPosition(9 + x * 21 * 3, 9 + (y + 1) * 21 * 3);
+					this.activeSpriteCursor.setVisible(true);
 					this.elemClick(x, y);
 				}
 			}

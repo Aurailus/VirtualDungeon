@@ -1,5 +1,5 @@
 class Tilemap {
-	scene: MainScene;
+	scene: MapScene;
 	map: Phaser.Tilemaps.Tilemap;
 	dimensions: Vec2 = new Vec2();
 
@@ -9,7 +9,7 @@ class Tilemap {
 	groundAt: number[][];
 	wallAt:   number[][];
 
-	constructor(key: string, scene: MainScene, xwid: number, ywid: number) {
+	constructor(key: string, scene: MapScene, xwid: number, ywid: number) {
 		this.scene = scene;
 		this.dimensions = new Vec2(xwid, ywid);
 

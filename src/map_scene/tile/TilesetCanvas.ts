@@ -51,7 +51,6 @@ class TilesetCanvas {
 			for (let j = 0; j < 7; j++) {
 				let frame = i + j * 9;
 
-
 				for (let r = 0; r < 4; r++) {
 					let xo = r < 2 ? -this.pad : +this.pad;
 					let yo = r % 2 == 0 ? -this.pad : +this.pad;

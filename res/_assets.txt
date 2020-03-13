@@ -12,3 +12,4 @@ ui/text_input 100 6
 ui/sidebar_bg 68 21
 ui/sidebar_cursor
 ui/sidebar_overlay
+ui/button_select_cursor 21 18

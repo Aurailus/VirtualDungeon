@@ -1,13 +1,13 @@
-class UITokenSelector extends UIContainer {
-	scene: MainScene;
+class UITileSelector extends UIContainer {
+	scene: MapScene;
 
 	background: Phaser.GameObjects.Sprite;
-	tokenSprites: Phaser.GameObjects.Sprite[];
+	tileSprites: Phaser.GameObjects.Sprite[];
 
-	tokens: string[] = [];
+	tiles: number[] = [];
 	selectSprite: Phaser.GameObjects.Sprite;
 
-	constructor(scene: MainScene, x: number, y: number) {
+	constructor(scene: MapScene, x: number, y: number) {
 		super(scene, x, y);
 		this.scene = scene;
 
@@ -37,19 +37,20 @@ class UITokenSelector extends UIContainer {
 			if (mousePos.y % 20 > 16) return;
 
 			let slot = Math.floor(mousePos.y / 20);
-			if (slot < 0 || slot >= this.tokens.length) return;
-			this.scene.activeToken = this.tokens[slot];
+			if (slot < 0 || slot >= this.tiles.length) return;
+			this.scene.activeTileset = this.tiles[slot];
 			this.positionSelect(slot);
 		}
 	}
 
-	addToken(sprite: string) {
-		let pos = this.tokens.length;
-		this.tokens.push(sprite);
+	addTile(tile: number) {
+		let pos = this.tiles.length;
+		this.tiles.push(tile);
 
-		let spr = new Phaser.GameObjects.Sprite(this.scene, 12 - 3, 18 - 3 + pos*60, sprite);
+		let spr = new Phaser.GameObjects.Sprite(this.scene, 12 - 22*2, 18 - 22*2 + pos*60, "tileset_" + tile);
 		spr.setOrigin(0, 0);
-		spr.setScale(3);
+		spr.setCrop(22, 22, 24, 24);
+		spr.setScale(2);
 		this.add(spr);
 		this.sendToBack(spr);
 		this.sendToBack(this.background);
