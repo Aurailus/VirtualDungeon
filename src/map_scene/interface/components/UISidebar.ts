@@ -15,7 +15,7 @@ class UISidebar extends UIContainer {
 		super(scene, x, y);
 		this.scene = scene;
 
-		for (let i = 0; i < 15; i++) {
+		for (let i = 0; i < 30; i++) {
 			let background = new Phaser.GameObjects.Sprite(this.scene, 0, 21 * 3 * i, "ui_sidebar_bg", 1);
 			background.setScale(3);
 			background.setOrigin(0, 0);
@@ -43,7 +43,7 @@ class UISidebar extends UIContainer {
 	}
 
 	update() {
-		let hovered = undefined;
+		let hovered = null;
 
 		if (this.mouseIntersects()) {
 			if (this.mousePos().x % 21 >= 4 && this.mousePos().y % 21 >= 4) {
@@ -52,9 +52,14 @@ class UISidebar extends UIContainer {
 				let x = Math.floor(mousePos.x / 21);
 				let y = Math.floor(mousePos.y / 21) - 1;
 
-				hovered = this.sprites[x + y * 3];
+				for (let i = 0; i < this.sprites.length; i++) {
+					if (Math.floor(this.sprites[i].x / 21 / 3) == x && Math.floor(this.sprites[i].y / 21 / 3) - 1 == y) {
+						hovered = this.sprites[i];
+						break;
+					}
+				}
 
-				if (hovered != undefined) {
+				if (hovered != null) {
 					this.hoverSpriteCursor.setVisible(true);
 					this.hoverSpriteCursor.setPosition(9 + x * 21 * 3, 9 + (y + 1) * 21 * 3);
 				}
@@ -63,7 +68,7 @@ class UISidebar extends UIContainer {
 					return;
 				}
 
-				if (hovered == undefined && this.hoveredElem != null) {
+				if (hovered == null && this.hoveredElem != null) {
 					this.elemUnhover(this.hoveredElem.x, this.hoveredElem.y);
 					this.hoveredElem = null;
 					return;
@@ -75,7 +80,7 @@ class UISidebar extends UIContainer {
 				this.elemHover(x, y);
 				this.hoveredElem = new Vec2(x, y);
 
-				if (this.scene.input.mousePointer.leftButtonDown()) {
+				if (this.scene.i.mouseLeftPressed()) {
 					this.activeSpriteCursor.setPosition(9 + x * 21 * 3, 9 + (y + 1) * 21 * 3);
 					this.activeSpriteCursor.setVisible(true);
 					this.elemClick(x, y);

@@ -19,8 +19,9 @@ class UIContainer extends Phaser.GameObjects.Container {
 		}
 		for (let i of this.intersects) {
 			let pointer = this.scene.input.mousePointer;
-			if (pointer.x >= this.x + i.x && pointer.y >= this.y + i.y 
-				&& pointer.x <= this.x + i.x + i.width * i.scaleX && pointer.y <= this.y + i.y + i.height * i.scaleY) 
+			let xO = ((this.scene as any).ui.sidebarOpen) ? 0 : 204;
+			if (pointer.x + xO >= this.x + i.x && pointer.y >= this.y + i.y 
+				&& pointer.x + xO <= this.x + i.x + i.width * i.scaleX && pointer.y <= this.y + i.y + i.height * i.scaleY) 
 				return true;
 		}
 		return false;
@@ -28,6 +29,7 @@ class UIContainer extends Phaser.GameObjects.Container {
 
 	mousePos(): Vec2 {
 		let pointer = this.scene.input.mousePointer;
-		return new Vec2(Math.round((pointer.x - this.x)/3), Math.round((pointer.y - this.y)/3));
+		let xO = ((this.scene as any).ui.sidebarOpen) ? 0 : 204;
+		return new Vec2(Math.round((pointer.x + xO - this.x)/3), Math.round((pointer.y - this.y)/3));
 	}
 }

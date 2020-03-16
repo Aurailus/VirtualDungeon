@@ -241,6 +241,24 @@ class TokenMode {
 			this.movedTokens = false;
 		}
 
+		if (this.scene.i.keyDown('DELETE') && this.selectedTokens.length > 0) {
+			let serializedData: string[] = [];
+			this.selectedTokens.forEach(t => {
+				for (let i = 0; i < this.scene.tokens.length; i++) {
+					if (this.scene.tokens[i] == t) {
+						this.scene.tokens.splice(i, 1);
+						break;
+					}
+				}
+				serializedData.push(t.serialize());
+				if (this.hoveredToken == t) this.hoveredToken = null;
+				t.destroy();
+			});
+			this.selectedTokens = [];
+
+			this.scene.history.push("token_delete", { data: serializedData });
+		}
+
 		if (!clickedAddedThisFrame) this.clickedLastFrame = null;
 
 		if (this.scene.i.mouseLeftDown()) this.updateRectangleSelect();

@@ -11,6 +11,8 @@ class UIView {
 	tokenSidebar: UITokenSidebar;
 	tokenProps: UITokenProps;
 
+	sidebarOpen: boolean = true;
+
 	constructor(scene: MapScene) {
 		this.scene = scene;
 		this.camera = this.scene.cameras.add(0, 0, this.scene.cameras.main.width, this.scene.cameras.main.height, false, "ui_camera");
@@ -20,8 +22,10 @@ class UIView {
 	}
 
 	createElements() {
-		this.o.add(new UIModeSwitchButton(this.scene, 14 + 10, 1));
-		this.o.add(new UIHistoryManipulation(this.scene, 14 + 25, 1));
+		this.o.add(new UISidebarToggle(this.scene, 16, 1));
+
+		this.o.add(new UIModeSwitchButton(this.scene, 28, 1));
+		this.o.add(new UIHistoryManipulation(this.scene, 43, 1));
 
 		this.tokenSidebar = new UITokenSidebar(this.scene, -205, 0);
 		this.o.add(this.tokenSidebar);
@@ -35,7 +39,28 @@ class UIView {
 		this.tokenProps = new UITokenProps(this.scene, 24, 0);
 		this.tokenProps.y = this.camera.height - 400 - 9;
 		this.o.add(this.tokenProps);
+	}
 
+	toggleSidebarOpen() {
+		let sidebarOpen = !this.sidebarOpen;
+		
+		this.scene.tweens.add({
+			targets: this.o,
+			x: {from: (sidebarOpen ? -10204 : -10000), to: (sidebarOpen ? -10000 : -10204)},
+			ease: 'Cubic',
+			duration: 225,
+			repeat: 0
+		});
+
+		this.scene.tweens.add({
+			targets: [this.tileSidebar, this.tokenSidebar],
+			alpha: {from: (sidebarOpen ? 0 : 2.5), to: (sidebarOpen ? 1 : 0)},
+			ease: 'Cubic',
+			duration: 225,
+			repeat: 0
+		});
+
+		setTimeout(() => this.sidebarOpen = sidebarOpen, 0); // Hack to prevent multiple UI items from triggering.
 	}
 
 	update() {
@@ -60,9 +85,10 @@ class UIView {
 
 	displayArchitect() {
 		this.o.bringToTop(this.tileSidebar);
+		this.tileSidebar.x = -205;
 		this.scene.tweens.add({
 			targets: this.tileSidebar,
-			x: 0,
+			x: {from: -205, to: 0},
 			ease: 'Cubic',
 			duration: 300,
 			repeat: 0
@@ -72,7 +98,7 @@ class UIView {
 	hideToken() {
 		this.scene.tweens.add({
 			targets: this.tokenSidebar,
-			x: -205,
+			x: {from: 0, to: -60},
 			ease: 'Cubic',
 			duration: 300,
 			repeat: 0
@@ -90,9 +116,10 @@ class UIView {
 
 	displayToken() {
 		this.o.bringToTop(this.tokenSidebar);
+		this.tokenSidebar.x = -205;
 		this.scene.tweens.add({
 			targets: this.tokenSidebar,
-			x: 0,
+			x: {from: -205, to: 0},
 			ease: 'Cubic',
 			duration: 300,
 			repeat: 0
@@ -112,7 +139,7 @@ class UIView {
 	hideArchitect() {
 		this.scene.tweens.add({
 			targets: this.tileSidebar,
-			x: -205,
+			x: {from: 0, to: -60},
 			ease: 'Cubic',
 			duration: 300,
 			repeat: 0

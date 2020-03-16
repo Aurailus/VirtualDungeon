@@ -1,6 +1,5 @@
 class UIHistoryManipulation extends UIComponent {
 	scene: MapScene;
-	mouseDown: boolean = false;
 
 	constructor(scene: MapScene, x: number, y: number) {
 		super(scene, x, y, "ui_history_manipulation");
@@ -15,16 +14,14 @@ class UIHistoryManipulation extends UIComponent {
 		if (hasNext && hasPrev) {
 			if (this.mouseIntersects() && this.mousePos().x > 19) {
 				this.setFrame(2);
-				if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+				if (this.scene.i.mouseLeftPressed()) {
 					this.scene.history.redo();
-					this.mouseDown = true;
 				}
 			}
 			else if (this.mouseIntersects()) {
 				this.setFrame(5);
-				if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+				if (this.scene.i.mouseLeftPressed()) {
 					this.scene.history.undo();
-					this.mouseDown = true;
 				}
 			}
 			else this.setFrame(1);
@@ -32,9 +29,8 @@ class UIHistoryManipulation extends UIComponent {
 		else if (!hasNext && hasPrev) {
 			if (this.mouseIntersects() && this.mousePos().x <= 19) {
 				this.setFrame(7);
-				if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+				if (this.scene.i.mouseLeftPressed()) {
 					this.scene.history.undo();
-					this.mouseDown = true;
 				}
 			}
 			else this.setFrame(3);
@@ -42,15 +38,12 @@ class UIHistoryManipulation extends UIComponent {
 		else if (hasNext && !hasPrev) {
 			if (this.mouseIntersects() && this.mousePos().x > 19) {
 				this.setFrame(6);
-				if (this.scene.input.activePointer.isDown && !this.mouseDown) {
+				if (this.scene.i.mouseLeftPressed()) {
 					this.scene.history.redo();
-					this.mouseDown = true;
 				}
 			}
 			else this.setFrame(0);
 		}
 		else this.setFrame(4);
-
-		if (!this.scene.input.mousePointer.isDown) this.mouseDown = false;
 	}
 }

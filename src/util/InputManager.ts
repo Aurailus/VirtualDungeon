@@ -13,13 +13,14 @@ class InputManager {
 	constructor(scene: Phaser.Scene) {
 		this.scene = scene;
 
-		this.keys.TAB   = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
-		this.keys.SHIFT = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-		this.keys.CTRL  = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
-		this.keys.UP    = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
-		this.keys.DOWN  = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
-		this.keys.LEFT  = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
-		this.keys.RIGHT = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+		this.keys.TAB    = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+		this.keys.SHIFT  = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+		this.keys.CTRL   = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
+		this.keys.UP     = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+		this.keys.DOWN   = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
+		this.keys.LEFT   = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+		this.keys.RIGHT  = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+		this.keys.DELETE = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DELETE);
 
 		for (let i = 0; i < 26; i++) {
 			let letter = (i + 10).toString(36).toUpperCase();

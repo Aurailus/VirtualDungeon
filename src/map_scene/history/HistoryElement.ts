@@ -18,8 +18,6 @@ class HistoryElement {
 		else if (this.type == "token_modify") {
 			let data = this.data as { old: string[], new: string[] };
 
-			console.log(data.old.length);
-
 			for (let i = 0; i < data.old.length; i++) {
 				let uuid = JSON.parse(this.data.old[i]).uuid;
 					
@@ -49,6 +47,14 @@ class HistoryElement {
 				}
 			}
 		}
+		else if (this.type == "token_delete") {
+			this.data.data.forEach(ser => {
+				let token = new Token(this.scene, 0, 0, "");
+				token.loadSerializedData(ser);
+				this.scene.add.existing(token);
+				this.scene.tokens.push(token);
+			});
+		}
 	}
 
 	redo() {
@@ -59,8 +65,6 @@ class HistoryElement {
 		}
 		else if (this.type == "token_modify") {
 			let data = this.data as { old: string[], new: string[] };
-
-			console.log(data.new.length);
 
 			for (let i = 0; i < data.new.length; i++) {
 				let uuid = JSON.parse(this.data.new[i]).uuid;
@@ -88,6 +92,27 @@ class HistoryElement {
 			token.loadSerializedData(this.data.data);
 			this.scene.add.existing(token);
 			this.scene.tokens.push(token);
+		}
+		else if (this.type == "token_delete") {
+			this.data.data.forEach(ser => {
+				let t = JSON.parse(ser);
+
+				if (this.scene.token.hoveredToken != null && this.scene.token.hoveredToken.uuid == t.uuid) this.scene.token.hoveredToken = null;
+
+				for (let i = 0; i < this.scene.token.selectedTokens.length; i++) {
+					if (this.scene.token.selectedTokens[i].uuid == t.uuid) {
+						this.scene.token.selectedTokens.splice(i, 1);
+						break;
+					}
+				}
+				for (let i = 0; i < this.scene.tokens.length; i++) {
+					if (this.scene.tokens[i].uuid == t.uuid) {
+						this.scene.tokens[i].destroy();
+						this.scene.tokens.splice(i, 1);
+						break;
+					}
+				}
+			});
 		}
 	}
 }

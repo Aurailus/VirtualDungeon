@@ -9,7 +9,7 @@ class UISideMenuButton extends UIComponent {
 
 	update() {
 		if (this.mouseIntersects()) {
-			if (this.scene.input.mousePointer.leftButtonDown()) {
+			if (this.scene.i.mouseLeftPressed()) {
 				this.setFrame(2);
 			}
 			else this.setFrame(1);

@@ -14,3 +14,5 @@ ui/sidebar_cursor
 ui/sidebar_overlay
 ui/button_select_cursor 21 18
 ui/background_9x 8 8
+ui/sidebar_browse
+ui/button_sidebar_toggle 30 18

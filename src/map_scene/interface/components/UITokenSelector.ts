@@ -29,7 +29,7 @@ class UITokenSelector extends UIContainer {
 	}
 
 	update() {
-		if (this.mouseIntersects() && this.scene.input.mousePointer.leftButtonDown()) {
+		if (this.mouseIntersects() && this.scene.i.mouseLeftPressed()) {
 			let mousePos = this.mousePos();
 			if (mousePos.x < 4 || mousePos.x > 4 + 16) return;
 
