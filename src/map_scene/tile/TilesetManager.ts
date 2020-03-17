@@ -11,10 +11,11 @@ class TilesetManager {
 	private currentGroundInd: number = 0;
 	private currentOverlayInd: number = 0;
 
-	wallLocations: 		{[key: number /*Index*/]: { res: number, ind: number, key: string }} = {};
-	groundLocations: 	{[key: number /*Index*/]: { res: number, ind: number, key: string }} = {};
-	overlayLocations: {[key: number /*Index*/]: { res: number, ind: number, key: string }} = {};
-	canvases:    {[key: number /*Resolution*/]: TilesetCanvas[] } = {};
+	private wallLocations: 		{[key: number /*Index*/]: { res: number, ind: number, key: string }} = {};
+	private groundLocations: 	{[key: number /*Index*/]: { res: number, ind: number, key: string }} = {};
+	private overlayLocations: {[key: number /*Index*/]: { res: number, ind: number, key: string }} = {};
+	private canvases:    {[key: number /*Resolution*/]: TilesetCanvas[] } = {};
+	
 	indexes:    {[key: string /*Tileset Key*/]: number} = {};
 
 	constructor(scene: MapScene) {
@@ -42,6 +43,12 @@ class TilesetManager {
 														this.currentOverlayInd++;
 	}
 
+	resolutions(): string[] {
+		let resList: string[] = [];
+		for (let res of Object.keys(this.canvases)) resList.push(res);
+		return resList;
+	}
+
 	getTilesetRes(tileset: number, layer: Layer): number {
 		return layer == Layer.WALL ? this.wallLocations[tileset].res 
 				 : layer == Layer.GROUND ? this.groundLocations[tileset].res
@@ -50,5 +57,9 @@ class TilesetManager {
 
 	getGlobalTileIndex(tileset: number, tile: number, layer: Layer): number {
 		return this.canvases[this.getTilesetRes(tileset, layer)][layer].getGlobalIndex(tileset, tile);
+	}
+
+	getLocalTileIndex(tileset: number, tile: number, layer: Layer): number {
+		return this.canvases[this.getTilesetRes(tileset, layer)][layer].getLocalIndex(tile);
 	}
 }

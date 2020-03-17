@@ -32,7 +32,7 @@ class Tilemap {
 
 		this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
 
-		for (let res of Object.keys(this.manager.canvases)) this.createLayers(parseInt(res));
+		for (let res of this.manager.resolutions()) this.createLayers(parseInt(res));
 
 		for (let x = 0; x < this.dimensions.x; x ++) {
 			for (let y = 0; y < this.dimensions.y; y ++) {
@@ -103,7 +103,7 @@ class Tilemap {
 	}
 
 	getTile(x: number, y: number, layer: Layer) {
-		return (layer == Layer.WALL ? this.getWall(x, y) : this.getGround(x, y));
+		return (layer == Layer.WALL ? this.getWall(x, y) : layer == Layer.GROUND ? this.getGround(x, y) : this.getOverlay(x, y));
 	}
 
 	setTile(x: number, y: number, tileset: number, layer: Layer): boolean {
@@ -117,7 +117,7 @@ class Tilemap {
 			arr[x][y] = -1;
 		}
 		if (tileset != -1) this.layers[this.manager.getTilesetRes(tileset, layer)][layer].putTileAt(
-			this.manager.getGlobalTileIndex(tileset, (layer == Layer.GROUND ? 54 : 13), layer), x, y);
+			this.manager.getGlobalTileIndex(tileset, 0, layer), x, y);
 
 		arr[x][y] = tileset;
 		
@@ -134,20 +134,27 @@ class Tilemap {
 		}
 
 		let loc = this.manager.getTilesetRes(tileset, layer);
-		this.layers[loc][layer].putTileAt(this.manager.canvases[loc][layer].getGlobalIndex(tileset, tile), x, y);
+		this.layers[loc][layer].putTileAt(this.manager.getGlobalTileIndex(tileset, tile, layer), x, y);
 		arr[x][y] = tileset;
 	}
 
-	private calculateSmartTilesAround(x: number, y: number) {
+	private getTileAt(x: number, y: number, layer: number): number {
+		let arr = (layer == Layer.GROUND ? this.groundAt : layer == Layer.WALL ? this.wallAt : this.overlayAt);
+		if (arr[x][y] == -1) return -1;
+		return this.manager.getLocalTileIndex(arr[x][y], this.layers[this.manager.getTilesetRes(arr[x][y], layer)][layer].getTileAt(x, y, true).index, layer);
+	}
+
+	private calculateSmartTilesAround(x: number, y: number): void {
 		for (let i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
 			for (let j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-				let wall = SmartTiler.wall(this.getWallsAround(i, j), this.wallAt[i][j]);
+
+				let wall = SmartTiler.wall(this.getWallsAround(i, j), this.getTileAt(i, j, Layer.WALL));
 				if (wall != -1) this.setTileRaw(i, j, this.wallAt[i][j], wall, Layer.WALL);
 
-				let ground = SmartTiler.ground(this.getWallsAround(i, j), this.groundAt[i][j]);
+				let ground = SmartTiler.ground(this.getWallsAround(i, j), this.getTileAt(i, j, Layer.GROUND));
 				if (ground != -1) this.setTileRaw(i, j, this.groundAt[i][j], ground, Layer.GROUND);
 
-				let overlay = SmartTiler.overlay(this.getOverlaysAround(i, j, this.overlayAt[i][j]), this.overlayAt[i][j]);
+				let overlay = SmartTiler.overlay(this.getOverlaysAround(i, j, this.overlayAt[i][j]), this.getTileAt(i, j, Layer.OVERLAY));
 				if (overlay != -1) this.setTileRaw(i, j, this.overlayAt[i][j], overlay, Layer.OVERLAY);
 			}
 		}

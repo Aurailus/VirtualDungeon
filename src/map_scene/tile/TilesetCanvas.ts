@@ -45,9 +45,17 @@ class TilesetCanvas {
 		return yy * this.width * 9 + xx;
 	}
 
-	private drawTileset(key: string, x: number, y: number) {
-		// this.canvas.drawFrame(key, 0, 9*this.res * x, 7*this.res * y);
+	getLocalIndex(tile: number): number {
+		const gX = tile % (this.width * 9);
+		const gY = Math.floor(tile / (this.width * 9));
 
+		const lX = gX % 9;
+		const lY = gY % 7;
+
+		return lX + lY * 9;
+	}
+
+	private drawTileset(key: string, x: number, y: number) {
 		let img: HTMLImageElement = this.manager.scene.textures.get(key).getSourceImage() as HTMLImageElement;
 		let refCanvas = document.createElement('canvas');
 		refCanvas.width = img.width;
@@ -87,7 +95,7 @@ class TilesetCanvas {
 						this.canvas.setPixel(tileOffX + oX, tileOffY + l + this.pad, pixel[0], pixel[1], pixel[2], pixel[3]);
 					}
 				}
-				
+
 				this.canvas.drawFrame(key, frame, 
 					9 * (this.res + this.pad * 2) * x + i * (this.res + this.pad * 2) + this.pad, 
 					7 * (this.res + this.pad * 2) * y + j * (this.res + this.pad * 2) + this.pad)

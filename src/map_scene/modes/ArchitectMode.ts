@@ -192,7 +192,7 @@ class ArchitectMode {
 
 		let lastTile = this.scene.map.getTile(manipPos.x, manipPos.y, layer);
 		if (tile == lastTile) return;
-
+		
 		this.scene.map.setTile(manipPos.x, manipPos.y, tile, layer);
 
 		this.manipulated.push({
