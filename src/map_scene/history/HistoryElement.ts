@@ -12,8 +12,8 @@ class HistoryElement {
 	undo() {
 		console.log("Undo", this.type);
 		if (this.type == "tile") {
-			for (let tile of this.data as {pos: Vec2, lastWall: number, wall: number}[])
-				this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.lastWall);
+			for (let tile of this.data as {pos: Vec2, layer: Layer, lastTile: number, tile: number}[])
+				this.scene.map.setTile(tile.pos.x, tile.pos.y, tile.lastTile, tile.layer);
 		}
 		else if (this.type == "token_modify") {
 			let data = this.data as { old: string[], new: string[] };
@@ -60,8 +60,8 @@ class HistoryElement {
 	redo() {
 		console.log("Redo", this.type);
 		if (this.type == "tile") {
-			for (let tile of this.data as {pos: Vec2, lastWall: number, wall: number}[])
-				this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.wall);
+			for (let tile of this.data as {pos: Vec2, layer: Layer, lastTile: number, tile: number}[])
+				this.scene.map.setTile(tile.pos.x, tile.pos.y, tile.tile, tile.layer);
 		}
 		else if (this.type == "token_modify") {
 			let data = this.data as { old: string[], new: string[] };

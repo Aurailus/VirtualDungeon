@@ -6,6 +6,8 @@ class UISidebar extends UIContainer {
 	activeSpriteCursor: Phaser.GameObjects.Sprite;
 	hoverSpriteCursor: Phaser.GameObjects.Sprite;
 
+	scrollY: number = 0;
+
 	elems: any[] = [];
 	sprites: any[] = [];
 
@@ -36,7 +38,27 @@ class UISidebar extends UIContainer {
 		this.hoverSpriteCursor.setAlpha(0.35);
 		this.hoverSpriteCursor.setVisible(false);
 		this.list.push(this.hoverSpriteCursor);
+
+		// Bind the scroll wheel event
+		this.onWheel = this.onWheel.bind(this);
+		document.documentElement.addEventListener("wheel", this.onWheel);
+		this.scene.events.on('destroy', () => document.documentElement.removeEventListener("wheel", this.onWheel));
 	}
+
+	private onWheel(e: WheelEvent) {
+		if (this.scene.ui.uiActive) {
+			let dir = (e.deltaY < 0 ? 1 : -1);
+			this.scrollY = clamp(this.scrollY + dir * 63, 0, -1000);
+
+			this.scene.tweens.add({
+				targets: this,
+				y: this.scrollY,
+				ease: 'Cubic',
+				duration: 160,
+				repeat: 0
+			});
+		}
+	}		
 
 	mouseIntersects(): boolean {
 		return (this.mousePos().x < 69); 

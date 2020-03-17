@@ -27,7 +27,7 @@ class WorldView {
 	}
 
 	private onWheel(e: WheelEvent) {
-		if (!this.scene.token.movingTokens) {
+		if (!this.scene.token.movingTokens && !this.scene.ui.uiActive) {
 			let dir = (e.deltaY < 0 ? 1 : -1);
 			this.zoomLevel = clamp(this.zoomLevel + dir, 0, this.zoomLevels.length - 1);
 			this.camera.setZoom(this.zoomLevels[this.zoomLevel] / 100);

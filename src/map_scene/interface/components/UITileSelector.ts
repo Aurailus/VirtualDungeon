@@ -38,7 +38,7 @@ class UITileSelector extends UIContainer {
 
 			let slot = Math.floor(mousePos.y / 20);
 			if (slot < 0 || slot >= this.tiles.length) return;
-			this.scene.activeTileset = this.tiles[slot];
+			this.scene.architect.activeTileset = this.tiles[slot];
 			this.positionSelect(slot);
 		}
 	}

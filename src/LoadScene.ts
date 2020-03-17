@@ -29,6 +29,10 @@ class LoadScene extends Phaser.Scene {
 		for (let t of GROUNDS) {
 			this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.res, frameHeight: t.res});
 		}
+
+		for (let t of OVERLAYS) {
+			this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.res, frameHeight: t.res});
+		}
 	}
 
 	create(): void {

@@ -2,7 +2,7 @@ class UITileSidebar extends UISidebar {
 	
 	walls: string[] = [];
 	grounds: string[] = [];
-	holes: string[] = [];
+	overlays: string[] = [];
 
 	constructor(scene: MapScene, x: number, y: number) {
 		super(scene, x, y);
@@ -30,12 +30,16 @@ class UITileSidebar extends UISidebar {
 			this.addGround(tileset.key);
 		}
 
-		let add_hole = new Phaser.GameObjects.Sprite(this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, "ui_sidebar_browse");
-		add_hole.setName("add_hole");
-		add_hole.setScale(3);
-		add_hole.setOrigin(0, 0);
-		this.list.push(add_hole);
-		this.sprites.push(add_hole);
+		let add_overlay = new Phaser.GameObjects.Sprite(this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, "ui_sidebar_browse");
+		add_overlay.setName("add_overlay");
+		add_overlay.setScale(3);
+		add_overlay.setOrigin(0, 0);
+		this.list.push(add_overlay);
+		this.sprites.push(add_overlay);
+
+		for (let tileset of OVERLAYS) {
+			this.addOverlay(tileset.key);
+		}
 
 		for (let i = 0; i < 12; i++) {
 			if (i % 4 != 0) this.backgrounds[i].setFrame(0);
@@ -43,8 +47,18 @@ class UITileSidebar extends UISidebar {
 	}
 
 	elemClick(x: number, y: number): void {
-		if (y < 4) this.scene.activeTileset = this.scene.map.manager.indexes[this.walls[x + y * 3]];
-		else this.scene.activeTileset = this.scene.map.manager.indexes[this.grounds[x + (y - 4) * 3]];
+		if (y < 4) {
+			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.walls[x + y * 3]];
+			this.scene.architect.activeLayer = Layer.WALL;
+		}
+		else if (y < 8) {
+			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.grounds[x + (y - 4) * 3]];
+			this.scene.architect.activeLayer = Layer.GROUND;
+		}
+		else {
+			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.overlays[x + (y - 8) * 3]];
+			this.scene.architect.activeLayer = Layer.OVERLAY;
+		}
 	}
 
 	private addWall(tileset: string): void {
@@ -59,6 +73,13 @@ class UITileSidebar extends UISidebar {
 		(this.getByName("add_ground") as Phaser.GameObjects.Sprite).x = 9 + ((this.grounds.length + 1) % 3 * 21 * 3);
 		(this.getByName("add_ground") as Phaser.GameObjects.Sprite).y = 9 + (Math.floor((this.grounds.length + 1) / 3 + 5) * 21 * 3);
 		this.grounds.push(tileset);
+	}
+
+	private addOverlay(tileset: string): void {
+		this.addTilesetSprite(tileset, this.overlays.length % 3, Math.floor(this.overlays.length / 3) + 9, 33);
+		(this.getByName("add_overlay") as Phaser.GameObjects.Sprite).x = 9 + ((this.overlays.length + 1) % 3 * 21 * 3);
+		(this.getByName("add_overlay") as Phaser.GameObjects.Sprite).y = 9 + (Math.floor((this.overlays.length + 1) / 3 + 9) * 21 * 3);
+		this.overlays.push(tileset);
 	}
 
 	private addTilesetSprite(key: string, x: number, y: number, frame: number) {

@@ -6,8 +6,9 @@ class Tilemap {
 	manager: TilesetManager;
 	layers: {[key: number]: Phaser.Tilemaps.DynamicTilemapLayer[]} = {};
 
-	groundAt: number[][];
-	wallAt:   number[][];
+	groundAt:  number[][];
+	wallAt:    number[][];
+	overlayAt: number[][];
 
 	constructor(key: string, scene: MapScene, xwid: number, ywid: number) {
 		this.scene = scene;
@@ -15,12 +16,15 @@ class Tilemap {
 
 		this.groundAt = [];
 		this.wallAt = [];
+		this.overlayAt = [];
 		for (let i = 0; i < xwid; i++) {
 			this.groundAt[i] = [];
 			this.wallAt[i] = [];
+			this.overlayAt[i] = [];
 			for (let j = 0; j < ywid; j++) {
 				this.groundAt[i][j] = -1;
 				this.wallAt[i][j] = -1;
+				this.overlayAt[i][j] = -1;
 			}
 		}
 
@@ -49,8 +53,9 @@ class Tilemap {
 	}
 
 	private createLayers(res: number) {
-		this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 0, 4);
-		this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 0, 4);
+		this.map.addTilesetImage("tileset_" + res + "_ground", 	"tileset_" + res + "_ground",  res, res, 2, 4);
+		this.map.addTilesetImage("tileset_" + res + "_wall", 		"tileset_" + res + "_wall", 	 res, res, 2, 4);
+		this.map.addTilesetImage("tileset_" + res + "_overlay", "tileset_" + res + "_overlay", res, res, 2, 4);
 
 		this.map.setLayer("layer_" + res + "_ground");
 		let ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", 
@@ -58,13 +63,19 @@ class Tilemap {
 		ground.setScale(4 / (res / 16), 4 / (res / 16));
 		ground.setDepth(-1000 + res);
 
+		this.map.setLayer("layer_" + res + "_overlay");
+		let overlay = this.map.createBlankDynamicLayer("layer_" + res + "_overlay", 
+			"tileset_" + res + "_overlay", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
+		overlay.setScale(4 / (res / 16), 4 / (res / 16));
+		overlay.setDepth(-500 + res);
+
 		this.map.setLayer("layer_" + res + "_wall");
 		let wall = this.map.createBlankDynamicLayer("layer_" + res + "_wall", 
 			"tileset_" + res + "_wall", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
 		wall.setScale(4 / (res / 16), 4 / (res / 16));
-		wall.setDepth(-500 + res);
+		wall.setDepth(res);
 
-		this.layers[res] = [ground, wall];
+		this.layers[res] = [ground, wall, overlay];
 	}
 
 	getWall(x: number, y: number): number {
@@ -83,14 +94,29 @@ class Tilemap {
 		return this.setTile(x, y, tileset, Layer.GROUND);
 	}
 
-	private setTile(x: number, y: number, tileset: number, layer: Layer): boolean {
+	getOverlay(x: number, y: number): number {
+		return this.overlayAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
+	}
+
+	setOverlay(x: number, y: number, tileset: number): boolean {
+		return this.setTile(x, y, tileset, Layer.OVERLAY);
+	}
+
+	getTile(x: number, y: number, layer: Layer) {
+		return (layer == Layer.WALL ? this.getWall(x, y) : this.getGround(x, y));
+	}
+
+	setTile(x: number, y: number, tileset: number, layer: Layer): boolean {
 		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return false;
 		
-		let arr = (layer == Layer.GROUND ? this.groundAt : this.wallAt);
+		let arr = (layer == Layer.GROUND ? this.groundAt : layer == Layer.WALL ? this.wallAt : this.overlayAt);
 		if (arr[x][y] == tileset) return false;
 
-		if (arr[x][y] != -1) this.layers[this.manager.getTilesetRes(arr[x][y])][layer].removeTileAt(x, y, true);
-		if (tileset != -1) this.layers[this.manager.getTilesetRes(tileset)][layer].putTileAt(
+		if (arr[x][y] != -1) {
+			this.layers[this.manager.getTilesetRes(arr[x][y], layer)][layer].removeTileAt(x, y, true);
+			arr[x][y] = -1;
+		}
+		if (tileset != -1) this.layers[this.manager.getTilesetRes(tileset, layer)][layer].putTileAt(
 			this.manager.getGlobalTileIndex(tileset, (layer == Layer.GROUND ? 54 : 13), layer), x, y);
 
 		arr[x][y] = tileset;
@@ -100,14 +126,14 @@ class Tilemap {
 	}
 
 	private setTileRaw(x: number, y: number, tileset: number, tile: number, layer: Layer): void {
-		let arr = (layer == Layer.GROUND ? this.groundAt : this.wallAt);
-		let loc = this.manager.locations[tileset].res;
+		let arr = (layer == Layer.GROUND ? this.groundAt : layer == Layer.WALL ? this.wallAt : this.overlayAt);
 
 		if (arr[x][y] != -1) {
-			this.layers[loc][layer].removeTileAt(x, y, true);
+			this.layers[this.manager.getTilesetRes(arr[x][y], layer)][layer].removeTileAt(x, y, true);
 			arr[x][y] = -1;
 		}
 
+		let loc = this.manager.getTilesetRes(tileset, layer);
 		this.layers[loc][layer].putTileAt(this.manager.canvases[loc][layer].getGlobalIndex(tileset, tile), x, y);
 		arr[x][y] = tileset;
 	}
@@ -120,6 +146,9 @@ class Tilemap {
 
 				let ground = SmartTiler.ground(this.getWallsAround(i, j), this.groundAt[i][j]);
 				if (ground != -1) this.setTileRaw(i, j, this.groundAt[i][j], ground, Layer.GROUND);
+
+				let overlay = SmartTiler.overlay(this.getOverlaysAround(i, j, this.overlayAt[i][j]), this.overlayAt[i][j]);
+				if (overlay != -1) this.setTileRaw(i, j, this.overlayAt[i][j], overlay, Layer.OVERLAY);
 			}
 		}
 	}
@@ -129,6 +158,16 @@ class Tilemap {
 		for (let i = -1; i <= 1; i++) {
 			for (let j = -1; j <= 1; j++) {
 				solid.push(this.getWall(x + j, y + i) != -1);
+			}
+		}
+		return solid;
+	}
+
+	private getOverlaysAround(x: number, y: number, targetTileset: number): boolean[] {
+		let solid: boolean[] = [];
+		for (let i = -1; i <= 1; i++) {
+			for (let j = -1; j <= 1; j++) {
+				solid.push(this.getOverlay(x + j, y + i) == targetTileset);
 			}
 		}
 		return solid;

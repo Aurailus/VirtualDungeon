@@ -84,6 +84,10 @@ var LoadScene = /** @class */ (function (_super) {
             var t = GROUNDS_1[_d];
             this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.res, frameHeight: t.res });
         }
+        for (var _e = 0, OVERLAYS_1 = OVERLAYS; _e < OVERLAYS_1.length; _e++) {
+            var t = OVERLAYS_1[_e];
+            this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.res, frameHeight: t.res });
+        }
     };
     LoadScene.prototype.create = function () {
         var _this = this;
@@ -135,7 +139,12 @@ var WALLS = [
 ];
 var GROUNDS = [
     { name: "Cave Floor", key: "ground_cave", file: "res/tileset/ground_cave", res: 16 },
-    { name: "Lawn", key: "ground_wood", file: "res/tileset/ground_grass", res: 16 },
+    { name: "Lawn", key: "ground_grass", file: "res/tileset/ground_grass", res: 16 },
+    { name: "Wood Floor", key: "ground_wood", file: "res/tileset/ground_wood", res: 16 },
+];
+var OVERLAYS = [
+    { name: "Water", key: "overlay_water", file: "res/tileset/overlay_water", res: 16 },
+    { name: "Hole", key: "overlay_hole", file: "res/tileset/overlay_hole", res: 16 },
 ];
 var TOKENS = [
     { name: "Armor 1", key: "tkn_armor_1", file: "res/token/armor_1", split_by: 18 },
@@ -196,10 +205,9 @@ var MapScene = /** @class */ (function (_super) {
     __extends(MapScene, _super);
     function MapScene() {
         var _this = _super.call(this, { key: "MapScene" }) || this;
+        // chat: Chat;
         _this.mode = 0;
         _this.tokens = [];
-        _this.timeHoldingHistoryKey = 0;
-        _this.activeTileset = 0;
         return _this;
     }
     MapScene.prototype.preload = function () {
@@ -207,7 +215,7 @@ var MapScene = /** @class */ (function (_super) {
         window.addEventListener('resize', function () {
             var frame = document.getElementById("game");
             _this.game.scale.resize(frame.offsetWidth, frame.offsetHeight);
-            _this.chat.x = -10000 + _this.cameras.main.width - 309;
+            // this.chat.x = -10000 + this.cameras.main.width - 309;
         });
     };
     MapScene.prototype.create = function () {
@@ -218,9 +226,11 @@ var MapScene = /** @class */ (function (_super) {
         this.world = new WorldView(this);
         this.ui = new UIView(this);
         this.ui.createElements();
-        this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
-        this.add.existing(this.chat);
+        // this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
+        // this.add.existing(this.chat);
         this.map = new Tilemap("gameMap", this, 300, 300);
+        var map = this.add.sprite(-300, 0, "tileset_16_wall");
+        map.setScale(3, 3);
         this.architect = new ArchitectMode(this);
         this.token = new TokenMode(this);
     };
@@ -228,32 +238,10 @@ var MapScene = /** @class */ (function (_super) {
         this.i.update();
         this.world.update();
         this.ui.update();
-        this.chat.update();
+        // this.chat.update();
+        this.history.update();
         if (this.i.keyPressed('TAB'))
             this.mode = (this.mode == 0 ? 1 : 0);
-        if (this.i.keyPressed('Z')) {
-            this.timeHoldingHistoryKey = 0;
-            if (!this.i.keyDown('SHIFT'))
-                this.history.undo();
-            else
-                this.history.redo();
-        }
-        if (this.i.keyPressed('Y')) {
-            this.timeHoldingHistoryKey = 0;
-            this.history.redo();
-        }
-        if (this.i.keyDown('Z') || this.i.keyDown('Y')) {
-            if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 == 0) {
-                if (this.i.keyDown('Y') || (this.i.keyDown('Z') && this.i.keyDown('SHIFT')))
-                    this.history.redo();
-                else
-                    this.history.undo();
-            }
-            this.timeHoldingHistoryKey++;
-        }
-        else {
-            this.timeHoldingHistoryKey = 0;
-        }
         if (this.mode == 0) {
             if (this.ui.uiActive)
                 this.architect.cleanup();
@@ -397,7 +385,7 @@ var WorldView = /** @class */ (function () {
         this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
     };
     WorldView.prototype.onWheel = function (e) {
-        if (!this.scene.token.movingTokens) {
+        if (!this.scene.token.movingTokens && !this.scene.ui.uiActive) {
             var dir = (e.deltaY < 0 ? 1 : -1);
             this.zoomLevel = clamp(this.zoomLevel + dir, 0, this.zoomLevels.length - 1);
             this.camera.setZoom(this.zoomLevels[this.zoomLevel] / 100);
@@ -430,7 +418,7 @@ var HistoryElement = /** @class */ (function () {
         if (this.type == "tile") {
             for (var _i = 0, _a = this.data; _i < _a.length; _i++) {
                 var tile = _a[_i];
-                this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.lastWall);
+                this.scene.map.setTile(tile.pos.x, tile.pos.y, tile.lastTile, tile.layer);
             }
         }
         else if (this.type == "token_modify") {
@@ -478,7 +466,7 @@ var HistoryElement = /** @class */ (function () {
         if (this.type == "tile") {
             for (var _i = 0, _a = this.data; _i < _a.length; _i++) {
                 var tile = _a[_i];
-                this.scene.map.setWall(tile.pos.x, tile.pos.y, tile.wall);
+                this.scene.map.setTile(tile.pos.x, tile.pos.y, tile.tile, tile.layer);
             }
         }
         else if (this.type == "token_modify") {
@@ -536,8 +524,33 @@ var HistoryManager = /** @class */ (function () {
     function HistoryManager(scene) {
         this.history = [];
         this.historyHead = -1;
+        this.timeHoldingHistoryKey = 0;
         this.scene = scene;
     }
+    HistoryManager.prototype.update = function () {
+        if (this.scene.i.keyPressed('Z')) {
+            this.timeHoldingHistoryKey = 0;
+            if (!this.scene.i.keyDown('SHIFT'))
+                this.undo();
+            else
+                this.redo();
+        }
+        if (this.scene.i.keyPressed('Y')) {
+            this.timeHoldingHistoryKey = 0;
+            this.redo();
+        }
+        if (this.scene.i.keyDown('Z') || this.scene.i.keyDown('Y')) {
+            if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 == 0) {
+                if (this.scene.i.keyDown('Y') || (this.scene.i.keyDown('Z') && this.scene.i.keyDown('SHIFT')))
+                    this.redo();
+                else
+                    this.undo();
+            }
+            this.timeHoldingHistoryKey++;
+        }
+        else
+            this.timeHoldingHistoryKey = 0;
+    };
     HistoryManager.prototype.push = function (type, data) {
         this.history.splice(this.historyHead + 1, this.history.length - this.historyHead, new HistoryElement(this.scene, type, data));
         this.historyHead = this.history.length - 1;
@@ -1002,6 +1015,7 @@ var UISidebar = /** @class */ (function (_super) {
     function UISidebar(scene, x, y) {
         var _this = _super.call(this, scene, x, y) || this;
         _this.backgrounds = [];
+        _this.scrollY = 0;
         _this.elems = [];
         _this.sprites = [];
         _this.hoveredElem = null;
@@ -1024,8 +1038,25 @@ var UISidebar = /** @class */ (function (_super) {
         _this.hoverSpriteCursor.setAlpha(0.35);
         _this.hoverSpriteCursor.setVisible(false);
         _this.list.push(_this.hoverSpriteCursor);
+        // Bind the scroll wheel event
+        _this.onWheel = _this.onWheel.bind(_this);
+        document.documentElement.addEventListener("wheel", _this.onWheel);
+        _this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
         return _this;
     }
+    UISidebar.prototype.onWheel = function (e) {
+        if (this.scene.ui.uiActive) {
+            var dir = (e.deltaY < 0 ? 1 : -1);
+            this.scrollY = clamp(this.scrollY + dir * 63, 0, -1000);
+            this.scene.tweens.add({
+                targets: this,
+                y: this.scrollY,
+                ease: 'Cubic',
+                duration: 160,
+                repeat: 0
+            });
+        }
+    };
     UISidebar.prototype.mouseIntersects = function () {
         return (this.mousePos().x < 69);
     };
@@ -1133,7 +1164,7 @@ var UITileSelector = /** @class */ (function (_super) {
             var slot = Math.floor(mousePos.y / 20);
             if (slot < 0 || slot >= this.tiles.length)
                 return;
-            this.scene.activeTileset = this.tiles[slot];
+            this.scene.architect.activeTileset = this.tiles[slot];
             this.positionSelect(slot);
         }
     };
@@ -1156,7 +1187,7 @@ var UITileSidebar = /** @class */ (function (_super) {
         var _this = _super.call(this, scene, x, y) || this;
         _this.walls = [];
         _this.grounds = [];
-        _this.holes = [];
+        _this.overlays = [];
         var add_wall = new Phaser.GameObjects.Sprite(_this.scene, 9 + x * 21 * 3, 9 + y * 21 * 3, "ui_sidebar_browse");
         add_wall.setName("add_wall");
         add_wall.setScale(3);
@@ -1177,12 +1208,16 @@ var UITileSidebar = /** @class */ (function (_super) {
             var tileset = GROUNDS_2[_a];
             _this.addGround(tileset.key);
         }
-        var add_hole = new Phaser.GameObjects.Sprite(_this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, "ui_sidebar_browse");
-        add_hole.setName("add_hole");
-        add_hole.setScale(3);
-        add_hole.setOrigin(0, 0);
-        _this.list.push(add_hole);
-        _this.sprites.push(add_hole);
+        var add_overlay = new Phaser.GameObjects.Sprite(_this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, "ui_sidebar_browse");
+        add_overlay.setName("add_overlay");
+        add_overlay.setScale(3);
+        add_overlay.setOrigin(0, 0);
+        _this.list.push(add_overlay);
+        _this.sprites.push(add_overlay);
+        for (var _b = 0, OVERLAYS_2 = OVERLAYS; _b < OVERLAYS_2.length; _b++) {
+            var tileset = OVERLAYS_2[_b];
+            _this.addOverlay(tileset.key);
+        }
         for (var i = 0; i < 12; i++) {
             if (i % 4 != 0)
                 _this.backgrounds[i].setFrame(0);
@@ -1190,10 +1225,18 @@ var UITileSidebar = /** @class */ (function (_super) {
         return _this;
     }
     UITileSidebar.prototype.elemClick = function (x, y) {
-        if (y < 4)
-            this.scene.activeTileset = this.scene.map.manager.indexes[this.walls[x + y * 3]];
-        else
-            this.scene.activeTileset = this.scene.map.manager.indexes[this.grounds[x + (y - 4) * 3]];
+        if (y < 4) {
+            this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.walls[x + y * 3]];
+            this.scene.architect.activeLayer = 1 /* WALL */;
+        }
+        else if (y < 8) {
+            this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.grounds[x + (y - 4) * 3]];
+            this.scene.architect.activeLayer = 0 /* GROUND */;
+        }
+        else {
+            this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.overlays[x + (y - 8) * 3]];
+            this.scene.architect.activeLayer = 2 /* OVERLAY */;
+        }
     };
     UITileSidebar.prototype.addWall = function (tileset) {
         this.addTilesetSprite(tileset, this.walls.length % 3, Math.floor(this.walls.length / 3) + 1, 17);
@@ -1206,6 +1249,12 @@ var UITileSidebar = /** @class */ (function (_super) {
         this.getByName("add_ground").x = 9 + ((this.grounds.length + 1) % 3 * 21 * 3);
         this.getByName("add_ground").y = 9 + (Math.floor((this.grounds.length + 1) / 3 + 5) * 21 * 3);
         this.grounds.push(tileset);
+    };
+    UITileSidebar.prototype.addOverlay = function (tileset) {
+        this.addTilesetSprite(tileset, this.overlays.length % 3, Math.floor(this.overlays.length / 3) + 9, 33);
+        this.getByName("add_overlay").x = 9 + ((this.overlays.length + 1) % 3 * 21 * 3);
+        this.getByName("add_overlay").y = 9 + (Math.floor((this.overlays.length + 1) / 3 + 9) * 21 * 3);
+        this.overlays.push(tileset);
     };
     UITileSidebar.prototype.addTilesetSprite = function (key, x, y, frame) {
         var spr = new Phaser.GameObjects.Sprite(this.scene, 12 + x * 21 * 3, 12 + y * 21 * 3, key, frame);
@@ -1382,6 +1431,8 @@ var ArchitectMode = /** @class */ (function () {
         this.placeMode = "brush";
         this.pointerDown = false;
         this.pointerPrimaryDown = false;
+        this.activeTileset = 0;
+        this.activeLayer = 1 /* WALL */;
         this.manipulated = [];
         this.scene = scene;
         // Create cursor hover sprite
@@ -1530,15 +1581,17 @@ var ArchitectMode = /** @class */ (function () {
         }
     };
     ArchitectMode.prototype.placeTileAndPushManip = function (manipPos, solid) {
-        var tile = solid ? this.scene.activeTileset : -1;
-        var lastWall = this.scene.map.getWall(manipPos.x, manipPos.y);
-        if (tile == lastWall)
+        var tile = solid ? this.activeTileset : -1;
+        var layer = (tile == -1 && this.activeLayer == 0 /* GROUND */) ? 1 /* WALL */ : this.activeLayer;
+        var lastTile = this.scene.map.getTile(manipPos.x, manipPos.y, layer);
+        if (tile == lastTile)
             return;
-        this.scene.map.setWall(manipPos.x, manipPos.y, tile);
+        this.scene.map.setTile(manipPos.x, manipPos.y, tile, layer);
         this.manipulated.push({
             pos: manipPos,
-            lastWall: lastWall,
-            wall: tile
+            layer: layer,
+            lastTile: lastTile,
+            tile: tile
         });
     };
     ArchitectMode.prototype.cleanup = function () {
@@ -2011,7 +2064,7 @@ var SmartTiler;
             else if (empty[BR])
                 tile = 51;
             else
-                tile = 21;
+                tile = 28;
         }
         else if (empty[TR]) {
             if (empty[BL]) {
@@ -2041,6 +2094,160 @@ var SmartTiler;
         return tile;
     }
     SmartTiler.wall = wall;
+    function overlay(overlays, current) {
+        var TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
+        if (current == -1)
+            return -1;
+        var empty = overlays.map(function (b) { return !b; });
+        var tile = 54;
+        if (empty[T]) {
+            if (empty[B]) {
+                if (empty[L]) {
+                    if (empty[R])
+                        tile = 33;
+                    else
+                        tile = 15;
+                }
+                else if (empty[R])
+                    tile = 5;
+                else
+                    tile = 2;
+            }
+            else if (empty[L]) {
+                if (empty[R])
+                    tile = 14;
+                else if (empty[BR])
+                    tile = 0;
+                else
+                    tile = 7;
+            }
+            else if (empty[R]) {
+                if (empty[BL])
+                    tile = 1;
+                else
+                    tile = 8;
+            }
+            else {
+                if (empty[BL]) {
+                    if (empty[BR])
+                        tile = 3;
+                    else
+                        tile = 40;
+                }
+                else if (empty[BR])
+                    tile = 41;
+                else
+                    tile = 31;
+            }
+        }
+        else if (empty[B]) {
+            if (empty[L]) {
+                if (empty[R])
+                    tile = 6;
+                else if (empty[TR])
+                    tile = 9;
+                else
+                    tile = 16;
+            }
+            else if (empty[R]) {
+                if (empty[TL])
+                    tile = 10;
+                else
+                    tile = 17;
+            }
+            else {
+                if (empty[TL]) {
+                    if (empty[TR])
+                        tile = 4;
+                    else
+                        tile = 49;
+                }
+                else if (empty[TR])
+                    tile = 50;
+                else
+                    tile = 32;
+            }
+        }
+        else if (empty[L]) {
+            if (empty[R])
+                tile = 11;
+            else {
+                if (empty[TR]) {
+                    if (empty[BR])
+                        tile = 12;
+                    else
+                        tile = 38;
+                }
+                else if (empty[BR])
+                    tile = 47;
+                else
+                    tile = 22;
+            }
+        }
+        else if (empty[R]) {
+            if (empty[TL]) {
+                if (empty[BL])
+                    tile = 13;
+                else
+                    tile = 39;
+            }
+            else if (empty[BL])
+                tile = 48;
+            else
+                tile = 23;
+        }
+        else if (empty[TL]) {
+            if (empty[TR]) {
+                if (empty[BL]) {
+                    if (empty[BR])
+                        tile = 25;
+                    else
+                        tile = 36;
+                }
+                else if (empty[BR])
+                    tile = 37;
+                else
+                    tile = 21;
+            }
+            else if (empty[BL]) {
+                if (empty[BR])
+                    tile = 45;
+                else
+                    tile = 30;
+            }
+            else if (empty[BR])
+                tile = 51;
+            else
+                tile = 28;
+        }
+        else if (empty[TR]) {
+            if (empty[BL]) {
+                if (empty[BR])
+                    tile = 46;
+                else
+                    tile = 42;
+            }
+            else if (empty[BR])
+                tile = 29;
+            else
+                tile = 27;
+        }
+        else if (empty[BL]) {
+            if (empty[BR])
+                tile = 20;
+            else
+                tile = 19;
+        }
+        else if (empty[BR])
+            tile = 18;
+        else {
+            if (current >= 54 && current <= 60)
+                return -1;
+            tile = 54 + Math.floor(Math.random() * 6);
+        }
+        return tile;
+    }
+    SmartTiler.overlay = overlay;
     function ground(walls, current) {
         var TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
         if (current == -1)
@@ -2199,12 +2406,15 @@ var Tilemap = /** @class */ (function () {
         this.dimensions = new Vec2(xwid, ywid);
         this.groundAt = [];
         this.wallAt = [];
+        this.overlayAt = [];
         for (var i = 0; i < xwid; i++) {
             this.groundAt[i] = [];
             this.wallAt[i] = [];
+            this.overlayAt[i] = [];
             for (var j = 0; j < ywid; j++) {
                 this.groundAt[i][j] = -1;
                 this.wallAt[i][j] = -1;
+                this.overlayAt[i][j] = -1;
             }
         }
         this.manager = new TilesetManager(scene);
@@ -2231,17 +2441,22 @@ var Tilemap = /** @class */ (function () {
         }
     }
     Tilemap.prototype.createLayers = function (res) {
-        this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 0, 4);
-        this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 0, 4);
+        this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 2, 4);
+        this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 2, 4);
+        this.map.addTilesetImage("tileset_" + res + "_overlay", "tileset_" + res + "_overlay", res, res, 2, 4);
         this.map.setLayer("layer_" + res + "_ground");
         var ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", "tileset_" + res + "_ground", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
         ground.setScale(4 / (res / 16), 4 / (res / 16));
         ground.setDepth(-1000 + res);
+        this.map.setLayer("layer_" + res + "_overlay");
+        var overlay = this.map.createBlankDynamicLayer("layer_" + res + "_overlay", "tileset_" + res + "_overlay", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
+        overlay.setScale(4 / (res / 16), 4 / (res / 16));
+        overlay.setDepth(-500 + res);
         this.map.setLayer("layer_" + res + "_wall");
         var wall = this.map.createBlankDynamicLayer("layer_" + res + "_wall", "tileset_" + res + "_wall", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
         wall.setScale(4 / (res / 16), 4 / (res / 16));
-        wall.setDepth(-500 + res);
-        this.layers[res] = [ground, wall];
+        wall.setDepth(res);
+        this.layers[res] = [ground, wall, overlay];
     };
     Tilemap.prototype.getWall = function (x, y) {
         return this.wallAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
@@ -2255,27 +2470,38 @@ var Tilemap = /** @class */ (function () {
     Tilemap.prototype.setGround = function (x, y, tileset) {
         return this.setTile(x, y, tileset, 0 /* GROUND */);
     };
+    Tilemap.prototype.getOverlay = function (x, y) {
+        return this.overlayAt[clamp(x, 0, this.dimensions.x - 1)][clamp(y, 0, this.dimensions.y - 1)];
+    };
+    Tilemap.prototype.setOverlay = function (x, y, tileset) {
+        return this.setTile(x, y, tileset, 2 /* OVERLAY */);
+    };
+    Tilemap.prototype.getTile = function (x, y, layer) {
+        return (layer == 1 /* WALL */ ? this.getWall(x, y) : this.getGround(x, y));
+    };
     Tilemap.prototype.setTile = function (x, y, tileset, layer) {
         if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
             return false;
-        var arr = (layer == 0 /* GROUND */ ? this.groundAt : this.wallAt);
+        var arr = (layer == 0 /* GROUND */ ? this.groundAt : layer == 1 /* WALL */ ? this.wallAt : this.overlayAt);
         if (arr[x][y] == tileset)
             return false;
-        if (arr[x][y] != -1)
-            this.layers[this.manager.getTilesetRes(arr[x][y])][layer].removeTileAt(x, y, true);
+        if (arr[x][y] != -1) {
+            this.layers[this.manager.getTilesetRes(arr[x][y], layer)][layer].removeTileAt(x, y, true);
+            arr[x][y] = -1;
+        }
         if (tileset != -1)
-            this.layers[this.manager.getTilesetRes(tileset)][layer].putTileAt(this.manager.getGlobalTileIndex(tileset, (layer == 0 /* GROUND */ ? 54 : 13), layer), x, y);
+            this.layers[this.manager.getTilesetRes(tileset, layer)][layer].putTileAt(this.manager.getGlobalTileIndex(tileset, (layer == 0 /* GROUND */ ? 54 : 13), layer), x, y);
         arr[x][y] = tileset;
         this.calculateSmartTilesAround(x, y);
         return true;
     };
     Tilemap.prototype.setTileRaw = function (x, y, tileset, tile, layer) {
-        var arr = (layer == 0 /* GROUND */ ? this.groundAt : this.wallAt);
-        var loc = this.manager.locations[tileset].res;
+        var arr = (layer == 0 /* GROUND */ ? this.groundAt : layer == 1 /* WALL */ ? this.wallAt : this.overlayAt);
         if (arr[x][y] != -1) {
-            this.layers[loc][layer].removeTileAt(x, y, true);
+            this.layers[this.manager.getTilesetRes(arr[x][y], layer)][layer].removeTileAt(x, y, true);
             arr[x][y] = -1;
         }
+        var loc = this.manager.getTilesetRes(tileset, layer);
         this.layers[loc][layer].putTileAt(this.manager.canvases[loc][layer].getGlobalIndex(tileset, tile), x, y);
         arr[x][y] = tileset;
     };
@@ -2288,6 +2514,9 @@ var Tilemap = /** @class */ (function () {
                 var ground = SmartTiler.ground(this.getWallsAround(i, j), this.groundAt[i][j]);
                 if (ground != -1)
                     this.setTileRaw(i, j, this.groundAt[i][j], ground, 0 /* GROUND */);
+                var overlay = SmartTiler.overlay(this.getOverlaysAround(i, j, this.overlayAt[i][j]), this.overlayAt[i][j]);
+                if (overlay != -1)
+                    this.setTileRaw(i, j, this.overlayAt[i][j], overlay, 2 /* OVERLAY */);
             }
         }
     };
@@ -2300,10 +2529,19 @@ var Tilemap = /** @class */ (function () {
         }
         return solid;
     };
+    Tilemap.prototype.getOverlaysAround = function (x, y, targetTileset) {
+        var solid = [];
+        for (var i = -1; i <= 1; i++) {
+            for (var j = -1; j <= 1; j++) {
+                solid.push(this.getOverlay(x + j, y + i) == targetTileset);
+            }
+        }
+        return solid;
+    };
     return Tilemap;
 }());
 var TilesetCanvas = /** @class */ (function () {
-    function TilesetCanvas(manager, res, wall) {
+    function TilesetCanvas(manager, res, layer) {
         this.indexes = [];
         this.indMap = [];
         this.pad = 2;
@@ -2311,14 +2549,15 @@ var TilesetCanvas = /** @class */ (function () {
         this.res = res;
         this.width = Math.floor(1024 / ((this.res + this.pad * 2) * 9));
         this.height = Math.floor(1024 / ((this.res + this.pad * 2) * 7));
-        this.canvas = manager.scene.textures.createCanvas("tileset_" + res + (wall ? "_wall" : "_ground"), this.width * 9 * (this.res + this.pad * 2) - 2, this.height * 7 * (this.res + this.pad * 2) - 2);
+        this.canvas = manager.scene.textures.createCanvas("tileset_" + res +
+            (layer == 1 /* WALL */ ? "_wall" : layer == 0 /* GROUND */ ? "_ground" : "_overlay"), this.width * 9 * (this.res + this.pad * 2), this.height * 7 * (this.res + this.pad * 2));
     }
-    TilesetCanvas.prototype.addTileset = function (key) {
+    TilesetCanvas.prototype.addTileset = function (key, ind) {
         var x = this.indexes.length % this.width;
         var y = Math.floor(this.indexes.length / this.width);
         this.drawTileset(key, x, y);
-        this.indMap[this.manager.currentInd] = this.indexes.length;
-        this.indexes.push(this.manager.currentInd++);
+        this.indMap[ind] = this.indexes.length;
+        this.indexes.push(ind);
     };
     TilesetCanvas.prototype.getGlobalIndex = function (tileset, tile) {
         var lX = tile % 9;
@@ -2331,25 +2570,52 @@ var TilesetCanvas = /** @class */ (function () {
     };
     TilesetCanvas.prototype.drawTileset = function (key, x, y) {
         // this.canvas.drawFrame(key, 0, 9*this.res * x, 7*this.res * y);
+        var img = this.manager.scene.textures.get(key).getSourceImage();
+        var refCanvas = document.createElement('canvas');
+        refCanvas.width = img.width;
+        refCanvas.height = img.height;
+        refCanvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+        var imageOffX = 9 * (this.res + this.pad * 2) * x;
+        var imageOffY = 7 * (this.res + this.pad * 2) * y;
         for (var i = 0; i < 9; i++) {
             for (var j = 0; j < 7; j++) {
                 var frame = i + j * 9;
-                for (var r = 0; r < 4; r++) {
-                    var xo = r < 2 ? -this.pad : +this.pad;
-                    var yo = r % 2 == 0 ? -this.pad : +this.pad;
-                    this.canvas.drawFrame(key, frame, 9 * (this.res + this.pad * 2) * x + i * (this.res + this.pad * 2) + xo, 7 * (this.res + this.pad * 2) * y + j * (this.res + this.pad * 2) + yo);
+                var tileOffX = imageOffX + i * (this.res + this.pad * 2);
+                var tileOffY = imageOffY + j * (this.res + this.pad * 2);
+                for (var k = 0; k < this.res + this.pad * 2; k++) {
+                    for (var l = 0; l < this.pad * 2; l++) {
+                        var sX = clamp(k - this.pad, 0, this.res - 1);
+                        var sY = l < this.pad ? 0 : this.res - 1;
+                        var oY = l < this.pad ? l : l + this.res;
+                        var pixel = refCanvas.getContext('2d').getImageData(this.res * i + sX, this.res * j + sY, 1, 1).data;
+                        this.canvas.setPixel(tileOffX + k, tileOffY + oY, pixel[0], pixel[1], pixel[2], pixel[3]);
+                    }
                 }
-                this.canvas.drawFrame(key, frame, 9 * (this.res + this.pad * 2) * x + i * (this.res + this.pad * 2), 7 * (this.res + this.pad * 2) * y + j * (this.res + this.pad * 2));
+                for (var k = 0; k < this.pad * 2; k++) {
+                    for (var l = 0; l < this.res; l++) {
+                        var sX = k < this.pad ? 0 : this.res - 1;
+                        var sY = clamp(l, 0, this.res - 1);
+                        var oX = k < this.pad ? k : k + this.res;
+                        var pixel = refCanvas.getContext('2d').getImageData(this.res * i + sX, this.res * j + sY, 1, 1).data;
+                        this.canvas.setPixel(tileOffX + oX, tileOffY + l + this.pad, pixel[0], pixel[1], pixel[2], pixel[3]);
+                    }
+                }
+                this.canvas.drawFrame(key, frame, 9 * (this.res + this.pad * 2) * x + i * (this.res + this.pad * 2) + this.pad, 7 * (this.res + this.pad * 2) * y + j * (this.res + this.pad * 2) + this.pad);
             }
         }
+        refCanvas.remove();
     };
     return TilesetCanvas;
 }());
 var TilesetManager = /** @class */ (function () {
     function TilesetManager(scene) {
-        this.currentInd = 0;
+        this.currentWallInd = 0;
+        this.currentGroundInd = 0;
+        this.currentOverlayInd = 0;
+        this.wallLocations = {};
+        this.groundLocations = {};
+        this.overlayLocations = {};
         this.canvases = {};
-        this.locations = {};
         this.indexes = {};
         this.scene = scene;
         for (var _i = 0, WALLS_3 = WALLS; _i < WALLS_3.length; _i++) {
@@ -2360,21 +2626,31 @@ var TilesetManager = /** @class */ (function () {
             var tileset = GROUNDS_3[_a];
             this.addTileset(tileset.key, 0 /* GROUND */);
         }
+        for (var _b = 0, OVERLAYS_3 = OVERLAYS; _b < OVERLAYS_3.length; _b++) {
+            var tileset = OVERLAYS_3[_b];
+            this.addTileset(tileset.key, 2 /* OVERLAY */);
+        }
     }
     TilesetManager.prototype.addTileset = function (key, layer) {
         var res = this.scene.textures.get(key).getSourceImage(0).width / 9;
         if (this.canvases[res] == undefined)
-            this.canvases[res] = [new TilesetCanvas(this, res, false), new TilesetCanvas(this, res, true)];
+            this.canvases[res] = [new TilesetCanvas(this, res, 0 /* GROUND */), new TilesetCanvas(this, res, 1 /* WALL */), new TilesetCanvas(this, res, 2 /* OVERLAY */)];
+        var ind = (layer == 1 /* WALL */ ? this.currentWallInd : layer == 0 /* GROUND */ ? this.currentGroundInd : this.currentOverlayInd);
         var canvas = this.canvases[res];
-        this.locations[this.currentInd] = { res: res, layer: layer, ind: this.currentInd, key: key };
-        this.indexes[key] = this.currentInd;
-        canvas[layer].addTileset(key);
+        this[layer == 1 /* WALL */ ? "wallLocations" : layer == 0 /* GROUND */ ? "groundLocations" : "overlayLocations"][ind] = { res: res, ind: ind, key: key };
+        this.indexes[key] = ind;
+        canvas[layer].addTileset(key, ind);
+        layer == 1 /* WALL */ ? this.currentWallInd++ :
+            layer == 0 /* GROUND */ ? this.currentGroundInd++ :
+                this.currentOverlayInd++;
     };
-    TilesetManager.prototype.getTilesetRes = function (tileset) {
-        return this.locations[tileset].res;
+    TilesetManager.prototype.getTilesetRes = function (tileset, layer) {
+        return layer == 1 /* WALL */ ? this.wallLocations[tileset].res
+            : layer == 0 /* GROUND */ ? this.groundLocations[tileset].res
+                : this.overlayLocations[tileset].res;
     };
     TilesetManager.prototype.getGlobalTileIndex = function (tileset, tile, layer) {
-        return this.canvases[this.getTilesetRes(tileset)][layer].getGlobalIndex(tileset, tile);
+        return this.canvases[this.getTilesetRes(tileset, layer)][layer].getGlobalIndex(tileset, tile);
     };
     return TilesetManager;
 }());

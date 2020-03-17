@@ -10,7 +10,10 @@ class ArchitectMode {
 	pointerDown: boolean = false;
 	pointerPrimaryDown: boolean = false;
 
-	manipulated: {pos: Vec2, lastWall: number, wall: number}[] = [];
+	activeTileset: number = 0;
+	activeLayer: Layer = Layer.WALL;
+
+	manipulated: {pos: Vec2, layer: Layer, lastTile: number, tile: number}[] = [];
 
 	constructor(scene: MapScene) {
 		this.scene = scene;
@@ -184,17 +187,19 @@ class ArchitectMode {
 	}
 
 	placeTileAndPushManip(manipPos: Vec2, solid: boolean) {
-		let tile = solid ? this.scene.activeTileset : -1;
+		let tile = solid ? this.activeTileset : -1;
+		let layer = (tile == -1 && this.activeLayer == Layer.GROUND) ? Layer.WALL : this.activeLayer;
 
-		let lastWall = this.scene.map.getWall(manipPos.x, manipPos.y);
-		if (tile == lastWall) return;
+		let lastTile = this.scene.map.getTile(manipPos.x, manipPos.y, layer);
+		if (tile == lastTile) return;
 
-		this.scene.map.setWall(manipPos.x, manipPos.y, tile);
+		this.scene.map.setTile(manipPos.x, manipPos.y, tile, layer);
 
 		this.manipulated.push({
 			pos: manipPos, 
-			lastWall: lastWall, 
-			wall: tile
+			layer: layer,
+			lastTile: lastTile, 
+			tile: tile
 		});
 
 	}

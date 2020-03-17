@@ -1,19 +1,18 @@
 class MapScene extends Phaser.Scene {
 	i: InputManager;
+	
 	history: HistoryManager;
+
 	architect: ArchitectMode;
 	token: TokenMode;
 
 	world: WorldView;
 	map: Tilemap;
 	ui: UIView;
-	chat: Chat;
+	// chat: Chat;
 
 	mode: number = 0;
 	tokens: Token[] = [];
-
-	timeHoldingHistoryKey: number = 0;
-	activeTileset: number = 0;
 
 	constructor() { super({key: "MapScene"}); }
 
@@ -21,7 +20,7 @@ class MapScene extends Phaser.Scene {
 		window.addEventListener('resize', () => {
 			let frame = document.getElementById("game");
 			this.game.scale.resize(frame.offsetWidth, frame.offsetHeight);
-			this.chat.x = -10000 + this.cameras.main.width - 309;
+			// this.chat.x = -10000 + this.cameras.main.width - 309;
 		});
 	}
 
@@ -37,10 +36,13 @@ class MapScene extends Phaser.Scene {
 		this.ui = new UIView(this);
 		this.ui.createElements();
 
-		this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
-		this.add.existing(this.chat);
+		// this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
+		// this.add.existing(this.chat);
 
 		this.map = new Tilemap("gameMap", this, 300, 300);
+
+		let map = this.add.sprite(-300, 0, "tileset_16_wall");
+		map.setScale(3, 3);
 
 		this.architect = new ArchitectMode(this);
 		this.token = new TokenMode(this);
@@ -51,30 +53,10 @@ class MapScene extends Phaser.Scene {
 
 		this.world.update();
 		this.ui.update();
-		this.chat.update();
-
-		if (this.i.keyPressed('TAB')) this.mode = (this.mode == 0 ? 1 : 0);
+		// this.chat.update();
+		this.history.update();
 		
-		if (this.i.keyPressed('Z')) {
-			this.timeHoldingHistoryKey = 0;
-			if (!this.i.keyDown('SHIFT')) this.history.undo();
-			else this.history.redo();
-		}
-		if (this.i.keyPressed('Y')) {
-			this.timeHoldingHistoryKey = 0;
-			this.history.redo();
-		}
-
-		if (this.i.keyDown('Z') || this.i.keyDown('Y')) {
-			if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 == 0) {
-				if (this.i.keyDown('Y') || (this.i.keyDown('Z') && this.i.keyDown('SHIFT'))) this.history.redo();
-				else this.history.undo();
-			}
-			this.timeHoldingHistoryKey++;
-		}
-		else {
-			this.timeHoldingHistoryKey = 0;
-		}
+		if (this.i.keyPressed('TAB')) this.mode = (this.mode == 0 ? 1 : 0);
 
 		if (this.mode == 0) {
 			if (this.ui.uiActive) this.architect.cleanup();

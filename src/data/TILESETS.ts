@@ -12,5 +12,11 @@ const WALLS: TilesetFileProps[] = [
 
 const GROUNDS: TilesetFileProps[] = [
 	{ name: "Cave Floor",	 											key: "ground_cave", 								file: "res/tileset/ground_cave",		 		res: 16 },
-	{ name: "Lawn",															key: "ground_wood", 								file: "res/tileset/ground_grass", 			res: 16 },
+	{ name: "Lawn",															key: "ground_grass", 								file: "res/tileset/ground_grass", 			res: 16 },
+	{ name: "Wood Floor",												key: "ground_wood", 								file: "res/tileset/ground_wood",	 			res: 16 },
+];
+
+const OVERLAYS: TilesetFileProps[] = [
+	{ name: "Water",														key: "overlay_water", 							file: "res/tileset/overlay_water", 			res: 16 },
+	{ name: "Hole",	 														key: "overlay_hole", 								file: "res/tileset/overlay_hole",		 		res: 16 },
 ];
