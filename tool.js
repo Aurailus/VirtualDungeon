@@ -17,9 +17,13 @@ var InitScene = /** @class */ (function (_super) {
         return _super.call(this, { key: "InitScene" }) || this;
     }
     InitScene.prototype.preload = function () {
-        this.cameras.main.setBackgroundColor("#6a655a");
-        this.load.image('splash', '/res/splash.png');
+        this.cameras.main.setBackgroundColor("#090d24");
         this.load.text("assets", "res/_assets.txt");
+        this.load.bitmapFont('font1x', '/res/font/font1.png', '/res/font/font1.fnt');
+        this.load.bitmapFont('font2x', '/res/font/font2.png', '/res/font/font2.fnt');
+        this.load.image("logo", "res/loader/logo.png");
+        this.load.spritesheet("loader_filled", "res/loader/loader_filled.png", { frameWidth: 18, frameHeight: 18 });
+        this.load.spritesheet("loader_unfilled", "res/loader/loader_unfilled.png", { frameWidth: 18, frameHeight: 18 });
     };
     InitScene.prototype.create = function () {
         var assets = this.cache.text.get("assets");
@@ -54,13 +58,51 @@ var InitScene = /** @class */ (function (_super) {
 var LoadScene = /** @class */ (function (_super) {
     __extends(LoadScene, _super);
     function LoadScene() {
-        return _super.call(this, { key: "LoadScene" }) || this;
+        var _this = _super.call(this, { key: "LoadScene" }) || this;
+        _this.patching = null;
+        _this.loadedTween = 0;
+        _this.preloading = true;
+        _this.spinTimer = 0;
+        _this.spinFrame = 0;
+        return _this;
     }
     LoadScene.prototype.preload = function () {
-        this.cameras.main.setBackgroundColor("#6a655a");
-        this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2, "splash");
-        this.load.bitmapFont('font1x', '/res/font/font1.png', '/res/font/font1.fnt');
-        this.load.bitmapFont('font2x', '/res/font/font2.png', '/res/font/font2.fnt');
+        var _this = this;
+        this.cameras.main.setBackgroundColor("#090d24");
+        this.loaderOutline = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_unfilled", 0);
+        this.loaderOutline.setScale(6);
+        this.loaderFilled = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_filled", 0);
+        this.loaderFilled.setScale(6);
+        this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height - 140, "logo");
+        this.text = this.add.bitmapText(this.cameras.main.width / 2 - 130, this.cameras.main.height / 2 - 20, "font2x", "Loading Assets...", 22, 1);
+        this.load.on('progress', function (val) {
+            _this.tweens.add({
+                targets: _this,
+                loadedTween: val,
+                ease: 'Cubic',
+                duration: 150,
+                repeat: 0
+            });
+        });
+        this.pre_update();
+        this.loadAssets();
+    };
+    LoadScene.prototype.pre_update = function () {
+        if (!this.preloading)
+            return;
+        this.loaderFilled.setCrop(0, this.loaderFilled.height - this.loaderFilled.height * this.loadedTween, this.loaderFilled.width, this.loaderFilled.height * this.loadedTween);
+        this.spinTimer++;
+        if (this.spinTimer > 80 - this.loadedTween * 70) {
+            this.spinTimer = 0;
+            this.spinFrame = (this.spinFrame + 1) % 4;
+            this.loaderOutline.setFrame(this.spinFrame);
+            this.loaderFilled.setFrame(this.spinFrame);
+        }
+        if (this.preloading)
+            setTimeout(this.pre_update.bind(this), 1 / 60);
+    };
+    LoadScene.prototype.loadAssets = function () {
+        this.load.image("loader_patching", "/res/loader/loader_patching.png");
         for (var _i = 0, _a = this.cache.text.get("assets").split("\n"); _i < _a.length; _i++) {
             var s = _a[_i];
             var tokens = s.split(" ");
@@ -91,12 +133,32 @@ var LoadScene = /** @class */ (function (_super) {
     };
     LoadScene.prototype.create = function () {
         var _this = this;
-        this.cache.text.remove("assets");
+        this.preloading = false;
+        this.loaderOutline.setFrame(0);
+        this.loaderFilled.setFrame(0);
         setTimeout(function () {
-            _this.game.scene.start('MapScene');
-            _this.game.scene.stop('LoadScene');
-            _this.game.scene.swapPosition('MapScene', 'LoadScene');
+            _this.text.setText("Loading Assets...");
+            _this.loaderFilled.setCrop(0, 0, 100, 100);
+            _this.tweens.add({
+                targets: [_this.loaderOutline, _this.loaderFilled],
+                y: -400,
+                alpha: 0,
+                ease: 'Cubic',
+                duration: 500,
+                repeat: 0
+            });
+            setTimeout(function () {
+                _this.patching = _this.add.sprite(_this.cameras.main.width / 2, _this.cameras.main.height / 2 - 100, "loader_patching");
+                _this.patching.setScale(6);
+                _this.text.setText(" Patching Tiles...");
+                setTimeout(function () {
+                    _this.game.scene.start('MapScene');
+                    _this.game.scene.stop('LoadScene');
+                    _this.game.scene.swapPosition('MapScene', 'LoadScene');
+                }, 100);
+            }, 300);
         }, 50);
+        this.cache.text.remove("assets");
     };
     return LoadScene;
 }(Phaser.Scene));
@@ -179,13 +241,19 @@ var TOKENS = [
     { name: "Squidman", key: "tkn_squidman", file: "res/token/squidman", split_by: 18 },
     { name: "Dwarf M 1", key: "tkn_dwarf_m_1", file: "res/token/dwarf_m_1", split_by: 18 },
     { name: "Dwarf M 2", key: "tkn_dwarf_m_2", file: "res/token/dwarf_m_2", split_by: 18 },
+    { name: "Bones", key: "tkn_bones", file: "res/token/bones" },
     { name: "Skeleton", key: "tkn_skeleton", file: "res/token/skeleton", split_by: 18 },
+    { name: "Gnoll", key: "tkn_gnoll", file: "res/token/gnoll", split_by: 18 },
+    { name: "Gnoll Leader", key: "tkn_gnoll_leader", file: "res/token/gnoll_leader", split_by: 18 },
+    { name: "Orc", key: "tkn_orc", file: "res/token/orc", split_by: 18 },
+    { name: "Orc Lord", key: "tkn_orc_lord", file: "res/token/orc_lord", split_by: 18 },
     { name: "Tiefling 1", key: "tkn_tiefling_1", file: "res/token/tiefling_1", split_by: 18 },
     { name: "Dark Wolf", key: "tkn_wolf_dark", file: "res/token/wolf_dark", split_by: 18 },
     { name: "Light Wolf", key: "tkn_wolf_light", file: "res/token/wolf_light", split_by: 18 },
     { name: "Tan Dog", key: "tkn_tan_dog", file: "res/token/tan_dog", split_by: 18 },
     { name: "Chest", key: "tkn_chest", file: "res/token/chest", split_by: 18 },
     { name: "Mimic", key: "tkn_mimic", file: "res/token/mimic", split_by: 18 },
+    { name: "Egg", key: "tkn_egg", file: "res/token/egg", split_by: 18 },
     { name: "Baby Tin Dragon", key: "tkn_baby_tin_dragon", file: "res/token/baby_tin_dragon", split_by: 18 },
     { name: "Baby Gold Dragon", key: "tkn_baby_gold_dragon", file: "res/token/baby_gold_dragon", split_by: 18 },
     { name: "Baby Amethyst Dragon", key: "tkn_baby_amethyst_dragon", file: "res/token/baby_amethyst_dragon", split_by: 18 },
@@ -194,12 +262,15 @@ var TOKENS = [
     { name: "Baby Green Dragon", key: "tkn_baby_green_dragon", file: "res/token/baby_green_dragon", split_by: 18 },
     { name: "Baby Red Dragon", key: "tkn_baby_red_dragon", file: "res/token/baby_red_dragon", split_by: 18 },
     { name: "Dino", key: "tkn_dino", file: "res/token/dino", split_by: 18 },
-    { name: "Crab", key: "tkn_crab", file: "res/token/crab", split_by: 18 },
     { name: "Naexi", key: "tkn_naexi", file: "res/token/naexi_human_noweapon", split_by: 18 },
     { name: "Naexi w/ Yklwa", key: "tkn_naexi_yklwa", file: "res/token/naexi_human_yklwa", split_by: 18 },
     { name: "Naexi Anthro Form", key: "tkn_naexi_anthro", file: "res/token/naexi_anthro", split_by: 18 },
-    { name: "bones", key: "tkn_bones", file: "res/token/bones" },
-    { name: "treasure", key: "tkn_treasure", file: "res/token/treasure" },
+    { name: "Crab", key: "tkn_crab", file: "res/token/crab", split_by: 18 },
+    { name: "Blue Slime", key: "tkn_blue_slime", file: "res/token/blue_slime", },
+    { name: "Green Goo", key: "tkn_green_goo", file: "res/token/green_goo", },
+    { name: "White Ooze", key: "tkn_white_ooze", file: "res/token/white_ooze", },
+    { name: "Water Slime", key: "tkn_water_slime", file: "res/token/water_slime", },
+    { name: "Treasure", key: "tkn_treasure", file: "res/token/treasure" },
 ];
 var MapScene = /** @class */ (function (_super) {
     __extends(MapScene, _super);
@@ -734,7 +805,7 @@ var UIView = /** @class */ (function () {
         this.tileSidebar = new UITileSidebar(this.scene, 0, 0);
         this.o.add(this.tileSidebar);
         this.tokenProps = new UITokenProps(this.scene, 24, 0);
-        this.tokenProps.y = this.camera.height - 400 - 9;
+        this.tokenProps.y = this.camera.height;
         this.o.add(this.tokenProps);
     };
     UIView.prototype.toggleSidebarOpen = function () {
@@ -2390,7 +2461,6 @@ var SmartTiler;
         else if (walls[BR])
             tile = 0;
         else {
-            console.log(current);
             if (current >= 54 && current <= 60)
                 return -1;
             tile = 54 + Math.floor(Math.random() * 6);
@@ -2448,15 +2518,15 @@ var Tilemap = /** @class */ (function () {
         this.map.setLayer("layer_" + res + "_ground");
         var ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", "tileset_" + res + "_ground", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
         ground.setScale(4 / (res / 16), 4 / (res / 16));
-        ground.setDepth(-1000 + res);
+        ground.setDepth(-1500 + res);
         this.map.setLayer("layer_" + res + "_overlay");
         var overlay = this.map.createBlankDynamicLayer("layer_" + res + "_overlay", "tileset_" + res + "_overlay", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
         overlay.setScale(4 / (res / 16), 4 / (res / 16));
-        overlay.setDepth(-500 + res);
+        overlay.setDepth(-1000 + res);
         this.map.setLayer("layer_" + res + "_wall");
         var wall = this.map.createBlankDynamicLayer("layer_" + res + "_wall", "tileset_" + res + "_wall", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
         wall.setScale(4 / (res / 16), 4 / (res / 16));
-        wall.setDepth(res);
+        wall.setDepth(-500 + res);
         this.layers[res] = [ground, wall, overlay];
     };
     Tilemap.prototype.getWall = function (x, y) {
@@ -2583,7 +2653,6 @@ var TilesetCanvas = /** @class */ (function () {
         return lX + lY * 9;
     };
     TilesetCanvas.prototype.drawTileset = function (key, x, y) {
-        // this.canvas.drawFrame(key, 0, 9*this.res * x, 7*this.res * y);
         var img = this.manager.scene.textures.get(key).getSourceImage();
         var refCanvas = document.createElement('canvas');
         refCanvas.width = img.width;

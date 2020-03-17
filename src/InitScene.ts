@@ -4,10 +4,17 @@ class InitScene extends Phaser.Scene {
 	}
 
 	preload(): void {
-		this.cameras.main.setBackgroundColor("#6a655a");
+		this.cameras.main.setBackgroundColor("#090d24");
 
-		this.load.image('splash', '/res/splash.png');
 		this.load.text("assets", "res/_assets.txt");
+
+		this.load.bitmapFont('font1x', '/res/font/font1.png', '/res/font/font1.fnt');
+		this.load.bitmapFont('font2x', '/res/font/font2.png', '/res/font/font2.fnt');
+		
+		this.load.image("logo", "res/loader/logo.png");
+
+		this.load.spritesheet("loader_filled", "res/loader/loader_filled.png", {frameWidth: 18, frameHeight: 18});
+		this.load.spritesheet("loader_unfilled", "res/loader/loader_unfilled.png", {frameWidth: 18, frameHeight: 18});
 	}
 
 	create(): void {

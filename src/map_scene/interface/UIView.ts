@@ -37,7 +37,7 @@ class UIView {
 		this.o.add(this.tileSidebar);
 
 		this.tokenProps = new UITokenProps(this.scene, 24, 0);
-		this.tokenProps.y = this.camera.height - 400 - 9;
+		this.tokenProps.y = this.camera.height;
 		this.o.add(this.tokenProps);
 	}
 

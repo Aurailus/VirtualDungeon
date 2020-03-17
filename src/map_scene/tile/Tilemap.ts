@@ -61,19 +61,19 @@ class Tilemap {
 		let ground = this.map.createBlankDynamicLayer("layer_" + res + "_ground", 
 			"tileset_" + res + "_ground", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
 		ground.setScale(4 / (res / 16), 4 / (res / 16));
-		ground.setDepth(-1000 + res);
+		ground.setDepth(-1500 + res);
 
 		this.map.setLayer("layer_" + res + "_overlay");
 		let overlay = this.map.createBlankDynamicLayer("layer_" + res + "_overlay", 
 			"tileset_" + res + "_overlay", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
 		overlay.setScale(4 / (res / 16), 4 / (res / 16));
-		overlay.setDepth(-500 + res);
+		overlay.setDepth(-1000 + res);
 
 		this.map.setLayer("layer_" + res + "_wall");
 		let wall = this.map.createBlankDynamicLayer("layer_" + res + "_wall", 
 			"tileset_" + res + "_wall", 0, 0, this.dimensions.x, this.dimensions.y, res, res);
 		wall.setScale(4 / (res / 16), 4 / (res / 16));
-		wall.setDepth(res);
+		wall.setDepth(-500 + res);
 
 		this.layers[res] = [ground, wall, overlay];
 	}
