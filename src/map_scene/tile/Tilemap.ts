@@ -5,13 +5,10 @@ class Tilemap {
 
 	manager: TilesetManager;
 	layers: {[key: number]: Phaser.Tilemaps.DynamicTilemapLayer[]} = {};
-	fogOfWarLayer: Phaser.Tilemaps.DynamicTilemapLayer;
 
 	groundAt:  number[][];
 	wallAt:    number[][];
 	overlayAt: number[][];
-
-	fogOfWarAt: boolean[][];
 
 	constructor(key: string, scene: MapScene, xwid: number, ywid: number) {
 		this.scene = scene;
@@ -20,17 +17,14 @@ class Tilemap {
 		this.groundAt = [];
 		this.wallAt = [];
 		this.overlayAt = [];
-		this.fogOfWarAt = [];
 		for (let i = 0; i < xwid; i++) {
 			this.groundAt[i] = [];
 			this.wallAt[i] = [];
 			this.overlayAt[i] = [];
-			this.fogOfWarAt[i] = [];
 			for (let j = 0; j < ywid; j++) {
 				this.groundAt[i][j] = -1;
 				this.wallAt[i][j] = -1;
 				this.overlayAt[i][j] = -1;
-				this.fogOfWarAt[i][j] = true;
 			}
 		}
 
@@ -56,50 +50,6 @@ class Tilemap {
 				if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) gridlayer.putTileAt(0, i, j);
 			}
 		}	
-		
-		this.map.addTilesetImage("shadow_overlay", "wall_shadow", 16, 16, 0, 0);
-		this.map.setLayer("shadow_overlay");
-		this.fogOfWarLayer = this.map.createBlankDynamicLayer("shadow_overlay", "shadow_overlay", 0, 0, this.dimensions.x, this.dimensions.y, 16, 16);
-		this.fogOfWarLayer.setScale(4, 4);
-		this.fogOfWarLayer.setDepth(900);
-		// this.fogOfWarLayer.setAlpha(0.5);
-		for (let i = 0; i < xwid; i++) {
-			for (let j = 0; j < ywid; j++) {
-				this.fogOfWarLayer.putTileAt(54, i, j);
-			}
-		}	
-	}
-
-	recalculateLighting(prevSerialized: string[]): void {
-		let dist = 8;
-
-		for (let ser of prevSerialized) {
-			let tbl: SerializedToken = JSON.parse(ser);
-
-			let tileX = Math.floor(tbl.x / 16);
-			let tileY = Math.floor(tbl.y / 16);
-
-			for (let i = clamp(tileX - dist - 1, this.dimensions.x - 1, 0); i <= clamp(tileX + dist + 1, this.dimensions.x - 1, 0); i++) {
-				for (let j = clamp(tileY - dist - 1, this.dimensions.y - 1, 0); j <= clamp(tileY + dist + 1, this.dimensions.y - 1, 0); j++) {
-					this.setFogOfWarRaw(i, j, 54);
-				}
-			}
-		}
-
-		for (let tkn of this.scene.tokens) {
-			let tileX = Math.floor(tkn.x / 64);
-			let tileY = Math.floor(tkn.y / 64);
-
-			let t = new ViewTrace(this, dist);
-			for (let tr of t.go(tileX, tileY)) {
-					this.setFogOfWar(tr.x, tr.y, false);
-			}
-
-			// for (let i = clamp(tileX - dist, this.dimensions.x - 1, 0); i <= clamp(tileX + dist, this.dimensions.x - 1, 0); i++) {
-			// 	for (let j = clamp(tileY - dist, this.dimensions.y - 1, 0); j <= clamp(tileY + dist, this.dimensions.y - 1, 0); j++) {
-			// 	}
-			// }
-		}
 	}
 
 	private createLayers(res: number) {
@@ -228,44 +178,6 @@ class Tilemap {
 			}
 		}
 		return solid;
-	}
-
-	private setFogOfWar(x: number, y: number, war: boolean): void {
-		if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1) return;
-
-		if (this.fogOfWarAt[x][y]) this.fogOfWarLayer.removeTileAt(x, y, true);
-		if (war) this.fogOfWarLayer.putTileAt(54, x, y);
-
-		this.fogOfWarAt[x][y] = war;
-		
-		this.calculateFogOfWarSmart(x, y);
-	}
-
-	private calculateFogOfWarSmart(x: number, y: number): void {
-		for (let i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
-			for (let j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-
-				let fog = SmartTiler.fogOfWar(this.getFogOfWarAround(i, j));
-				if (fog != -1) this.setFogOfWarRaw(i, j, fog);
-			}
-		}
-	}
-
-	private getFogOfWarAround(x: number, y: number): boolean[] {
-		let fog: boolean[] = [];
-
-		for (let i = -1; i <= 1; i++) {
-			for (let j = -1; j <= 1; j++) {
-				fog.push(this.fogOfWarAt[clamp(x + j, 0, this.dimensions.x)][clamp(y + i, 0, this.dimensions.y)]);
-			}
-		}
-		return fog;
-	}
-
-	private setFogOfWarRaw(x: number, y: number, tile: number): void {
-		if (this.fogOfWarAt[x][y] != false) this.fogOfWarLayer.removeTileAt(x, y, true);
-		this.fogOfWarAt[x][y] = true;
-		this.fogOfWarLayer.putTileAt(tile, x, y);
 	}
 }
  

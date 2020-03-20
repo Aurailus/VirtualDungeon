@@ -9,7 +9,8 @@ class MapScene extends Phaser.Scene {
 	world: WorldView;
 	map: Tilemap;
 	ui: UIView;
-	// chat: Chat;
+
+	fog: FogOfWar;
 
 	mode: number = 0;
 	tokens: Token[] = [];
@@ -40,6 +41,8 @@ class MapScene extends Phaser.Scene {
 		
 		this.architect = new ArchitectMode(this);
 		this.token = new TokenMode(this);
+
+		this.fog = new FogOfWar(this, new Vec2(300, 300));
 	}
 
 	update(time: number, delta: number): void {
@@ -49,6 +52,8 @@ class MapScene extends Phaser.Scene {
 		this.ui.update();
 		// this.chat.update();
 		this.history.update();
+
+		this.fog.update();
 		
 		if (this.i.keyPressed('TAB')) this.mode = (this.mode == 0 ? 1 : 0);
 

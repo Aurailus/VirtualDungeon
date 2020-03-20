@@ -273,11 +273,68 @@ var TOKENS = [
     { name: "Water Slime", key: "tkn_water_slime", file: "res/token/water_slime", },
     { name: "Treasure", key: "tkn_treasure", file: "res/token/treasure" },
 ];
+var FogOfWar = /** @class */ (function () {
+    function FogOfWar(scene, dims) {
+        this.scene = scene;
+        this.dims = dims;
+        this.tex = new Phaser.GameObjects.RenderTexture(this.scene, 0, 0, this.dims.x * 16, this.dims.y * 16);
+        this.tex.setScale(4, 4);
+        this.tex.setAlpha(0.7);
+        this.scene.add.existing(this.tex);
+        // this.map = this.scene.add.tilemap(null, 16, 16, 0, 0);
+        // this.map.addTilesetImage("history", "wall_shadow", 16, 16, 0, 0);
+        // this.map.setLayer("history");
+        // this.historyLayer = this.map.createBlankDynamicLayer("history", "wall_shadow", 0, 0, this.dims.x, this.dims.y, 16, 16);
+        // this.historyLayer.setScale(4, 4);
+        // for (let i = 0; i < this.dims.x; i++) {
+        // 	for (let j = 0; j < this.dims.y; j++) {
+        // 		if ((j % 2 == 0 && i % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) this.historyLayer.putTileAt(0, i, j);
+        // 	}
+        // }
+    }
+    FogOfWar.prototype.update = function () {
+        var resetSquare = new Phaser.GameObjects.Rectangle(this.scene, 0, 0, this.dims.x * 16, this.dims.y * 16, 0x000000);
+        this.tex.draw(resetSquare);
+        for (var _i = 0, _a = this.scene.tokens; _i < _a.length; _i++) {
+            var token = _a[_i];
+            var startTile = new Vec2(Math.floor(token.x / 64), Math.floor(token.y / 64));
+            var points = [];
+            for (var i = 0; i < 144; i++) {
+                var ray = new Vec2(0.5, 0.5);
+                var dir = new Vec2(Math.cos(i * 2.5 * (Math.PI / 180)) / 16, Math.sin(i * 2.5 * (Math.PI / 180)) / 16);
+                var dist = 0;
+                var maxDist = 12;
+                while (this.scene.map.getWall(Math.floor(startTile.x + ray.x), Math.floor(startTile.y + ray.y)) == -1 &&
+                    (dist = Math.sqrt(Math.pow(ray.x, 2) + Math.pow(ray.y, 2))) < maxDist) {
+                    ray.x += dir.x;
+                    ray.y += dir.y;
+                }
+                ray.x -= dir.x * maxDist * 1.2;
+                ray.y -= dir.y * maxDist * 1.2;
+                ray.x += dir.x * ((maxDist - dist) * 1.4);
+                ray.y += dir.y * ((maxDist - dist) * 1.4);
+                points.push(new Vec2(ray.x * 4, ray.y * 4));
+            }
+            var poly = new Phaser.GameObjects.Polygon(this.scene, token.x / 4, token.y / 4, points, 0xffffff, 0.4);
+            poly.setScale(4, 4);
+            poly.setBlendMode('ERASE');
+            poly.setDisplayOrigin(0, 0);
+            poly.setOrigin(0, 0);
+            for (var i = 0; i < 10; i++) {
+                poly.scaleX += 0.04;
+                poly.scaleY += 0.04;
+                // poly.x = token.x / 4 + 50 * poly.scaleX;
+                // poly.y = token.y / 4 + 50 * poly.scaleY;
+                this.tex.draw(poly);
+            }
+        }
+    };
+    return FogOfWar;
+}());
 var MapScene = /** @class */ (function (_super) {
     __extends(MapScene, _super);
     function MapScene() {
         var _this = _super.call(this, { key: "MapScene" }) || this;
-        // chat: Chat;
         _this.mode = 0;
         _this.tokens = [];
         return _this;
@@ -301,6 +358,7 @@ var MapScene = /** @class */ (function (_super) {
         this.map = new Tilemap("gameMap", this, 300, 300);
         this.architect = new ArchitectMode(this);
         this.token = new TokenMode(this);
+        this.fog = new FogOfWar(this, new Vec2(300, 300));
     };
     MapScene.prototype.update = function (time, delta) {
         this.i.update();
@@ -308,6 +366,7 @@ var MapScene = /** @class */ (function (_super) {
         this.ui.update();
         // this.chat.update();
         this.history.update();
+        this.fog.update();
         if (this.i.keyPressed('TAB'))
             this.mode = (this.mode == 0 ? 1 : 0);
         if (this.mode == 0) {
@@ -1770,7 +1829,6 @@ var TokenMode = /** @class */ (function () {
         }
         if (!identical) {
             this.scene.history.push("token_modify", { old: prevSerialized, new: currSerialized });
-            this.scene.map.recalculateLighting(prevSerialized);
         }
     };
     TokenMode.prototype.selecting = function () {
@@ -1953,7 +2011,6 @@ var TokenMode = /** @class */ (function () {
                 }
                 if (!identical) {
                     this.scene.history.push("token_modify", { old: this.prevSerialized, new: currSerialized });
-                    this.scene.map.recalculateLighting(this.prevSerialized);
                 }
                 return;
             }
@@ -2469,160 +2526,6 @@ var SmartTiler;
         return tile;
     }
     SmartTiler.ground = ground;
-    function fogOfWar(walls) {
-        var TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
-        if (walls[C] == false)
-            return -1;
-        var empty = walls.map(function (b) { return !b; });
-        var tile = 54;
-        if (empty[T]) {
-            if (empty[B]) {
-                if (empty[L]) {
-                    if (empty[R])
-                        tile = 33;
-                    else
-                        tile = 15;
-                }
-                else if (empty[R])
-                    tile = 5;
-                else
-                    tile = 2;
-            }
-            else if (empty[L]) {
-                if (empty[R])
-                    tile = 14;
-                else if (empty[BR])
-                    tile = 0;
-                else
-                    tile = 7;
-            }
-            else if (empty[R]) {
-                if (empty[BL])
-                    tile = 1;
-                else
-                    tile = 8;
-            }
-            else {
-                if (empty[BL]) {
-                    if (empty[BR])
-                        tile = 3;
-                    else
-                        tile = 40;
-                }
-                else if (empty[BR])
-                    tile = 41;
-                else
-                    tile = 31;
-            }
-        }
-        else if (empty[B]) {
-            if (empty[L]) {
-                if (empty[R])
-                    tile = 6;
-                else if (empty[TR])
-                    tile = 9;
-                else
-                    tile = 16;
-            }
-            else if (empty[R]) {
-                if (empty[TL])
-                    tile = 10;
-                else
-                    tile = 17;
-            }
-            else {
-                if (empty[TL]) {
-                    if (empty[TR])
-                        tile = 4;
-                    else
-                        tile = 49;
-                }
-                else if (empty[TR])
-                    tile = 50;
-                else
-                    tile = 32;
-            }
-        }
-        else if (empty[L]) {
-            if (empty[R])
-                tile = 11;
-            else {
-                if (empty[TR]) {
-                    if (empty[BR])
-                        tile = 12;
-                    else
-                        tile = 38;
-                }
-                else if (empty[BR])
-                    tile = 47;
-                else
-                    tile = 22;
-            }
-        }
-        else if (empty[R]) {
-            if (empty[TL]) {
-                if (empty[BL])
-                    tile = 13;
-                else
-                    tile = 39;
-            }
-            else if (empty[BL])
-                tile = 48;
-            else
-                tile = 23;
-        }
-        else if (empty[TL]) {
-            if (empty[TR]) {
-                if (empty[BL]) {
-                    if (empty[BR])
-                        tile = 25;
-                    else
-                        tile = 36;
-                }
-                else if (empty[BR])
-                    tile = 37;
-                else
-                    tile = 21;
-            }
-            else if (empty[BL]) {
-                if (empty[BR])
-                    tile = 45;
-                else
-                    tile = 30;
-            }
-            else if (empty[BR])
-                tile = 51;
-            else
-                tile = 28;
-        }
-        else if (empty[TR]) {
-            if (empty[BL]) {
-                if (empty[BR])
-                    tile = 46;
-                else
-                    tile = 42;
-            }
-            else if (empty[BR])
-                tile = 29;
-            else
-                tile = 27;
-        }
-        else if (empty[BL]) {
-            if (empty[BR])
-                tile = 20;
-            else
-                tile = 19;
-        }
-        else if (empty[BR])
-            tile = 18;
-        else {
-            if (!empty[C])
-                return -1;
-            tile = 54;
-        }
-        return tile;
-    }
-    SmartTiler.fogOfWar = fogOfWar;
 })(SmartTiler || (SmartTiler = {}));
 var Tilemap = /** @class */ (function () {
     function Tilemap(key, scene, xwid, ywid) {
@@ -2633,17 +2536,14 @@ var Tilemap = /** @class */ (function () {
         this.groundAt = [];
         this.wallAt = [];
         this.overlayAt = [];
-        this.fogOfWarAt = [];
         for (var i = 0; i < xwid; i++) {
             this.groundAt[i] = [];
             this.wallAt[i] = [];
             this.overlayAt[i] = [];
-            this.fogOfWarAt[i] = [];
             for (var j = 0; j < ywid; j++) {
                 this.groundAt[i][j] = -1;
                 this.wallAt[i][j] = -1;
                 this.overlayAt[i][j] = -1;
-                this.fogOfWarAt[i][j] = true;
             }
         }
         this.manager = new TilesetManager(scene);
@@ -2668,46 +2568,7 @@ var Tilemap = /** @class */ (function () {
                     gridlayer.putTileAt(0, i, j);
             }
         }
-        this.map.addTilesetImage("shadow_overlay", "wall_shadow", 16, 16, 0, 0);
-        this.map.setLayer("shadow_overlay");
-        this.fogOfWarLayer = this.map.createBlankDynamicLayer("shadow_overlay", "shadow_overlay", 0, 0, this.dimensions.x, this.dimensions.y, 16, 16);
-        this.fogOfWarLayer.setScale(4, 4);
-        this.fogOfWarLayer.setDepth(900);
-        // this.fogOfWarLayer.setAlpha(0.5);
-        for (var i = 0; i < xwid; i++) {
-            for (var j = 0; j < ywid; j++) {
-                this.fogOfWarLayer.putTileAt(54, i, j);
-            }
-        }
     }
-    Tilemap.prototype.recalculateLighting = function (prevSerialized) {
-        var dist = 8;
-        for (var _i = 0, prevSerialized_1 = prevSerialized; _i < prevSerialized_1.length; _i++) {
-            var ser = prevSerialized_1[_i];
-            var tbl = JSON.parse(ser);
-            var tileX = Math.floor(tbl.x / 16);
-            var tileY = Math.floor(tbl.y / 16);
-            for (var i = clamp(tileX - dist - 1, this.dimensions.x - 1, 0); i <= clamp(tileX + dist + 1, this.dimensions.x - 1, 0); i++) {
-                for (var j = clamp(tileY - dist - 1, this.dimensions.y - 1, 0); j <= clamp(tileY + dist + 1, this.dimensions.y - 1, 0); j++) {
-                    this.setFogOfWarRaw(i, j, 54);
-                }
-            }
-        }
-        for (var _a = 0, _b = this.scene.tokens; _a < _b.length; _a++) {
-            var tkn = _b[_a];
-            var tileX = Math.floor(tkn.x / 64);
-            var tileY = Math.floor(tkn.y / 64);
-            var t = new ViewTrace(this, dist);
-            for (var _c = 0, _d = t.go(tileX, tileY); _c < _d.length; _c++) {
-                var tr = _d[_c];
-                this.setFogOfWar(tr.x, tr.y, false);
-            }
-            // for (let i = clamp(tileX - dist, this.dimensions.x - 1, 0); i <= clamp(tileX + dist, this.dimensions.x - 1, 0); i++) {
-            // 	for (let j = clamp(tileY - dist, this.dimensions.y - 1, 0); j <= clamp(tileY + dist, this.dimensions.y - 1, 0); j++) {
-            // 	}
-            // }
-        }
-    };
     Tilemap.prototype.createLayers = function (res) {
         this.map.addTilesetImage("tileset_" + res + "_ground", "tileset_" + res + "_ground", res, res, 2, 4);
         this.map.addTilesetImage("tileset_" + res + "_wall", "tileset_" + res + "_wall", res, res, 2, 4);
@@ -2811,40 +2672,6 @@ var Tilemap = /** @class */ (function () {
             }
         }
         return solid;
-    };
-    Tilemap.prototype.setFogOfWar = function (x, y, war) {
-        if (x < 0 || y < 0 || x > this.dimensions.x - 1 || y > this.dimensions.y - 1)
-            return;
-        if (this.fogOfWarAt[x][y])
-            this.fogOfWarLayer.removeTileAt(x, y, true);
-        if (war)
-            this.fogOfWarLayer.putTileAt(54, x, y);
-        this.fogOfWarAt[x][y] = war;
-        this.calculateFogOfWarSmart(x, y);
-    };
-    Tilemap.prototype.calculateFogOfWarSmart = function (x, y) {
-        for (var i = clamp(x - 1, this.dimensions.x - 1, 0); i <= clamp(x + 1, this.dimensions.x - 1, 0); i++) {
-            for (var j = clamp(y - 1, this.dimensions.y - 1, 0); j <= clamp(y + 1, this.dimensions.y - 1, 0); j++) {
-                var fog = SmartTiler.fogOfWar(this.getFogOfWarAround(i, j));
-                if (fog != -1)
-                    this.setFogOfWarRaw(i, j, fog);
-            }
-        }
-    };
-    Tilemap.prototype.getFogOfWarAround = function (x, y) {
-        var fog = [];
-        for (var i = -1; i <= 1; i++) {
-            for (var j = -1; j <= 1; j++) {
-                fog.push(this.fogOfWarAt[clamp(x + j, 0, this.dimensions.x)][clamp(y + i, 0, this.dimensions.y)]);
-            }
-        }
-        return fog;
-    };
-    Tilemap.prototype.setFogOfWarRaw = function (x, y, tile) {
-        if (this.fogOfWarAt[x][y] != false)
-            this.fogOfWarLayer.removeTileAt(x, y, true);
-        this.fogOfWarAt[x][y] = true;
-        this.fogOfWarLayer.putTileAt(tile, x, y);
     };
     return Tilemap;
 }());
@@ -2978,76 +2805,6 @@ var TilesetManager = /** @class */ (function () {
         return this.canvases[this.getTilesetRes(tileset, layer)][layer].getLocalIndex(tile);
     };
     return TilesetManager;
-}());
-var TraceNode = /** @class */ (function () {
-    function TraceNode(x, y, distance, maxDistance) {
-        this.l = true;
-        this.r = true;
-        this.u = true;
-        this.d = true;
-        this.x = x;
-        this.y = y;
-        this.distance = distance;
-        this.maxDistance = maxDistance;
-    }
-    TraceNode.prototype.setDirections = function (l, r, u, d) {
-        this.l = l;
-        this.r = r;
-        this.u = u;
-        this.d = d;
-    };
-    TraceNode.prototype.propagate = function (t) {
-        // Kill
-        if (this.distance == this.maxDistance)
-            return;
-        // Left
-        if (this.l && t.map.getWall(this.x - 1, this.y) == -1) {
-            var newNode = new TraceNode(this.x - 1, this.y, this.distance + 1, this.maxDistance);
-            newNode.setDirections(this.l, false, this.u, this.d);
-            t.activeNodes.push(newNode);
-        }
-        // Right
-        if (this.r && t.map.getWall(this.x + 1, this.y) == -1) {
-            var newNode = new TraceNode(this.x + 1, this.y, this.distance + 1, this.maxDistance);
-            newNode.setDirections(false, this.r, this.u, this.d);
-            t.activeNodes.push(newNode);
-        }
-        // Up
-        if (this.u && t.map.getWall(this.x, this.y - 1) == -1) {
-            var newNode = new TraceNode(this.x, this.y - 1, this.distance + 1, this.maxDistance);
-            newNode.setDirections(this.l, this.r, this.u, false);
-            t.activeNodes.push(newNode);
-        }
-        // Down
-        if (this.d && t.map.getWall(this.x, this.y + 1) == -1) {
-            var newNode = new TraceNode(this.x, this.y + 1, this.distance + 1, this.maxDistance);
-            newNode.setDirections(this.l, this.r, false, this.d);
-            t.activeNodes.push(newNode);
-        }
-    };
-    return TraceNode;
-}());
-var ViewTrace = /** @class */ (function () {
-    function ViewTrace(map, distance) {
-        this.commitedNodes = [];
-        this.activeNodes = [];
-        this.map = map;
-        this.distance = distance;
-    }
-    ViewTrace.prototype.go = function (startX, startY) {
-        this.activeNodes.push(new TraceNode(startX, startY, 0, this.distance));
-        this.propagateNodes();
-        return this.commitedNodes;
-    };
-    ViewTrace.prototype.propagateNodes = function () {
-        while (this.activeNodes.length > 0) {
-            var node = this.activeNodes[0];
-            this.activeNodes.splice(0, 1);
-            node.propagate(this);
-            this.commitedNodes.push(node);
-        }
-    };
-    return ViewTrace;
 }());
 var BrightenPipeline = /** @class */ (function (_super) {
     __extends(BrightenPipeline, _super);

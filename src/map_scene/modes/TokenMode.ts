@@ -115,7 +115,6 @@ class TokenMode {
 		
 		if (!identical) {
 			this.scene.history.push("token_modify", { old: prevSerialized, new: currSerialized });
-			this.scene.map.recalculateLighting(prevSerialized);
 		}
 	}
 
@@ -309,7 +308,6 @@ class TokenMode {
 				}				
 				if (!identical) {
 					this.scene.history.push("token_modify", { old: this.prevSerialized, new: currSerialized });
-					this.scene.map.recalculateLighting(this.prevSerialized);
 				}
 				return;
 			}
