@@ -35,7 +35,7 @@ class WorldView {
 	}
 
 	private pan() {
-		if (this.scene.input.mousePointer.middleButtonDown()) {
+		if (this.scene.input.activePointer.middleButtonDown()) {
 			this.camera.scrollX += Math.round((this.lastCursorScreen.x - this.cursorScreen.x) / this.camera.zoom);
 			this.camera.scrollY += Math.round((this.lastCursorScreen.y - this.cursorScreen.y) / this.camera.zoom);
 		}

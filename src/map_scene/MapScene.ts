@@ -36,14 +36,8 @@ class MapScene extends Phaser.Scene {
 		this.ui = new UIView(this);
 		this.ui.createElements();
 
-		// this.chat = new Chat(this, -10000 + this.cameras.main.width - 309, this.cameras.main.height - 9);
-		// this.add.existing(this.chat);
-
 		this.map = new Tilemap("gameMap", this, 300, 300);
-
-		let map = this.add.sprite(-300, 0, "tileset_16_wall");
-		map.setScale(3, 3);
-
+		
 		this.architect = new ArchitectMode(this);
 		this.token = new TokenMode(this);
 	}

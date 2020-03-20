@@ -113,7 +113,10 @@ class TokenMode {
 			if (prevSerialized[s] != currSerialized[s]) identical = false;
 		}
 		
-		if (!identical) this.scene.history.push("token_modify", { old: prevSerialized, new: currSerialized });
+		if (!identical) {
+			this.scene.history.push("token_modify", { old: prevSerialized, new: currSerialized });
+			this.scene.map.recalculateLighting(prevSerialized);
+		}
 	}
 
 	private selecting(): void {
@@ -304,7 +307,10 @@ class TokenMode {
 					currSerialized.push(this.selectedTokens[s].serialize());
 					if (this.prevSerialized[s] != currSerialized[s]) identical = false;
 				}				
-				if (!identical) this.scene.history.push("token_modify", { old: this.prevSerialized, new: currSerialized });
+				if (!identical) {
+					this.scene.history.push("token_modify", { old: this.prevSerialized, new: currSerialized });
+					this.scene.map.recalculateLighting(this.prevSerialized);
+				}
 				return;
 			}
 			

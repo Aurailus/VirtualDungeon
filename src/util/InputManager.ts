@@ -3,9 +3,11 @@ class InputManager {
 
 	private leftMouseState: boolean = false;
 	private rightMouseState: boolean = false;
+	private middleMouseState: boolean = false;
 	private leftMouseStateLast: boolean = false;
 	private rightMouseStateLast: boolean = false;
-
+	private middleMouseStateLast: boolean = false;
+	
 	private keys: {[key: string]: Phaser.Input.Keyboard.Key} = {};
 	private keysDown: {[key: string]: boolean } = {};
 	private keysDownLast: {[key: string]: boolean } = {};
@@ -39,9 +41,11 @@ class InputManager {
 
 	update() {
 		this.leftMouseStateLast = this.leftMouseState;
-		this.leftMouseState = this.scene.input.mousePointer.leftButtonDown();
+		this.leftMouseState = this.scene.input.activePointer.leftButtonDown();
 		this.rightMouseStateLast = this.rightMouseState;
-		this.rightMouseState = this.scene.input.mousePointer.rightButtonDown();
+		this.rightMouseState = this.scene.input.activePointer.rightButtonDown();
+		this.middleMouseStateLast = this.middleMouseState;
+		this.rightMouseState = this.scene.input.activePointer.middleButtonDown();
 
 		for (let key in this.keys) this.keysDownLast[key] = this.keysDown[key];
 		for (let key in this.keys) this.keysDown[key] = this.keys[key].isDown;

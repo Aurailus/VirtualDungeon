@@ -8,6 +8,7 @@ interface TilesetFileProps {
 const WALLS: TilesetFileProps[] = [
 	{ name: "Dungeon Wall", 										key: "wall_dungeon", 								file: "res/tileset/wall_dungeon", 			res: 16 },
 	{ name: "Wood Wall",												key: "wall_wood", 									file: "res/tileset/wall_wood", 					res: 16 },
+	{ name: "Shadow Wall",											key: "wall_shadow", 								file: "res/tileset/wall_shadow", 				res: 16 },
 ];
 
 const GROUNDS: TilesetFileProps[] = [
