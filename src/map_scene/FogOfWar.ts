@@ -39,9 +39,9 @@ class FogOfWar {
 
 			let points: Vec2[] = [];
 
-			for (let i = 0; i < 144; i++) {
+			for (let i = 0; i < 288; i++) {
 				let ray = new Vec2(0.5, 0.5);
-				let dir = new Vec2(Math.cos(i * 2.5 * (Math.PI / 180)) / 16, Math.sin(i * 2.5 * (Math.PI / 180)) / 16);
+				let dir = new Vec2(Math.cos(i * 1.25 * (Math.PI / 180)) / 32, Math.sin(i * 1.25 * (Math.PI / 180)) / 32);
 
 				let dist = 0;
 				let maxDist = 12;
@@ -52,11 +52,11 @@ class FogOfWar {
 					ray.y += dir.y;
 				}
 
-				ray.x -= dir.x * maxDist * 1.2;
-				ray.y -= dir.y * maxDist * 1.2;
+				ray.x -= dir.x * maxDist * 2.4;
+				ray.y -= dir.y * maxDist * 2.4;
 
-				ray.x += dir.x * ((maxDist - dist) * 1.4);
-				ray.y += dir.y * ((maxDist - dist) * 1.4);
+				ray.x += dir.x * ((maxDist - dist) * 2.8);
+				ray.y += dir.y * ((maxDist - dist) * 2.8);
 
 				points.push(new Vec2(ray.x * 4, ray.y * 4));
 			}

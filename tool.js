@@ -299,9 +299,9 @@ var FogOfWar = /** @class */ (function () {
             var token = _a[_i];
             var startTile = new Vec2(Math.floor(token.x / 64), Math.floor(token.y / 64));
             var points = [];
-            for (var i = 0; i < 144; i++) {
+            for (var i = 0; i < 288; i++) {
                 var ray = new Vec2(0.5, 0.5);
-                var dir = new Vec2(Math.cos(i * 2.5 * (Math.PI / 180)) / 16, Math.sin(i * 2.5 * (Math.PI / 180)) / 16);
+                var dir = new Vec2(Math.cos(i * 1.25 * (Math.PI / 180)) / 32, Math.sin(i * 1.25 * (Math.PI / 180)) / 32);
                 var dist = 0;
                 var maxDist = 12;
                 while (this.scene.map.getWall(Math.floor(startTile.x + ray.x), Math.floor(startTile.y + ray.y)) == -1 &&
@@ -309,10 +309,10 @@ var FogOfWar = /** @class */ (function () {
                     ray.x += dir.x;
                     ray.y += dir.y;
                 }
-                ray.x -= dir.x * maxDist * 1.2;
-                ray.y -= dir.y * maxDist * 1.2;
-                ray.x += dir.x * ((maxDist - dist) * 1.4);
-                ray.y += dir.y * ((maxDist - dist) * 1.4);
+                ray.x -= dir.x * maxDist * 2.4;
+                ray.y -= dir.y * maxDist * 2.4;
+                ray.x += dir.x * ((maxDist - dist) * 2.8);
+                ray.y += dir.y * ((maxDist - dist) * 2.8);
                 points.push(new Vec2(ray.x * 4, ray.y * 4));
             }
             var poly = new Phaser.GameObjects.Polygon(this.scene, token.x / 4, token.y / 4, points, 0xffffff, 0.4);
