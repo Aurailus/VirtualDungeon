@@ -15,6 +15,10 @@ class Vec2 {
 			this.y = (x as any as {x: number, y:number}).y;
 		}
 	}
+
+	equals(o: Vec2) {
+		return this.x == o.x && this.y == o.y;
+	}
 }
 
 class Vec3 {
@@ -41,6 +45,10 @@ class Vec3 {
 			this.y = (x as any as {x: number, y:number, z:number}).y;
 			this.z = (x as any as {x: number, y:number, z:number}).z;
 		}
+	}
+
+	equals(o: Vec3) {
+		return this.x == o.x && this.y == o.y && this.z == o.z;
 	}
 }
 
@@ -72,5 +80,9 @@ class Vec4 {
 			this.z = (x as any).z;
 			this.w = (x as any).w;
 		}
+	}
+
+	equals(o: Vec4) {
+		return this.x == o.x && this.y == o.y && this.z == o.z && this.w == o.w;
 	}
 }

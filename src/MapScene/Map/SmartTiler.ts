@@ -219,7 +219,7 @@ namespace SmartTiler {
 		return tile;
 	}
 
-	export function ground(walls: boolean[], current: number): number {
+	export function floor(walls: boolean[], current: number): number {
 		const TL = 0, T = 1, TR = 2, L = 3, C = 4, R = 5, BL = 6, B = 7, BR = 8;
 
 		if (current == -1) return -1;

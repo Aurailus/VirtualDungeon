@@ -11,7 +11,7 @@ class ArchitectMode {
 	pointerPrimaryDown: boolean = false;
 
 	activeTileset: number = 0;
-	activeLayer: Layer = Layer.WALL;
+	activeLayer: Layer = Layer.wall;
 
 	manipulated: {pos: Vec2, layer: Layer, lastTile: number, tile: number}[] = [];
 
@@ -33,7 +33,7 @@ class ArchitectMode {
 		this.cursor.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
 
 		this.cursor.setVisible((selectedTilePos.x >= 0 && selectedTilePos.y >= 0 && 
-			selectedTilePos.x < this.scene.map.dimensions.x && selectedTilePos.y < this.scene.map.dimensions.y));
+			selectedTilePos.x < this.scene.map.size.x && selectedTilePos.y < this.scene.map.size.y));
 
 		// Place Tiles
 		switch(this.placeMode) {
@@ -188,12 +188,12 @@ class ArchitectMode {
 
 	placeTileAndPushManip(manipPos: Vec2, solid: boolean) {
 		let tile = solid ? this.activeTileset : -1;
-		let layer = (tile == -1 && this.activeLayer == Layer.GROUND) ? Layer.WALL : this.activeLayer;
+		let layer = (tile == -1 && this.activeLayer == Layer.floor) ? Layer.wall : this.activeLayer;
 
-		let lastTile = this.scene.map.getTile(manipPos.x, manipPos.y, layer);
+		let lastTile = this.scene.map.getTileset(layer, manipPos.x, manipPos.y);
 		if (tile == lastTile) return;
 		
-		this.scene.map.setTile(manipPos.x, manipPos.y, tile, layer);
+		this.scene.map.setTile(layer, tile, manipPos.x, manipPos.y);
 
 		this.manipulated.push({
 			pos: manipPos, 

@@ -49,15 +49,15 @@ class UITileSidebar extends UISidebar {
 	elemClick(x: number, y: number): void {
 		if (y < 4) {
 			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.walls[x + y * 3]];
-			this.scene.architect.activeLayer = Layer.WALL;
+			this.scene.architect.activeLayer = Layer.wall;
 		}
 		else if (y < 8) {
 			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.grounds[x + (y - 4) * 3]];
-			this.scene.architect.activeLayer = Layer.GROUND;
+			this.scene.architect.activeLayer = Layer.floor;
 		}
 		else {
 			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.overlays[x + (y - 8) * 3]];
-			this.scene.architect.activeLayer = Layer.OVERLAY;
+			this.scene.architect.activeLayer = Layer.overlay;
 		}
 	}
 

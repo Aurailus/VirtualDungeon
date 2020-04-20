@@ -105,7 +105,7 @@ class LoadScene extends Phaser.Scene {
 				this.patching = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_patching");
 				this.patching.setScale(6);
 
-				this.text.setText(" Patching Tiles...");	
+				this.text.setText(" Loading Map...");	
 		
 				setTimeout(() => {
 					this.game.scene.start('MapScene');

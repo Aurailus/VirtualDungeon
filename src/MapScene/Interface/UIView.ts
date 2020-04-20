@@ -19,6 +19,8 @@ class UIView {
 		this.camera.scrollX = -10000;
 
 		this.o = this.scene.add.container(-10000, 0);
+
+		this.createElements();
 	}
 
 	createElements() {
@@ -79,6 +81,23 @@ class UIView {
 			else {
 				this.hideArchitect();
 				this.displayToken();
+			}
+		}
+
+		if (this.scene.i.keyPressed('TAB')) this.scene.mode = (this.scene.mode == 0 ? 1 : 0);
+
+		if (this.scene.mode == 0) {
+			if (this.uiActive) this.scene.architect.cleanup();
+			else {
+				this.scene.architect.update();
+				this.scene.token.cleanup();
+			}
+		}
+		else {
+			if (this.uiActive) this.scene.token.cleanup();
+			else {
+				this.scene.token.update();
+				this.scene.architect.cleanup();
 			}
 		}
 	}
