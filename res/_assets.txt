@@ -16,3 +16,6 @@ ui/button_select_cursor 21 18
 ui/background_9x 8 8
 ui/sidebar_browse
 ui/button_sidebar_toggle 30 18
+
+FOLDERPREFIX shader shader_
+shader/light_mask
