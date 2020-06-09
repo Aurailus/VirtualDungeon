@@ -1,0 +1,6 @@
+{
+	"watch": ["client"],
+	"ext": ".ts,.js",
+	"ignore": [],
+	"exec": "tsc --project ./client/tsconfig.json"
+}
