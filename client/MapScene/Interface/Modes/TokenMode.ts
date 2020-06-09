@@ -239,8 +239,8 @@ class TokenMode {
 				}
 				else {
 					this.selectedTokens.forEach(t => t.setSelected(false));
-					this.selectedTokens = [this.hoveredToken];
-					this.hoveredToken.setSelected(true);
+					this.selectedTokens = [this.hoveredToken!];
+					this.hoveredToken!.setSelected(true);
 					this.startMovingTokens();
 				}
 			}

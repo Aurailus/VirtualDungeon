@@ -342,7 +342,7 @@ var TOKENS = [
     { name: "Dino", key: "tkn_dino", file: "/public/tool/res/token/dino", split_by: 18 },
     { name: "Naexi", key: "tkn_naexi", file: "/public/tool/res/token/naexi_human_noweapon", split_by: 18 },
     { name: "Naexi w/ Yklwa", key: "tkn_naexi_yklwa", file: "/public/tool/res/token/naexi_human_yklwa", split_by: 18 },
-    { name: "Naexi Anthro Form", key: "tkn_naexi_anthro", file: "/public/tool/res/token/naexi_anthro", split_by: 18 },
+    // { name: "Naexi Anthro Form",								key: "tkn_naexi_anthro",						file: "/public/tool/res/token/naexi_anthro",	  			split_by: 18 },
     { name: "Crab", key: "tkn_crab", file: "/public/tool/res/token/crab", split_by: 18 },
     { name: "Blue Slime", key: "tkn_blue_slime", file: "/public/tool/res/token/blue_slime", },
     { name: "Green Goo", key: "tkn_green_goo", file: "/public/tool/res/token/green_goo", },
