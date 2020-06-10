@@ -6,15 +6,14 @@ class InitScene extends Phaser.Scene {
 	preload(): void {
 		this.cameras.main.setBackgroundColor("#090d24");
 
-		this.load.text("assets", "/public/tool/res/_assets.txt");
+		this.load.text("assets", "/public/res/_assets.txt");
 
-		this.load.bitmapFont('font1x', '/public/tool/res/font/font1.png', '/public/tool/res/font/font1.fnt');
-		this.load.bitmapFont('font2x', '/public/tool/res/font/font2.png', '/public/tool/res/font/font2.fnt');
+		this.load.bitmapFont('font1x', '/public/res/font/font1.png', '/public/res/font/font1.fnt');
+		this.load.bitmapFont('font2x', '/public/res/font/font2.png', '/public/res/font/font2.fnt');
 		
-		this.load.image("logo", "/public/tool/res/loader/logo.png");
-
-		this.load.spritesheet("loader_filled", "/public/tool/res/loader/loader_filled.png", {frameWidth: 18, frameHeight: 18});
-		this.load.spritesheet("loader_unfilled", "/public/tool/res/loader/loader_unfilled.png", {frameWidth: 18, frameHeight: 18});
+		this.load.image("logo", "/public/res/loader/logo.png");
+		this.load.spritesheet("loader_filled", "/public/res/loader/loader_filled.png", {frameWidth: 18, frameHeight: 18});
+		this.load.spritesheet("loader_unfilled", "/public/res/loader/loader_unfilled.png", {frameWidth: 18, frameHeight: 18});
 	}
 
 	create(): void {

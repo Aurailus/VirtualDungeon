@@ -1,0 +1,56 @@
+doctype html
+html(lang="en")
+	head
+		include includes/head.pug
+		title Campaigns &bullet; Virtual Dungeon
+	body
+		header
+			.wrap_wide
+				h1 
+					span.brand Virtual Dungeon
+					| &nbsp;&nbsp;&bullet;&nbsp;&nbsp;
+					span.welcome Hello, #{username}.
+				button#log_out Log Out
+			
+		main
+			.wrap_wide
+				h1 My Campaigns
+				ul#campaigns_list
+					each camp in campaigns
+						li 
+							a(href="/campaigns/" + camp.safeName) #{camp.name}
+					
+					li
+						form#new_campaign
+							input(type="text" id="newCampaign")
+							button +
+
+		script.
+			document.getElementById('log_out').addEventListener('click', () => {
+				Cookies.remove('tkn');
+				location.reload();
+			});
+
+			document.getElementById('new_campaign').addEventListener('submit', (e) => {
+				let campaignName = document.querySelector("input#newCampaign").value;
+
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "/campaigns/new", true);
+				xhr.setRequestHeader('Content-Type', 'application/json');
+
+				xhr.onload = function() {
+					if (xhr.status != 200) console.log('problem!');
+					else {
+						document.querySelector("input#newCampaign").value = "";
+						let list = document.createElement('li');
+						list.innerHTML = `<a href="/campaigns/${this.responseText}"></a>`;
+						list.querySelector('a').innerText = campaignName;
+						document.querySelector('#campaigns_list').insertBefore(list, document.querySelector('#campaigns_list > li:last-child'));
+					}
+				}
+
+				xhr.send(JSON.stringify({ name: campaignName }));
+
+				e.preventDefault();
+				return false;
+			});

@@ -1,0 +1,46 @@
+doctype html
+html(lang="en")
+	head
+		include includes/head.pug
+		title Virtual Dungeon
+	body#login
+		.wrap
+			h1 Log In
+
+			form#login_form(method="post")
+				input(type="email", name="email", placeholder="Email", autofocus)
+				input(type="password", name="pass", placeholder="Password")
+				button Log In
+				#warn_wrap
+
+			script.
+				const form = document.getElementById("login_form");
+				const err = document.getElementById("warn_wrap");
+		
+				let reqSent = false;
+				form.addEventListener('submit', (e) => {
+					if (!reqSent) {
+						reqSent = true;
+						err.innerText = "";
+
+						let xhr = new XMLHttpRequest();
+						xhr.open("POST", "/auth", true);
+						xhr.setRequestHeader('Content-Type', 'application/json');
+
+						xhr.onload = function() {
+							reqSent = false;
+							if (xhr.status != 200) err.innerText = "Error logging in, please try again.";
+							else {
+								Cookies.set('tkn', this.responseText, { expires: 3 });
+								location.href = "/campaigns";
+							}
+						}
+
+						xhr.send(JSON.stringify({ 
+							email: form.querySelector("input[name=email]").value, 
+							pass: form.querySelector("input[name=pass]").value }));
+					}
+
+					e.preventDefault();
+					return false;
+				});

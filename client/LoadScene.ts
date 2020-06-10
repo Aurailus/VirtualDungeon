@@ -61,12 +61,12 @@ class LoadScene extends Phaser.Scene {
 	}
 
 	private loadAssets(): void {
-		this.load.image("loader_patching", "/public/tool/res/loader/loader_patching.png");
+		this.load.image("loader_patching", "/public/res/loader/loader_patching.png");
 
 		for (let s of this.cache.text.get("assets").split("\n")) {
 			let tokens = s.split(" ");
-			if (tokens.length == 2) this.load.image(tokens[0], "/public/tool/res/" + tokens[1] + ".png");
-			else if (tokens.length == 4) this.load.spritesheet(tokens[0], "/public/tool/res/" + tokens[1] + ".png", {frameWidth: parseInt(tokens[2]), frameHeight: parseInt(tokens[3])});
+			if (tokens.length == 2) this.load.image(tokens[0], "/public/res/" + tokens[1] + ".png");
+			else if (tokens.length == 4) this.load.spritesheet(tokens[0], "/public/res/" + tokens[1] + ".png", {frameWidth: parseInt(tokens[2]), frameHeight: parseInt(tokens[3])});
 		}
 
 		for (let t of TOKENS) {

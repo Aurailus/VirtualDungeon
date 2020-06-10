@@ -1,0 +1,59 @@
+doctype html
+html(lang="en")
+	head
+		include includes/head.pug
+		title #{campaign.name} &bullet; Virtual Dungeon
+	body
+		header
+			.wrap_wide
+				h1 
+					span.brand Virtual Dungeon
+					| &nbsp;&nbsp;&bullet;&nbsp;&nbsp;
+					span.welcome Hello, #{username}.
+				button#log_out Log Out
+			
+		main
+			.wrap_wide
+				h1 #{campaign.name}
+					small &nbsp; &nbsp;
+						small
+							a(href="/campaigns/") Back
+
+				h2(style="margin-top: 45px; opacity: 0.7;") Maps
+				ul#maps_list
+					each map in campaign.maps
+						li 
+							a(href="/campaigns/" + campaign.safeName + "/" + map.safeName) #{map.name}
+					
+					li
+						form#new_map
+							input(type="text" id="newMap")
+							button +
+
+		script.
+			document.getElementById('log_out').addEventListener('click', () => {
+				Cookies.remove('tkn');
+				location.reload();
+			});
+
+			document.getElementById('new_map').addEventListener('submit', (e) => {
+				let mapName = document.querySelector("input#newMap").value;
+
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "/maps/new", true);
+				xhr.setRequestHeader('Content-Type', 'application/json');
+
+				xhr.onload = function() {
+					if (xhr.status != 200) console.log('problem!');
+					else {
+						let list = document.createElement('li');
+						list.innerHTML = `<a href="/campaigns/#{campaign.safeName}/${this.responseText}">${mapName}</a>`;
+						document.querySelector('#maps_list').insertBefore(list, document.querySelector('#maps_list > li:last-child'));
+					}
+				}
+
+				xhr.send(JSON.stringify({ campaign: "#{campaign.safeName}", name: mapName }));
+
+				e.preventDefault();
+				return false;
+			});
