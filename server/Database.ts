@@ -59,7 +59,7 @@ export default class Database {
 
 	// Create a campaign with the name specified. Return the safeName.
 	async createCampaign(user: string, name: string): Promise<string> {
-		let safeName = name.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+		let safeName = this.sanitizeName(name);
 		if (safeName.length < 1) throw "Campaign cannot have empty name!";
 		const collection = this.db!.collection('campaigns');
 		let exists = await collection.findOne({user: user, safeName: safeName});
@@ -75,9 +75,9 @@ export default class Database {
 
 	// Create a campaign with the name specified in a campaign
 	async createMap(user: string, campaign: string, map: string) {
-		let safeCampaign = campaign.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+		let safeCampaign = this.sanitizeName(campaign);
 		if (safeCampaign.length < 1) throw "Campaign cannot have empty name!";
-		let safeName = map.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+		let safeName = this.sanitizeName(map);
 		if (safeName.length < 1) throw "Map cannot have empty name!";
 
 		const collection = this.db!.collection('campaigns');
@@ -88,10 +88,7 @@ export default class Database {
 		if (mapExists) throw "A map of this name already exists.";
 
 		await collection.updateOne({user: user, safeName: safeCampaign}, {
-			$push: {
-				maps: {name: map, safeName: safeName, size: {x: 100, y: 100}, tiles: ""}
-			}
-		});
+			$push: {maps: {name: map, safeName: safeName, size: {x: 100, y: 100}, tiles: ""}}});
 		return safeName;
 	}
 
@@ -147,5 +144,9 @@ export default class Database {
 	private async pruneTokens() {
 		const tokens = this.db!.collection('tokens');
 		await tokens.deleteMany({expires: {$lt: Date.now()}});
+	}
+
+	sanitizeName(name: string) {
+		return name.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
 	}
 }

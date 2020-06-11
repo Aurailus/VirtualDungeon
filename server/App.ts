@@ -76,10 +76,17 @@ export default class App {
 			}
 		});
 
-		this.app.get('/builder', async (req, res) => {
+		this.app.get('/builder/:campaign/:map', async (req, res) => {
+			let campaign = this.db.sanitizeName(req.params.campaign);
+			let map = this.db.sanitizeName(req.params.map);
+			if (!campaign || typeof campaign != "string" || !map || typeof map != "string") {
+				res.sendStatus(403);
+				return;
+			}
+
 			let user = await this.db.authUser(req);
-			if (user) res.render('builder');
-			else res.redirect('/campaigns');
+			if (user) res.render('builder', { campaign: campaign, map: map });
+			else res.redirect('/');
 		});
 
 		this.app.post('/campaigns/new', async (req, res) => {

@@ -46,8 +46,10 @@ html(lang="en")
 				xhr.onload = function() {
 					if (xhr.status != 200) console.log('problem!');
 					else {
+						document.querySelector("input#newMap").value = "";
 						let list = document.createElement('li');
-						list.innerHTML = `<a href="/campaigns/#{campaign.safeName}/${this.responseText}">${mapName}</a>`;
+						list.innerHTML = `<a href="/campaigns/#{campaign.safeName}/${this.responseText}"></a>`;
+						list.querySelector('a').innerText = mapName;
 						document.querySelector('#maps_list').insertBefore(list, document.querySelector('#maps_list > li:last-child'));
 					}
 				}

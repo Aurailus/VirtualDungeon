@@ -1,5 +1,8 @@
 /// <reference path="./@types/phaser.d.ts"/>
 
+declare const CAMPAIGN_NAME: string;
+declare const MAP_NAME: string;
+
 // Prevent scrolling hotkeys as the app implements its own scrolling.
 document.addEventListener('keydown', (e: KeyboardEvent) => {
 	if (e.ctrlKey 
