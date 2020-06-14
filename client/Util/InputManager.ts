@@ -1,5 +1,9 @@
+type ScrollEvent = ((delta: number) => void);
+
 class InputManager {
 	scene: Phaser.Scene;
+
+	private hasFocus: boolean = true;
 
 	private leftMouseState: boolean = false;
 	private rightMouseState: boolean = false;
@@ -11,6 +15,8 @@ class InputManager {
 	private keys: {[key: string]: Phaser.Input.Keyboard.Key} = {};
 	private keysDown: {[key: string]: boolean } = {};
 	private keysDownLast: {[key: string]: boolean } = {};
+
+	private scrollEvents: ScrollEvent[] = [];
 
 	constructor(scene: Phaser.Scene) {
 		this.scene = scene;
@@ -39,6 +45,10 @@ class InputManager {
 			this.keysDown[key] = false;
 			this.keysDownLast[key] = false;
 		}
+
+		this.onScroll = this.onScroll.bind(this);
+		document.documentElement.addEventListener("wheel", this.onScroll);
+		this.scene.events.on('destroy', () => document.documentElement.removeEventListener("wheel", this.onScroll));
 	}
 
 	update() {
@@ -47,57 +57,87 @@ class InputManager {
 		this.rightMouseStateLast  = this.rightMouseState;
 		this.rightMouseState 		  = this.scene.input.activePointer.rightButtonDown();
 		this.middleMouseStateLast = this.middleMouseState;
-		this.rightMouseState 			= this.scene.input.activePointer.middleButtonDown();
+		this.middleMouseState 		= this.scene.input.activePointer.middleButtonDown();
 
 		for (let key in this.keys) this.keysDownLast[key] = this.keysDown[key];
 		for (let key in this.keys) this.keysDown[key] = this.keys[key].isDown;
 	}
 
+	setFocus(focus: boolean) {
+		if (this.hasFocus != focus) {
+			if (focus) this.scene.input.keyboard.enableGlobalCapture();
+			else this.scene.input.keyboard.disableGlobalCapture();
+		}
+		this.hasFocus = focus;
+	}
+
 	mouseDown(): boolean {
+		if (!this.hasFocus) return false;
 		return this.leftMouseState || this.rightMouseState;
 	}
 
 	mousePressed(): boolean {
+		if (!this.hasFocus) return false;
 		return (this.leftMouseState && !this.leftMouseStateLast) || (this.rightMouseState && !this.rightMouseStateLast);
 	}
 
 	mouseReleased(): boolean {
+		if (!this.hasFocus) return false;
 		return (!this.leftMouseState && this.leftMouseStateLast) || (!this.rightMouseState && this.rightMouseStateLast);
 	}
 
 	mouseLeftDown(): boolean {
+		if (!this.hasFocus) return false;
 		return this.leftMouseState;
 	}
 
 	mouseLeftPressed(): boolean {
+		if (!this.hasFocus) return false;
 		return this.leftMouseState && !this.leftMouseStateLast;
 	}
 
 	mouseLeftReleased(): boolean {
+		if (!this.hasFocus) return false;
 		return !this.leftMouseState && this.leftMouseStateLast;
 	}
 
 	mouseRightDown(): boolean {
+		if (!this.hasFocus) return false;
 		return this.rightMouseState;
 	}
 
 	mouseRightPressed(): boolean {
+		if (!this.hasFocus) return false;
 		return this.rightMouseState && !this.rightMouseStateLast;
 	}
 
 	mouseRightReleased(): boolean {
+		if (!this.hasFocus) return false;
 		return !this.rightMouseState && this.rightMouseStateLast;
 	}
 
 	keyDown(key: string): boolean {
+		if (!this.hasFocus) return false;
 		return this.keysDown[key.toUpperCase()];
 	}
 
 	keyPressed(key: string): boolean {
+		if (!this.hasFocus) return false;
 		return this.keysDown[key.toUpperCase()] && !this.keysDownLast[key.toUpperCase()];
 	}
 
 	keyReleased(key: string): boolean {
+		if (!this.hasFocus) return false;
 		return !this.keysDown[key.toUpperCase()] && this.keysDownLast[key.toUpperCase()];
+	}
+
+	private onScroll(e: WheelEvent) {
+		if (!this.hasFocus) return;
+		let delta = e.deltaY < 0 ? 1 : -1;
+		for (let evt of this.scrollEvents) evt(delta);
+	}
+
+	bindScrollEvent(evt: ScrollEvent): void {
+		this.scrollEvents.push(evt);
 	}
 }

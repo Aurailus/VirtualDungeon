@@ -1,0 +1,290 @@
+@charset "utf-8";
+@font-face {
+  font-family: Game;
+  src: url(/public/res/aesymatt.ttf) format("truetype");
+}
+			
+html, body {
+	background-color: #000;
+	margin: 0;
+	height: 100vh;
+	display: block;
+	overflow: hidden;
+}
+
+#root {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+@mixin ui($style: "background", $scale: 3) {
+	display: block;
+	box-sizing: border-box;
+
+	min-height: $scale * 16px;
+	min-width: $scale * 16px;
+
+	padding: 8px * $scale;
+	border-radius: 5px * $scale;
+	
+	&::before {
+		content: " ";
+		display: block;
+		position: absolute;
+		pointer-events: none;
+		top: 0;
+		left: 0;
+		width: calc(100% - #{16px * $scale});
+		height: calc(100% - #{16px * $scale});
+
+		image-rendering: pixelated;
+		border: #{8px * $scale} solid;
+		border-image: url("/public/res/ui/#{$style}_9x.png") 33% fill;
+	}
+
+	& > * {
+		position: relative;
+		z-index: auto;
+	}
+	
+	color: #fff;
+	font-size: 26px;
+	font-family: Game, sans-serif;
+
+	h1, h2, h3, h4, h5, h6, p, img, span, a {
+		user-select: none;
+	}
+
+	input {
+		user-select: auto;
+	}
+
+	p {
+		font-size: inherit;
+	}
+
+	h1 {
+		font-size: 39px;
+	}
+}
+
+@mixin ui-button($scale: 3) {
+	cursor: pointer;
+	@include ui("background", $scale);
+	&:hover, &:focus { @include ui("background_active", $scale); }
+	&:disabled { @include ui("background_inactive", $scale); & > * { opacity: 0.6; }; cursor: auto; }
+}
+
+@mixin align-center($width, $height, $pad) {
+	position: absolute;
+
+	width: calc(100vw - #{$pad * 2});
+	height: calc(100vh - #{$pad * 2});
+	max-width: $width;
+	max-height: $height;
+
+	top: $pad;
+	left: $pad;
+	@media screen and (min-width: #{$width + $pad * 2}) { left: calc(50% - #{$width / 2}); }
+	@media screen and (min-height: #{$height + $pad * 2}) { top: calc(50% - #{$height / 2}); }
+}
+
+.modal_wrap {
+	background-color: rgba(0, 0, 0, 0.3);
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.upload_modal {
+	@include ui;
+	@include align-center(550px, 903px, 16px);
+
+	display: flex;
+	flex-direction: column;
+
+	h1 {
+		margin-top: 0px;
+		text-align: center;
+	}
+
+	.upload_form {
+		@include ui("outline");
+
+		position: relative;
+		width: 100%;
+		height: 100px;
+		flex-shrink: 0;
+
+		margin-bottom: 8px;
+
+		&:hover, &:focus-within {
+			background-color: rgba(66, 95, 200, 0.3);
+		}
+
+		input[type="file"] {
+			position: absolute;
+			opacity: 0;
+			top: 0;
+			left: 0;
+			width: 100%;
+			bottom: 0;
+			z-index: 1;
+			cursor: pointer;
+		}
+
+		label {
+			display: block;
+			margin-top: 14px;
+			font-size: 20px;
+			opacity: 0.6;
+			text-align: center;
+		}
+	}
+	
+	.files {
+		flex-grow: 1;
+		overflow: auto;
+
+		margin-bottom: 8px;
+		padding-right: 8px;
+
+		&::-webkit-scrollbar {
+			width: 8px;
+			background-color: rgb(66, 95, 200);
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background-color: rgb(97, 129, 245);
+		}
+
+		.upload_file {
+			@include ui("outline");
+
+			display: grid;
+			position: relative;
+			width: 100%;
+			height: auto;
+
+			padding: 12px;
+			margin-bottom: 6px;
+			
+			grid-gap: 8px;
+			grid-template-rows: 48px 40px 1fr;
+			grid-template-columns: 80px 1fr;
+
+			.input_wrap {
+				@include ui("highlight");
+				padding: 0;
+
+				input {
+					background: transparent;
+					border: 0px solid transparent;
+					padding: 10px;
+					font-size: 22px;
+					color: #fff;
+					outline: 0;
+					width: 100%;
+
+					&::placeholder {
+						color: rgba(255, 255, 255, 0.6);
+					}
+
+					&::selection {
+						background-color: rgba(255, 255, 255, 0.2);
+					}
+
+					&:disabled {
+						opacity: 0.6;
+					}
+				}
+			}
+
+			.upload_preview_wrap {
+				@include ui("highlight");
+				
+				display: block;
+				grid-area: 1 / 1 / -1 / 2;
+				padding: 0;
+
+				.upload_preview {
+					overflow: hidden;
+					width: calc(100% - 6px);
+					height: calc(100% - 6px);
+					margin-left: 3px;
+					margin-top: 3px;
+
+					image-rendering: pixelated;
+					background-color: transparent;
+					background-size: contain;
+					background-position: center center;
+					background-repeat: no-repeat;
+					border-radius: 8px;
+				}
+			}
+
+			p {
+				margin: 0;
+		    color: #ffc3dc;
+		    font-size: 20px;
+		    margin-left: 6px;
+			}
+
+			&.success .upload_preview::after, &.failed .upload_preview::after, 
+			&.loading .upload_preview::after, & .upload_preview:not(.success):hover::after {
+				content: " ";
+				display: block;
+				position: absolute;
+
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				
+				background-color: rgba(47, 61, 143, 0.6);
+				background-size: contain;
+				background-position: center center;
+				background-repeat: no-repeat;
+			}
+
+			&.success .upload_preview::after {
+				background-image: url(/public/res/ui/status_success.png);
+			}
+
+			&.failed .upload_preview::after, & .upload_preview:hover::after {
+				background-image: url(/public/res/ui/status_failed.png);
+			}
+
+			&.loading .upload_preview::after {
+				background-image: url(/public/res/ui/status_pending.png);
+				background-color: transparent;
+				background-size: 512px 64px;
+				width: 64px;
+				height: 64px;
+				left: 4px;
+				top: 16px;
+
+			  animation: animate 1s steps(8) infinite;
+
+				@keyframes animate {
+					from { background-position: 0px 0px };
+					to   { background-position: -512px 0px };
+				}
+			}
+		}
+	}
+
+	.upload {
+		@include ui-button;
+
+		width: 100%;
+		height: auto;
+		flex-shrink: 0;
+
+		&.upload { padding: 0; } // Priority hack :(
+		p { margin: 16px; }
+	}
+}

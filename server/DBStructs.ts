@@ -1,6 +1,6 @@
 import { ObjectID } from 'mongodb';
 
-export interface DBUser {
+export interface User {
 	_id?: ObjectID;
 	
 	name: string;
@@ -8,7 +8,7 @@ export interface DBUser {
 	pass: string;
 }
 
-export interface DBAuthToken {
+export interface AuthToken {
 	_id?: ObjectID;
 
 	user: string;
@@ -16,20 +16,52 @@ export interface DBAuthToken {
 	expires: number;
 }
 
-export interface DBCampaign {
+export interface Campaign {
 	_id?: ObjectID;
 
 	user: string;
+	identifier: string;
 	name: string;
-	safeName: string;
-	maps: DBMap[];
+	
+	maps: Map[];
+	assets: AssetListing[];
 }
 
-export interface DBMap {
+export interface Map {
 	_id?: ObjectID;
 
+	identifier: string;
 	name: string;
-	safeName: string;
 	size: {x: number, y: number};
 	tiles: string;
+}
+
+export enum AssetType {
+	GROUND, WALL, OVERLAY, TOKEN
+}
+
+export interface AssetListing {
+	_id?: ObjectID;
+
+	group: string;
+	identifier?: string;
+}
+
+export interface AssetGroup {
+	_id?: ObjectID;
+
+	identifier: string;
+	name: string;
+	contents: Asset[];
+}
+
+export interface Asset {
+	_id?: ObjectID;
+
+	type: AssetType;
+	identifier: string;
+	name: string;
+
+	path: string;
+	size?: {x: number, y: number};
 }

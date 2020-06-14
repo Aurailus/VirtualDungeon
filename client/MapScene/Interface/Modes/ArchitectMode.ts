@@ -60,11 +60,11 @@ class ArchitectMode {
 		}
 
 		// Push history to HistoryManager
-		if (this.scene.input.activePointer.isDown && !this.pointerDown) {
+		if (this.scene.i.mouseLeftDown() && !this.pointerDown) {
 			this.pointerDown = true;
-			this.pointerPrimaryDown = this.scene.input.activePointer.leftButtonDown();
+			this.pointerPrimaryDown = this.scene.i.mouseLeftDown();
 		}
-		else if (!this.scene.input.activePointer.isDown && this.pointerDown) {
+		else if (!this.scene.i.mouseLeftDown() && this.pointerDown) {
 			if (this.manipulated.length != 0) {
 				for (let tile of this.manipulated) {
 					this.scene.lighting.tileUpdatedAt(tile.pos.x, tile.pos.y);
@@ -79,7 +79,7 @@ class ArchitectMode {
 	}
 
 	drawLine(selectedTilePos: Vec2) {
-		if (this.scene.input.mousePointer.leftButtonDown() || this.scene.input.mousePointer.rightButtonDown()) {
+		if (this.scene.i.mouseLeftDown() || this.scene.i.mouseRightDown()) {
 			if (!this.pointerDown) this.startTilePos = selectedTilePos;
 
 			let a = new Vec2(this.startTilePos.x, this.startTilePos.y);
@@ -108,7 +108,7 @@ class ArchitectMode {
 			this.primitives[1].setAlpha(0.5);
 		}
 
-		else if (!this.scene.input.mousePointer.leftButtonDown() && !this.scene.input.mousePointer.rightButtonDown() && this.pointerDown) {
+		else if (!this.scene.i.mouseLeftDown() && !this.scene.i.mouseRightDown() && this.pointerDown) {
 			let a = new Vec2(this.startTilePos.x * 64, this.startTilePos.y * 64);
 			let b = new Vec2(selectedTilePos.x * 64, selectedTilePos.y * 64);
 			
@@ -133,7 +133,7 @@ class ArchitectMode {
 	}
 
 	drawRect(selectedTilePos: Vec2) {
-		if (this.scene.input.mousePointer.leftButtonDown() || this.scene.input.mousePointer.rightButtonDown()) {
+		if (this.scene.i.mouseLeftDown() || this.scene.i.mouseRightDown()) {
 			if (!this.pointerDown) this.startTilePos = selectedTilePos;
 
 			let a = new Vec2(Math.min(this.startTilePos.x, selectedTilePos.x), Math.min(this.startTilePos.y, selectedTilePos.y));
@@ -156,7 +156,7 @@ class ArchitectMode {
 			});
 		}
 
-		else if (!this.scene.input.mousePointer.leftButtonDown() && !this.scene.input.mousePointer.rightButtonDown() && this.pointerDown) {
+		else if (!this.scene.i.mouseLeftDown() && !this.scene.i.mouseRightDown() && this.pointerDown) {
 			let a = new Vec2(Math.min(this.startTilePos.x, selectedTilePos.x), Math.min(this.startTilePos.y, selectedTilePos.y));
 			let b = new Vec2(Math.max(this.startTilePos.x, selectedTilePos.x), Math.max(this.startTilePos.y, selectedTilePos.y));
 
@@ -172,7 +172,7 @@ class ArchitectMode {
 	}
 
 	drawBrush(selectedTilePos: Vec2) {
-		if (this.scene.input.mousePointer.leftButtonDown() || this.scene.input.mousePointer.rightButtonDown()) {
+		if (this.scene.i.mouseLeftDown() || this.scene.i.mouseRightDown()) {
 			let change = new Vec2(this.scene.view.cursorWorld.x - this.scene.view.lastCursorWorld.x, 
 				this.scene.view.cursorWorld.y - this.scene.view.lastCursorWorld.y);
 
@@ -183,12 +183,12 @@ class ArchitectMode {
 			let place = new Vec2(this.scene.view.lastCursorWorld.x, this.scene.view.lastCursorWorld.y);
 
 			while (Math.abs(this.scene.view.cursorWorld.x - place.x) >= 1 || Math.abs(this.scene.view.cursorWorld.y - place.y) >= 1) {
-				this.placeTileAndPushManip(new Vec2(Math.floor(place.x / 64), Math.floor(place.y / 64)), this.scene.input.mousePointer.leftButtonDown());
+				this.placeTileAndPushManip(new Vec2(Math.floor(place.x / 64), Math.floor(place.y / 64)), this.scene.i.mouseLeftDown());
 				place.x += change.x;
 				place.y += change.y;
 			}
 
-			this.placeTileAndPushManip(new Vec2(selectedTilePos.x, selectedTilePos.y), this.scene.input.mousePointer.leftButtonDown());
+			this.placeTileAndPushManip(new Vec2(selectedTilePos.x, selectedTilePos.y), this.scene.i.mouseLeftDown());
 		}
 	}
 

@@ -2,6 +2,7 @@ doctype html
 html(lang="en")
 	head
 		include includes/head.pug
+		link(rel="stylesheet", href="/public/style/build/css/overview.css")
 		title Campaigns &bullet; Virtual Dungeon
 	body
 		header
@@ -18,38 +19,54 @@ html(lang="en")
 				ul#campaigns_list
 					each camp in campaigns
 						li 
-							a(href="/campaigns/" + camp.safeName) #{camp.name}
+							a(href="/campaigns/" + camp.identifier) #{camp.name}
 					
 					li
-						form#new_campaign
-							input(type="text" id="newCampaign")
+						form#new
+							input(type="text", name="new_input")
 							button +
+							#warning
 
 		script.
 			document.getElementById('log_out').addEventListener('click', () => {
 				Cookies.remove('tkn');
 				location.reload();
 			});
+	
+			const form = document.getElementById("new");
+			const input = document.querySelector("input[name=new_input]");
+			const err = document.getElementById("warning");
 
-			document.getElementById('new_campaign').addEventListener('submit', (e) => {
-				let campaignName = document.querySelector("input#newCampaign").value;
+			let reqSent = false;
+			form.addEventListener('submit', (e) => {
+				if (!reqSent) {
+					reqSent = true;
+					err.innerText = "";
+					
+					const name = input.value;
 
-				let xhr = new XMLHttpRequest();
-				xhr.open("POST", "/campaigns/new", true);
-				xhr.setRequestHeader('Content-Type', 'application/json');
+					const xhr = new XMLHttpRequest();
+					xhr.open("POST", "/campaigns/new", true);
+					xhr.setRequestHeader('Content-Type', 'application/json');
 
-				xhr.onload = function() {
-					if (xhr.status != 200) console.log('problem!');
-					else {
-						document.querySelector("input#newCampaign").value = "";
-						let list = document.createElement('li');
-						list.innerHTML = `<a href="/campaigns/${this.responseText}"></a>`;
-						list.querySelector('a').innerText = campaignName;
-						document.querySelector('#campaigns_list').insertBefore(list, document.querySelector('#campaigns_list > li:last-child'));
+					xhr.onload = function() {
+						reqSent = false;
+						if (xhr.status != 200) {
+							err.innerText = this.responseText;
+						}
+						else {
+							input.value = "";
+							let list = document.createElement('li');
+							list.innerHTML = `<a href="/campaigns/${this.responseText}"></a>`;
+							list.querySelector('a').innerText = name;
+							document.getElementById('campaigns_list').insertBefore(list, document.querySelector('#campaigns_list > li:last-child'));
+						}
 					}
-				}
 
-				xhr.send(JSON.stringify({ name: campaignName }));
+					xhr.send(JSON.stringify({ 
+						name: name 
+					}));
+				}
 
 				e.preventDefault();
 				return false;

@@ -2,6 +2,7 @@ doctype html
 html(lang="en")
 	head
 		include includes/head.pug
+		link(rel="stylesheet", href="/public/style/build/css/overview.css")
 		title #{campaign.name}/#{map.name} &bullet; Virtual Dungeon
 	body
 		header
@@ -17,9 +18,9 @@ html(lang="en")
 				h1 #{campaign.name}/#{map.name}
 					small &nbsp; &nbsp;
 						small
-							a(href="/campaigns/" + campaign.safeName) Back
+							a(href="/campaigns/" + campaign.identifier) Back
 
-				a(href="/builder/" + campaign.safeName + "/" + map.safeName) Edit
+				a(href="/editor/" + campaign.identifier + "/" + map.identifier) Edit
 
 		script.
 			document.getElementById('log_out').addEventListener('click', () => {

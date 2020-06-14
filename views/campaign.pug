@@ -2,6 +2,7 @@ doctype html
 html(lang="en")
 	head
 		include includes/head.pug
+		link(rel="stylesheet", href="/public/style/build/css/overview.css")
 		title #{campaign.name} &bullet; Virtual Dungeon
 	body
 		header
@@ -23,38 +24,55 @@ html(lang="en")
 				ul#maps_list
 					each map in campaign.maps
 						li 
-							a(href="/campaigns/" + campaign.safeName + "/" + map.safeName) #{map.name}
+							a(href="/campaigns/" + campaign.identifier + "/" + map.identifier) #{map.name}
 					
 					li
-						form#new_map
-							input(type="text" id="newMap")
+						form#new
+							input(type="text", name="new_input")
 							button +
+							#warning
 
 		script.
 			document.getElementById('log_out').addEventListener('click', () => {
 				Cookies.remove('tkn');
 				location.reload();
 			});
+	
+			const form = document.getElementById("new");
+			const input = document.querySelector("input[name=new_input]");
+			const err = document.getElementById("warning");
 
-			document.getElementById('new_map').addEventListener('submit', (e) => {
-				let mapName = document.querySelector("input#newMap").value;
+			let reqSent = false;
+			form.addEventListener('submit', (e) => {
+				if (!reqSent) {
+					reqSent = true;
+					err.innerText = "";
+					
+					const name = input.value;
 
-				let xhr = new XMLHttpRequest();
-				xhr.open("POST", "/maps/new", true);
-				xhr.setRequestHeader('Content-Type', 'application/json');
+					const xhr = new XMLHttpRequest();
+					xhr.open("POST", "/maps/new", true);
+					xhr.setRequestHeader('Content-Type', 'application/json');
 
-				xhr.onload = function() {
-					if (xhr.status != 200) console.log('problem!');
-					else {
-						document.querySelector("input#newMap").value = "";
-						let list = document.createElement('li');
-						list.innerHTML = `<a href="/campaigns/#{campaign.safeName}/${this.responseText}"></a>`;
-						list.querySelector('a').innerText = mapName;
-						document.querySelector('#maps_list').insertBefore(list, document.querySelector('#maps_list > li:last-child'));
+					xhr.onload = function() {
+						reqSent = false;
+						if (xhr.status != 200) {
+							err.innerText = this.responseText;
+						}
+						else {
+							input.value = "";
+							let list = document.createElement('li');
+							list.innerHTML = `<a href="/campaigns/#{campaign.identifier}/${this.responseText}"></a>`;
+							list.querySelector('a').innerText = name;
+							document.getElementById('maps_list').insertBefore(list, document.querySelector('#maps_list > li:last-child'));
+						}
 					}
-				}
 
-				xhr.send(JSON.stringify({ campaign: "#{campaign.safeName}", name: mapName }));
+					xhr.send(JSON.stringify({ 
+						campaign: "#{campaign.identifier}", 
+						name: name 
+					}));
+				}
 
 				e.preventDefault();
 				return false;

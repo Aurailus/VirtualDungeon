@@ -23,6 +23,58 @@ var __values = (this && this.__values) || function(o) {
     };
     throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
 var InitScene = /** @class */ (function (_super) {
     __extends(InitScene, _super);
     function InitScene() {
@@ -30,37 +82,13 @@ var InitScene = /** @class */ (function (_super) {
     }
     InitScene.prototype.preload = function () {
         this.cameras.main.setBackgroundColor("#090d24");
-        this.load.text("assets", "/public/res/_assets.txt");
-        this.load.bitmapFont('font1x', '/public/res/font/font1.png', '/public/res/font/font1.fnt');
-        this.load.bitmapFont('font2x', '/public/res/font/font2.png', '/public/res/font/font2.fnt');
         this.load.image("logo", "/public/res/loader/logo.png");
         this.load.spritesheet("loader_filled", "/public/res/loader/loader_filled.png", { frameWidth: 18, frameHeight: 18 });
         this.load.spritesheet("loader_unfilled", "/public/res/loader/loader_unfilled.png", { frameWidth: 18, frameHeight: 18 });
+        this.load.text("data", "/data/" + CAMPAIGN_NAME + "/" + MAP_NAME);
+        this.load.text("assets", "/assets/" + CAMPAIGN_NAME);
     };
     InitScene.prototype.create = function () {
-        var assets = this.cache.text.get("assets");
-        var lines = assets.split("\n");
-        var assetsParsed = "";
-        var prefixes = {};
-        lines.forEach(function (v) {
-            if (v.substr(0, "FOLDERPREFIX".length) == "FOLDERPREFIX") {
-                var tokens = v.split(" ");
-                prefixes[tokens[1]] = tokens[2];
-                return;
-            }
-            if (v.length == 0)
-                return;
-            var slash = v.indexOf('/');
-            var prefix = "";
-            if (slash != -1 && prefixes[v.substr(0, slash)] != undefined)
-                prefix = prefixes[v.substr(0, slash)];
-            if (slash == -1)
-                assetsParsed += v.split(" ")[0] + " " + v + "\n";
-            else
-                assetsParsed += "" + prefix + v.substring(slash + 1, v.length).split(" ")[0] + " " + v + "\n";
-        });
-        this.cache.text.remove("assets");
-        this.cache.text.add("assets", assetsParsed);
         this.game.scene.start('LoadScene');
         this.game.scene.stop('InitScene');
         this.game.scene.swapPosition('LoadScene', 'InitScene');
@@ -73,153 +101,60 @@ var LoadScene = /** @class */ (function (_super) {
         var _this = _super.call(this, { key: "LoadScene" }) || this;
         _this.loaderOutline = null;
         _this.loaderFilled = null;
-        _this.patching = null;
-        _this.text = null;
-        _this.loadedTween = 0;
-        _this.preloading = true;
-        _this.spinTimer = 0;
-        _this.spinFrame = 0;
         return _this;
     }
-    LoadScene.prototype.preload = function () {
+    LoadScene.prototype.setup = function () {
         var _this = this;
-        this.cameras.main.setBackgroundColor("#090d24");
         this.loaderOutline = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_unfilled", 0);
-        this.loaderOutline.setScale(6);
         this.loaderFilled = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_filled", 0);
+        this.loaderOutline.setScale(6);
         this.loaderFilled.setScale(6);
-        this.text = this.add.bitmapText(this.cameras.main.width / 2 - 130, this.cameras.main.height / 2 - 20, "font2x", "Loading Assets...", 22, 1);
         this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height - 140, "logo");
         this.load.on('progress', function (val) {
-            _this.tweens.add({
-                targets: _this,
-                loadedTween: val,
-                ease: 'Cubic',
-                duration: 150,
-                repeat: 0
-            });
+            _this.loaderFilled.setCrop(0, _this.loaderFilled.height - _this.loaderFilled.height * val, _this.loaderFilled.width, _this.loaderFilled.height * val);
         });
-        this.pre_update();
-        this.loadAssets();
     };
-    LoadScene.prototype.pre_update = function () {
-        if (!this.preloading)
-            return;
-        this.loaderFilled.setCrop(0, this.loaderFilled.height - this.loaderFilled.height * this.loadedTween, this.loaderFilled.width, this.loaderFilled.height * this.loadedTween);
-        this.spinTimer++;
-        if (this.spinTimer > 80 - this.loadedTween * 70) {
-            this.spinTimer = 0;
-            this.spinFrame = (this.spinFrame + 1) % 4;
-            this.loaderOutline.setFrame(this.spinFrame);
-            this.loaderFilled.setFrame(this.spinFrame);
-        }
-        if (this.preloading)
-            setTimeout(this.pre_update.bind(this), 1 / 60);
-    };
-    LoadScene.prototype.loadAssets = function () {
-        var e_1, _a, e_2, _b, e_3, _c, e_4, _d, e_5, _e;
-        this.load.image("loader_patching", "/public/res/loader/loader_patching.png");
+    LoadScene.prototype.preload = function () {
+        var e_1, _a;
+        this.setup();
+        this.load.image("cursor", "/public/res/cursor.png");
+        this.load.image("grid_tile", "/public/res/grid_tile.png");
+        this.load.image("ui_button_grid", "/public/res/ui/button_grid.png");
+        this.load.spritesheet("ui_button_side_menu", "/public/res/ui/button_side_menu.png", { frameWidth: 21, frameHeight: 18 });
+        this.load.spritesheet("ui_history_manipulation", "/public/res/ui/history_manipulation.png", { frameWidth: 39, frameHeight: 18 });
+        this.load.spritesheet("ui_mode_switch", "/public/res/ui/mode_switch.png", { frameWidth: 39, frameHeight: 18 });
+        this.load.image("ui_quick_selector", "/public/res/ui/quick_selector.png");
+        this.load.spritesheet("ui_sidebar_bg", "/public/res/ui/sidebar_bg.png", { frameWidth: 68, frameHeight: 21 });
+        this.load.image("ui_sidebar_cursor", "/public/res/ui/sidebar_cursor.png");
+        this.load.image("ui_sidebar_overlay", "/public/res/ui/sidebar_overlay.png");
+        this.load.spritesheet("ui_button_select_cursor", "/public/res/ui/button_select_cursor.png", { frameWidth: 21, frameHeight: 18 });
+        this.load.spritesheet("ui_background_9x", "/public/res/ui/background_9x.png", { frameWidth: 8, frameHeight: 8 });
+        this.load.image("ui_sidebar_browse", "/public/res/ui/sidebar_browse.png");
+        this.load.spritesheet("ui_button_sidebar_toggle", "/public/res/ui/button_sidebar_toggle.png", { frameWidth: 30, frameHeight: 18 });
+        this.load.image("shader_light_mask", "/public/res/shader/light_mask.png");
+        var assets = JSON.parse(this.cache.text.get("assets"));
         try {
-            for (var _f = __values(this.cache.text.get("assets").split("\n")), _g = _f.next(); !_g.done; _g = _f.next()) {
-                var s = _g.value;
-                var tokens = s.split(" ");
-                if (tokens.length == 2)
-                    this.load.image(tokens[0], "/public/res/" + tokens[1] + ".png");
-                else if (tokens.length == 4)
-                    this.load.spritesheet(tokens[0], "/public/res/" + tokens[1] + ".png", { frameWidth: parseInt(tokens[2]), frameHeight: parseInt(tokens[3]) });
+            for (var assets_1 = __values(assets), assets_1_1 = assets_1.next(); !assets_1_1.done; assets_1_1 = assets_1.next()) {
+                var asset = assets_1_1.value;
+                if (asset.size)
+                    this.load.spritesheet(asset.identifier, asset.path, { frameWidth: asset.size.x, frameHeight: asset.size.y });
+                else
+                    this.load.image(asset.identifier, asset.path);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_g && !_g.done && (_a = _f.return)) _a.call(_f);
+                if (assets_1_1 && !assets_1_1.done && (_a = assets_1.return)) _a.call(assets_1);
             }
             finally { if (e_1) throw e_1.error; }
         }
-        try {
-            for (var TOKENS_1 = __values(TOKENS), TOKENS_1_1 = TOKENS_1.next(); !TOKENS_1_1.done; TOKENS_1_1 = TOKENS_1.next()) {
-                var t = TOKENS_1_1.value;
-                if (t.split_by != undefined)
-                    this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.split_by, frameHeight: t.split_by });
-                else
-                    this.load.image(t.key, t.file + ".png");
-            }
-        }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-        finally {
-            try {
-                if (TOKENS_1_1 && !TOKENS_1_1.done && (_b = TOKENS_1.return)) _b.call(TOKENS_1);
-            }
-            finally { if (e_2) throw e_2.error; }
-        }
-        try {
-            for (var WALLS_1 = __values(WALLS), WALLS_1_1 = WALLS_1.next(); !WALLS_1_1.done; WALLS_1_1 = WALLS_1.next()) {
-                var t = WALLS_1_1.value;
-                this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.res, frameHeight: t.res });
-            }
-        }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-        finally {
-            try {
-                if (WALLS_1_1 && !WALLS_1_1.done && (_c = WALLS_1.return)) _c.call(WALLS_1);
-            }
-            finally { if (e_3) throw e_3.error; }
-        }
-        try {
-            for (var GROUNDS_1 = __values(GROUNDS), GROUNDS_1_1 = GROUNDS_1.next(); !GROUNDS_1_1.done; GROUNDS_1_1 = GROUNDS_1.next()) {
-                var t = GROUNDS_1_1.value;
-                this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.res, frameHeight: t.res });
-            }
-        }
-        catch (e_4_1) { e_4 = { error: e_4_1 }; }
-        finally {
-            try {
-                if (GROUNDS_1_1 && !GROUNDS_1_1.done && (_d = GROUNDS_1.return)) _d.call(GROUNDS_1);
-            }
-            finally { if (e_4) throw e_4.error; }
-        }
-        try {
-            for (var OVERLAYS_1 = __values(OVERLAYS), OVERLAYS_1_1 = OVERLAYS_1.next(); !OVERLAYS_1_1.done; OVERLAYS_1_1 = OVERLAYS_1.next()) {
-                var t = OVERLAYS_1_1.value;
-                this.load.spritesheet(t.key, t.file + ".png", { frameWidth: t.res, frameHeight: t.res });
-            }
-        }
-        catch (e_5_1) { e_5 = { error: e_5_1 }; }
-        finally {
-            try {
-                if (OVERLAYS_1_1 && !OVERLAYS_1_1.done && (_e = OVERLAYS_1.return)) _e.call(OVERLAYS_1);
-            }
-            finally { if (e_5) throw e_5.error; }
-        }
     };
     LoadScene.prototype.create = function () {
-        var _this = this;
-        this.preloading = false;
-        this.loaderOutline.setFrame(0);
-        this.loaderFilled.setFrame(0);
-        setTimeout(function () {
-            _this.text.setText("Loading Assets...");
-            _this.loaderFilled.setCrop(0, 0, 100, 100);
-            _this.tweens.add({
-                targets: [_this.loaderOutline, _this.loaderFilled],
-                y: -400,
-                alpha: 0,
-                ease: 'Cubic',
-                duration: 500,
-                repeat: 0
-            });
-            setTimeout(function () {
-                _this.patching = _this.add.sprite(_this.cameras.main.width / 2, _this.cameras.main.height / 2 - 100, "loader_patching");
-                _this.patching.setScale(6);
-                _this.text.setText(" Loading Map...");
-                setTimeout(function () {
-                    _this.game.scene.start('MapScene');
-                    _this.game.scene.stop('LoadScene');
-                    _this.game.scene.swapPosition('MapScene', 'LoadScene');
-                }, 100);
-            }, 300);
-        }, 50);
+        this.game.scene.start('MapScene', JSON.parse(this.cache.text.get("assets")));
         this.cache.text.remove("assets");
+        this.game.scene.stop('LoadScene');
+        this.game.scene.swapPosition('MapScene', 'LoadScene');
     };
     return LoadScene;
 }(Phaser.Scene));
@@ -272,6 +207,13 @@ var DNDMapper = /** @class */ (function (_super) {
     }
     return DNDMapper;
 }(Phaser.Game));
+var AssetType;
+(function (AssetType) {
+    AssetType[AssetType["GROUND"] = 0] = "GROUND";
+    AssetType[AssetType["WALL"] = 1] = "WALL";
+    AssetType[AssetType["OVERLAY"] = 2] = "OVERLAY";
+    AssetType[AssetType["TOKEN"] = 3] = "TOKEN";
+})(AssetType || (AssetType = {}));
 var WALLS = [
     { name: "Dungeon Wall", key: "wall_dungeon", file: "/public/res/tileset/wall_dungeon", res: 16 },
     { name: "Wood Wall", key: "wall_wood", file: "/public/res/tileset/wall_wood", res: 16 },
@@ -415,6 +357,7 @@ var MapScene = /** @class */ (function (_super) {
     __extends(MapScene, _super);
     function MapScene() {
         var _this = _super.call(this, { key: "MapScene" }) || this;
+        _this.assets = null;
         _this.i = new InputManager(_this);
         _this.history = new HistoryManager(_this);
         _this.view = new WorldView(_this);
@@ -428,6 +371,9 @@ var MapScene = /** @class */ (function (_super) {
         _this.tokens = [];
         return _this;
     }
+    MapScene.prototype.init = function (assets) {
+        this.assets = assets;
+    };
     MapScene.prototype.preload = function () {
         var _this = this;
         window.addEventListener('resize', function () {
@@ -441,8 +387,8 @@ var MapScene = /** @class */ (function (_super) {
         this.i.init();
         this.view.init();
         this.size = new Vec2(64, 64);
-        this.map.init(this.size);
-        this.ui.init();
+        this.map.init(this.size, this.assets);
+        this.ui.init(this.assets);
         this.architect.init();
         this.token.init();
         this.lighting.init(this.size);
@@ -454,6 +400,9 @@ var MapScene = /** @class */ (function (_super) {
         this.ui.update();
         this.map.update();
         this.lighting.update();
+        if (this.i.keyPressed("U")) {
+            new AssetUploader(this);
+        }
     };
     return MapScene;
 }(Phaser.Scene));
@@ -590,17 +539,12 @@ var WorldView = /** @class */ (function () {
         var _this = this;
         this.camera = this.scene.cameras.main;
         this.camera.setBackgroundColor("#090d24");
-        // Bind the scroll wheel event
-        this.onWheel = this.onWheel.bind(this);
-        document.documentElement.addEventListener("wheel", this.onWheel);
-        this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
-    };
-    WorldView.prototype.onWheel = function (e) {
-        if (!this.scene.token.movingTokens && !this.scene.ui.uiActive) {
-            var dir = (e.deltaY < 0 ? 1 : -1);
-            this.zoomLevel = clamp(this.zoomLevel + dir, 0, this.zoomLevels.length - 1);
-            this.camera.setZoom(this.zoomLevels[this.zoomLevel] / 100);
-        }
+        this.scene.i.bindScrollEvent(function (delta) {
+            if (!_this.scene.token.movingTokens && !_this.scene.ui.uiActive) {
+                _this.zoomLevel = clamp(_this.zoomLevel + delta, 0, _this.zoomLevels.length - 1);
+                _this.camera.setZoom(_this.zoomLevels[_this.zoomLevel] / 100);
+            }
+        });
     };
     WorldView.prototype.pan = function () {
         if (this.scene.input.activePointer.middleButtonDown()) {
@@ -624,7 +568,7 @@ var HistoryElement = /** @class */ (function () {
         this.data = data;
     }
     HistoryElement.prototype.undo = function () {
-        var e_6, _a, e_7, _b;
+        var e_2, _a, e_3, _b;
         var _this = this;
         console.log("Undo", this.type);
         if (this.type == "tile") {
@@ -635,12 +579,12 @@ var HistoryElement = /** @class */ (function () {
                     this.scene.lighting.tileUpdatedAt(tile.pos.x, tile.pos.y);
                 }
             }
-            catch (e_6_1) { e_6 = { error: e_6_1 }; }
+            catch (e_2_1) { e_2 = { error: e_2_1 }; }
             finally {
                 try {
                     if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
-                finally { if (e_6) throw e_6.error; }
+                finally { if (e_2) throw e_2.error; }
             }
         }
         else if (this.type == "token_modify") {
@@ -649,7 +593,7 @@ var HistoryElement = /** @class */ (function () {
                 var uuid = JSON.parse(this.data.old[i]).uuid;
                 var found = false;
                 try {
-                    for (var _e = (e_7 = void 0, __values(this.scene.tokens)), _f = _e.next(); !_f.done; _f = _e.next()) {
+                    for (var _e = (e_3 = void 0, __values(this.scene.tokens)), _f = _e.next(); !_f.done; _f = _e.next()) {
                         var token_1 = _f.value;
                         if (token_1.uuid == uuid) {
                             token_1.loadSerializedData(this.data.old[i]);
@@ -658,12 +602,12 @@ var HistoryElement = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_7_1) { e_7 = { error: e_7_1 }; }
+                catch (e_3_1) { e_3 = { error: e_3_1 }; }
                 finally {
                     try {
                         if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
                     }
-                    finally { if (e_7) throw e_7.error; }
+                    finally { if (e_3) throw e_3.error; }
                 }
                 if (found)
                     continue;
@@ -692,7 +636,7 @@ var HistoryElement = /** @class */ (function () {
         }
     };
     HistoryElement.prototype.redo = function () {
-        var e_8, _a, e_9, _b;
+        var e_4, _a, e_5, _b;
         var _this = this;
         console.log("Redo", this.type);
         if (this.type == "tile") {
@@ -703,12 +647,12 @@ var HistoryElement = /** @class */ (function () {
                     this.scene.lighting.tileUpdatedAt(tile.pos.x, tile.pos.y);
                 }
             }
-            catch (e_8_1) { e_8 = { error: e_8_1 }; }
+            catch (e_4_1) { e_4 = { error: e_4_1 }; }
             finally {
                 try {
                     if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
-                finally { if (e_8) throw e_8.error; }
+                finally { if (e_4) throw e_4.error; }
             }
         }
         else if (this.type == "token_modify") {
@@ -717,7 +661,7 @@ var HistoryElement = /** @class */ (function () {
                 var uuid = JSON.parse(this.data.new[i]).uuid;
                 var found = false;
                 try {
-                    for (var _e = (e_9 = void 0, __values(this.scene.tokens)), _f = _e.next(); !_f.done; _f = _e.next()) {
+                    for (var _e = (e_5 = void 0, __values(this.scene.tokens)), _f = _e.next(); !_f.done; _f = _e.next()) {
                         var token_2 = _f.value;
                         if (token_2.uuid == uuid) {
                             token_2.loadSerializedData(this.data.new[i]);
@@ -726,12 +670,12 @@ var HistoryElement = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_9_1) { e_9 = { error: e_9_1 }; }
+                catch (e_5_1) { e_5 = { error: e_5_1 }; }
                 finally {
                     try {
                         if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
                     }
-                    finally { if (e_9) throw e_9.error; }
+                    finally { if (e_5) throw e_5.error; }
                 }
                 if (found)
                     continue;
@@ -820,6 +764,184 @@ var HistoryManager = /** @class */ (function () {
     };
     return HistoryManager;
 }());
+var FileStatus;
+(function (FileStatus) {
+    FileStatus[FileStatus["ACCEPTED"] = 0] = "ACCEPTED";
+    FileStatus[FileStatus["FAILED"] = 1] = "FAILED";
+    FileStatus[FileStatus["TYPE_INVALID"] = 2] = "TYPE_INVALID";
+    FileStatus[FileStatus["FILE_LIMIT"] = 3] = "FILE_LIMIT";
+    FileStatus[FileStatus["ACCT_LIMIT"] = 4] = "ACCT_LIMIT";
+})(FileStatus || (FileStatus = {}));
+var uploadLimit = 2 * 1024 * 1024;
+var AssetUploader = /** @class */ (function () {
+    function AssetUploader(scene) {
+        var _this = this;
+        this.filesList = [];
+        this.uploading = false;
+        this.scene = scene;
+        this.scene.i.setFocus(false);
+        this.root = document.createElement("div");
+        this.root.classList.add("modal_wrap");
+        this.root.innerHTML = "\n\t\t\t<div class=\"upload_modal\">\n\t\t\t\t<h1>Upload Custom Tokens</h1>\n\t\t\t\t<form class=\"upload_form\">\n\t\t\t\t\t<input type=\"file\" name=\"upload_input\" multiple />\n\t\t\t\t\t<label>Click here or drag to upload assets.</label>\n\t\t\t\t</form>\n\t\t\t\t<div class=\"files\"></div>\n\t\t\t\t<button class=\"upload\" disabled>\n\t\t\t\t\t<p>Upload</p>\n\t\t\t\t</button>\n\t\t\t</div>";
+        document.documentElement.append(this.root);
+        this.fileSelector = document.querySelector("input[name=upload_input]");
+        this.filesWrapper = document.querySelector(".upload_modal .files");
+        this.uploadButton = document.querySelector(".upload_modal .upload");
+        this.fileSelector.addEventListener("change", function (e) {
+            Promise.all(Array.from(_this.fileSelector.files || []).map(function (file) { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.addFileToList(file)];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
+            }); }); }))
+                .then(function () { return _this.renderFileList(); });
+            _this.fileSelector.value = "";
+        });
+        this.uploadButton.addEventListener("click", function (e) {
+            _this.uploadButton.disabled = true;
+            _this.uploadButton.innerHTML = "<p>Uploading</p>";
+            _this.root.querySelector(".upload_form").remove();
+            _this.uploading = true;
+            _this.renderFileList();
+            _this.initiateUpload();
+        });
+    }
+    AssetUploader.prototype.addFileToList = function (file) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                return [2 /*return*/, new Promise(function (resolve, reject) {
+                        var status = -1;
+                        if (file.size > uploadLimit)
+                            status = FileStatus.FILE_LIMIT;
+                        else if (file.type != "image/png" && file.type != "image/jpeg")
+                            status = FileStatus.TYPE_INVALID;
+                        var chosenName = file.name;
+                        var addFile = function (res) {
+                            _this.filesList.push({
+                                file: file,
+                                image: res,
+                                name: chosenName,
+                                identifier: "",
+                                status: status
+                            });
+                            resolve();
+                        };
+                        if (status == -1) {
+                            chosenName = file.name.substr(0, file.name.lastIndexOf(".")).replace(/_+/g, " ")
+                                .split(" ").map(function (_a) {
+                                var _b = __read(_a), firstChar = _b[0], rest = _b.slice(1);
+                                return firstChar.toUpperCase() + rest.join("").toLowerCase();
+                            }).join(" ");
+                            var reader_1 = new FileReader();
+                            reader_1.readAsDataURL(file);
+                            reader_1.onload = function () { return addFile(reader_1.result); };
+                        }
+                        else
+                            addFile("");
+                    })];
+            });
+        });
+    };
+    AssetUploader.prototype.initiateUpload = function () {
+        var _this = this;
+        setTimeout(function () {
+            Promise.all(_this.filesList.map(function (file) { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.uploadFile(file)];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
+            }); }); })).then(function () {
+                console.log("all done~");
+            });
+        }, 300);
+    };
+    AssetUploader.prototype.uploadFile = function (file) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                return [2 /*return*/, new Promise(function (resolve, reject) {
+                        var form = new FormData();
+                        var xhr = new XMLHttpRequest();
+                        form.set('file', file.file);
+                        form.set('name', file.name);
+                        form.set('identifier', file.identifier || file.name.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, ''));
+                        xhr.addEventListener("load", function (e) {
+                            file.status = Number.parseInt(xhr.responseText);
+                            _this.renderFileList();
+                            resolve();
+                        });
+                        xhr.open("POST", "/assets/upload/token");
+                        xhr.send(form);
+                    })];
+            });
+        });
+    };
+    AssetUploader.prototype.renderFileList = function () {
+        var _this = this;
+        this.filesWrapper.innerHTML = "";
+        var allValid = true;
+        var _loop_1 = function (i) {
+            var file = this_1.filesList[i];
+            var errorString = file.status == FileStatus.FAILED ? "An unknown error occured." :
+                file.status == FileStatus.TYPE_INVALID ? "Assets must be a JPEG or PNG." :
+                    file.status == FileStatus.FILE_LIMIT ? "Assets must be less than 2 MB." :
+                        file.status == FileStatus.ACCT_LIMIT ? "You've exceeded your asset limit." : "";
+            var fileDiv = document.createElement("div");
+            fileDiv.classList.add("upload_file");
+            fileDiv.innerHTML = "\n\t\t\t\t<div class=\"upload_preview_wrap\">\n\t\t\t\t\t<button title=\"Cancel\" class=\"upload_preview\" style=\"background-image: url(" + file.image + ");\"></button>\n\t\t\t\t</div>\n\t\t\t\t<div class=\"input_wrap\"><input placeholder=\"Name\" name=\"name\"/></div>\n\t\t\t\t" + ((file.status == -1 || file.status == 0) ?
+                '<div class="input_wrap"><input name="identifier"/></div>' : '<p class="error">' + errorString + '</p>') + "\n\t\t\t";
+            var name_1 = fileDiv.querySelector("input[name=name]");
+            var identifier = fileDiv.querySelector("input[name=identifier]");
+            name_1.value = file.name;
+            if (!identifier) {
+                name_1.disabled = true;
+            }
+            else {
+                name_1.disabled = this_1.uploading;
+                identifier.disabled = this_1.uploading;
+                identifier.value = file.identifier;
+                identifier.placeholder = file.name.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '') || "Identifier";
+                name_1.addEventListener("input", function () {
+                    file.name = name_1.value;
+                    if (!identifier.value)
+                        identifier.placeholder = name_1.value.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                });
+                identifier.addEventListener("input", function () {
+                    var start = identifier.selectionStart;
+                    var end = identifier.selectionEnd;
+                    var oldVal = identifier.value;
+                    identifier.value = identifier.value.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                    if (oldVal.length > identifier.value.length) {
+                        start -= oldVal.length - identifier.value.length;
+                        end -= oldVal.length - identifier.value.length;
+                    }
+                    identifier.setSelectionRange(start, end);
+                    file.identifier = identifier.value;
+                });
+            }
+            fileDiv.querySelector("button").addEventListener("click", function () {
+                _this.filesList.splice(i, 1);
+                _this.renderFileList();
+            });
+            if (this_1.uploading && file.status == -1)
+                fileDiv.classList.add("loading");
+            else if (file.status == 0)
+                fileDiv.classList.add("success");
+            else if (file.status != -1)
+                fileDiv.classList.add("failed");
+            this_1.filesWrapper.append(fileDiv);
+            if (file.status != -1)
+                allValid = false;
+        };
+        var this_1 = this;
+        for (var i = 0; i < this.filesList.length; i++) {
+            _loop_1(i);
+        }
+        this.uploadButton.disabled = this.uploading || !allValid;
+    };
+    return AssetUploader;
+}());
 var Chat = /** @class */ (function (_super) {
     __extends(Chat, _super);
     function Chat(scene, x, y) {
@@ -848,7 +970,7 @@ var Chat = /** @class */ (function (_super) {
         this.reflowMessages();
     };
     Chat.prototype.reflowMessages = function () {
-        var e_10, _a;
+        var e_6, _a;
         var y = 0;
         try {
             for (var _b = __values(this.messages), _c = _b.next(); !_c.done; _c = _b.next()) {
@@ -872,12 +994,12 @@ var Chat = /** @class */ (function (_super) {
                 });
             }
         }
-        catch (e_10_1) { e_10 = { error: e_10_1 }; }
+        catch (e_6_1) { e_6 = { error: e_6_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_10) throw e_10.error; }
+            finally { if (e_6) throw e_6.error; }
         }
     };
     return Chat;
@@ -896,7 +1018,7 @@ var ChatBox = /** @class */ (function (_super) {
         return _this;
     }
     ChatBox.prototype.setText = function (text) {
-        var e_11, _a;
+        var e_7, _a;
         this.list.forEach(function (e) { return e.destroy(); });
         this.list = [];
         this.str = text;
@@ -930,12 +1052,12 @@ var ChatBox = /** @class */ (function (_super) {
                 i++;
             }
         }
-        catch (e_11_1) { e_11 = { error: e_11_1 }; }
+        catch (e_7_1) { e_7 = { error: e_7_1 }; }
         finally {
             try {
                 if (lines_1_1 && !lines_1_1.done && (_a = lines_1.return)) _a.call(lines_1);
             }
-            finally { if (e_11) throw e_11.error; }
+            finally { if (e_7) throw e_7.error; }
         }
         var lastElem = this.list[this.list.length - 1];
         var height = Math.max(lastElem.y + lastElem.getTextBounds().global.height - 36, 2);
@@ -990,8 +1112,8 @@ var UIView = /** @class */ (function () {
         this.sidebarOpen = true;
         this.scene = scene;
     }
-    UIView.prototype.init = function () {
-        var e_12, _a;
+    UIView.prototype.init = function (assets) {
+        var e_8, _a;
         this.camera = this.scene.cameras.add(0, 0, this.scene.cameras.main.width, this.scene.cameras.main.height, false, "ui_camera");
         this.camera.scrollX = -10000;
         this.o = this.scene.add.container(-10000, 0);
@@ -1001,19 +1123,19 @@ var UIView = /** @class */ (function () {
         this.tokenSidebar = new UITokenSidebar(this.scene, -205, 0);
         this.o.add(this.tokenSidebar);
         try {
-            for (var TOKENS_2 = __values(TOKENS), TOKENS_2_1 = TOKENS_2.next(); !TOKENS_2_1.done; TOKENS_2_1 = TOKENS_2.next()) {
-                var t = TOKENS_2_1.value;
-                this.tokenSidebar.addToken(t.key);
+            for (var _b = __values(assets.filter(function (a) { return a.type == AssetType.TOKEN; })), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var token = _c.value;
+                this.tokenSidebar.addToken(token.identifier);
             }
         }
-        catch (e_12_1) { e_12 = { error: e_12_1 }; }
+        catch (e_8_1) { e_8 = { error: e_8_1 }; }
         finally {
             try {
-                if (TOKENS_2_1 && !TOKENS_2_1.done && (_a = TOKENS_2.return)) _a.call(TOKENS_2);
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_12) throw e_12.error; }
+            finally { if (e_8) throw e_8.error; }
         }
-        this.tileSidebar = new UITileSidebar(this.scene, 0, 0);
+        this.tileSidebar = new UITileSidebar(this.scene, 0, 0, assets);
         this.o.add(this.tileSidebar);
         this.tokenProps = new UITokenProps(this.scene, 24, 0);
         this.tokenProps.y = this.camera.height;
@@ -1039,7 +1161,7 @@ var UIView = /** @class */ (function () {
         setTimeout(function () { return _this.sidebarOpen = sidebarOpen; }, 0); // Hack to prevent multiple UI items from triggering.
     };
     UIView.prototype.update = function () {
-        var e_13, _a;
+        var e_9, _a;
         if (!this.o)
             return;
         this.uiActive = false;
@@ -1051,12 +1173,12 @@ var UIView = /** @class */ (function () {
                     this.uiActive = true;
             }
         }
-        catch (e_13_1) { e_13 = { error: e_13_1 }; }
+        catch (e_9_1) { e_9 = { error: e_9_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_13) throw e_13.error; }
+            finally { if (e_9) throw e_9.error; }
         }
         if (this.visibleMenu != this.scene.mode) {
             this.visibleMenu = this.scene.mode;
@@ -1193,7 +1315,7 @@ var UIContainer = /** @class */ (function (_super) {
         this.setPosition(x * 3, y * 3);
     };
     UIContainer.prototype.mouseIntersects = function () {
-        var e_14, _a, e_15, _b;
+        var e_10, _a, e_11, _b;
         try {
             for (var _c = __values(this.list), _d = _c.next(); !_d.done; _d = _c.next()) {
                 var i = _d.value;
@@ -1202,12 +1324,12 @@ var UIContainer = /** @class */ (function (_super) {
                         return true;
             }
         }
-        catch (e_14_1) { e_14 = { error: e_14_1 }; }
+        catch (e_10_1) { e_10 = { error: e_10_1 }; }
         finally {
             try {
                 if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
             }
-            finally { if (e_14) throw e_14.error; }
+            finally { if (e_10) throw e_10.error; }
         }
         try {
             for (var _e = __values(this.intersects), _f = _e.next(); !_f.done; _f = _e.next()) {
@@ -1219,12 +1341,12 @@ var UIContainer = /** @class */ (function (_super) {
                     return true;
             }
         }
-        catch (e_15_1) { e_15 = { error: e_15_1 }; }
+        catch (e_11_1) { e_11 = { error: e_11_1 }; }
         finally {
             try {
                 if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
             }
-            finally { if (e_15) throw e_15.error; }
+            finally { if (e_11) throw e_11.error; }
         }
         return false;
     };
@@ -1377,14 +1499,12 @@ var UISidebar = /** @class */ (function (_super) {
         _this.list.push(_this.hoverSpriteCursor);
         // Bind the scroll wheel event
         _this.onWheel = _this.onWheel.bind(_this);
-        document.documentElement.addEventListener("wheel", _this.onWheel);
-        _this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
+        _this.scene.i.bindScrollEvent(_this.onWheel);
         return _this;
     }
-    UISidebar.prototype.onWheel = function (e) {
+    UISidebar.prototype.onWheel = function (delta) {
         if (this.scene.ui.uiActive) {
-            var dir = (e.deltaY < 0 ? 1 : -1);
-            this.scrollY = clamp(this.scrollY + dir * 63, 0, -1000);
+            this.scrollY = clamp(this.scrollY + delta * 63, 0, -1000);
             this.scene.tweens.add({
                 targets: this,
                 y: this.scrollY,
@@ -1518,8 +1638,8 @@ var UISidebarToggle = /** @class */ (function (_super) {
 // }
 var UITileSidebar = /** @class */ (function (_super) {
     __extends(UITileSidebar, _super);
-    function UITileSidebar(scene, x, y) {
-        var e_16, _a, e_17, _b, e_18, _c;
+    function UITileSidebar(scene, x, y, assets) {
+        var e_12, _a, e_13, _b, e_14, _c;
         var _this = _super.call(this, scene, x, y) || this;
         _this.walls = [];
         _this.grounds = [];
@@ -1531,17 +1651,17 @@ var UITileSidebar = /** @class */ (function (_super) {
         _this.list.push(add_wall);
         _this.sprites.push(add_wall);
         try {
-            for (var WALLS_2 = __values(WALLS), WALLS_2_1 = WALLS_2.next(); !WALLS_2_1.done; WALLS_2_1 = WALLS_2.next()) {
-                var tileset = WALLS_2_1.value;
-                _this.addWall(tileset.key);
+            for (var _d = __values(assets.filter(function (a) { return a.type == AssetType.WALL; })), _e = _d.next(); !_e.done; _e = _d.next()) {
+                var tileset = _e.value;
+                _this.addWall(tileset.identifier);
             }
         }
-        catch (e_16_1) { e_16 = { error: e_16_1 }; }
+        catch (e_12_1) { e_12 = { error: e_12_1 }; }
         finally {
             try {
-                if (WALLS_2_1 && !WALLS_2_1.done && (_a = WALLS_2.return)) _a.call(WALLS_2);
+                if (_e && !_e.done && (_a = _d.return)) _a.call(_d);
             }
-            finally { if (e_16) throw e_16.error; }
+            finally { if (e_12) throw e_12.error; }
         }
         var add_ground = new Phaser.GameObjects.Sprite(_this.scene, 9 + x * 21 * 3, 9 + y * 21 * 3, "ui_sidebar_browse");
         add_ground.setName("add_ground");
@@ -1550,17 +1670,17 @@ var UITileSidebar = /** @class */ (function (_super) {
         _this.list.push(add_ground);
         _this.sprites.push(add_ground);
         try {
-            for (var GROUNDS_2 = __values(GROUNDS), GROUNDS_2_1 = GROUNDS_2.next(); !GROUNDS_2_1.done; GROUNDS_2_1 = GROUNDS_2.next()) {
-                var tileset = GROUNDS_2_1.value;
-                _this.addGround(tileset.key);
+            for (var _f = __values(assets.filter(function (a) { return a.type == AssetType.GROUND; })), _g = _f.next(); !_g.done; _g = _f.next()) {
+                var tileset = _g.value;
+                _this.addGround(tileset.identifier);
             }
         }
-        catch (e_17_1) { e_17 = { error: e_17_1 }; }
+        catch (e_13_1) { e_13 = { error: e_13_1 }; }
         finally {
             try {
-                if (GROUNDS_2_1 && !GROUNDS_2_1.done && (_b = GROUNDS_2.return)) _b.call(GROUNDS_2);
+                if (_g && !_g.done && (_b = _f.return)) _b.call(_f);
             }
-            finally { if (e_17) throw e_17.error; }
+            finally { if (e_13) throw e_13.error; }
         }
         var add_overlay = new Phaser.GameObjects.Sprite(_this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, "ui_sidebar_browse");
         add_overlay.setName("add_overlay");
@@ -1569,17 +1689,17 @@ var UITileSidebar = /** @class */ (function (_super) {
         _this.list.push(add_overlay);
         _this.sprites.push(add_overlay);
         try {
-            for (var OVERLAYS_2 = __values(OVERLAYS), OVERLAYS_2_1 = OVERLAYS_2.next(); !OVERLAYS_2_1.done; OVERLAYS_2_1 = OVERLAYS_2.next()) {
-                var tileset = OVERLAYS_2_1.value;
-                _this.addOverlay(tileset.key);
+            for (var _h = __values(assets.filter(function (a) { return a.type == AssetType.OVERLAY; })), _j = _h.next(); !_j.done; _j = _h.next()) {
+                var tileset = _j.value;
+                _this.addOverlay(tileset.identifier);
             }
         }
-        catch (e_18_1) { e_18 = { error: e_18_1 }; }
+        catch (e_14_1) { e_14 = { error: e_14_1 }; }
         finally {
             try {
-                if (OVERLAYS_2_1 && !OVERLAYS_2_1.done && (_c = OVERLAYS_2.return)) _c.call(OVERLAYS_2);
+                if (_j && !_j.done && (_c = _h.return)) _c.call(_h);
             }
-            finally { if (e_18) throw e_18.error; }
+            finally { if (e_14) throw e_14.error; }
         }
         for (var i = 0; i < 12; i++) {
             if (i % 4 != 0)
@@ -1806,7 +1926,7 @@ var ArchitectMode = /** @class */ (function () {
         this.cursor.setOrigin(0, 0);
     };
     ArchitectMode.prototype.update = function () {
-        var e_19, _a;
+        var e_15, _a;
         this.active = true;
         this.cursor.setVisible(true);
         var selectedTilePos = new Vec2(Math.floor(this.scene.view.cursorWorld.x / 64), Math.floor(this.scene.view.cursorWorld.y / 64));
@@ -1839,11 +1959,11 @@ var ArchitectMode = /** @class */ (function () {
                 this.placeMode = "brush";
         }
         // Push history to HistoryManager
-        if (this.scene.input.activePointer.isDown && !this.pointerDown) {
+        if (this.scene.i.mouseLeftDown() && !this.pointerDown) {
             this.pointerDown = true;
-            this.pointerPrimaryDown = this.scene.input.activePointer.leftButtonDown();
+            this.pointerPrimaryDown = this.scene.i.mouseLeftDown();
         }
-        else if (!this.scene.input.activePointer.isDown && this.pointerDown) {
+        else if (!this.scene.i.mouseLeftDown() && this.pointerDown) {
             if (this.manipulated.length != 0) {
                 try {
                     for (var _b = __values(this.manipulated), _c = _b.next(); !_c.done; _c = _b.next()) {
@@ -1851,12 +1971,12 @@ var ArchitectMode = /** @class */ (function () {
                         this.scene.lighting.tileUpdatedAt(tile.pos.x, tile.pos.y);
                     }
                 }
-                catch (e_19_1) { e_19 = { error: e_19_1 }; }
+                catch (e_15_1) { e_15 = { error: e_15_1 }; }
                 finally {
                     try {
                         if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                     }
-                    finally { if (e_19) throw e_19.error; }
+                    finally { if (e_15) throw e_15.error; }
                 }
                 this.scene.history.push("tile", this.manipulated);
                 this.manipulated = [];
@@ -1866,7 +1986,7 @@ var ArchitectMode = /** @class */ (function () {
         }
     };
     ArchitectMode.prototype.drawLine = function (selectedTilePos) {
-        if (this.scene.input.mousePointer.leftButtonDown() || this.scene.input.mousePointer.rightButtonDown()) {
+        if (this.scene.i.mouseLeftDown() || this.scene.i.mouseRightDown()) {
             if (!this.pointerDown)
                 this.startTilePos = selectedTilePos;
             var a = new Vec2(this.startTilePos.x, this.startTilePos.y);
@@ -1890,7 +2010,7 @@ var ArchitectMode = /** @class */ (function () {
             this.primitives[1].setScale(4, 4);
             this.primitives[1].setAlpha(0.5);
         }
-        else if (!this.scene.input.mousePointer.leftButtonDown() && !this.scene.input.mousePointer.rightButtonDown() && this.pointerDown) {
+        else if (!this.scene.i.mouseLeftDown() && !this.scene.i.mouseRightDown() && this.pointerDown) {
             var a = new Vec2(this.startTilePos.x * 64, this.startTilePos.y * 64);
             var b = new Vec2(selectedTilePos.x * 64, selectedTilePos.y * 64);
             if (Math.abs(b.x - a.x) > Math.abs(b.y - a.y))
@@ -1912,7 +2032,7 @@ var ArchitectMode = /** @class */ (function () {
         }
     };
     ArchitectMode.prototype.drawRect = function (selectedTilePos) {
-        if (this.scene.input.mousePointer.leftButtonDown() || this.scene.input.mousePointer.rightButtonDown()) {
+        if (this.scene.i.mouseLeftDown() || this.scene.i.mouseRightDown()) {
             if (!this.pointerDown)
                 this.startTilePos = selectedTilePos;
             var a = new Vec2(Math.min(this.startTilePos.x, selectedTilePos.x), Math.min(this.startTilePos.y, selectedTilePos.y));
@@ -1931,7 +2051,7 @@ var ArchitectMode = /** @class */ (function () {
                 v.setDepth(300);
             });
         }
-        else if (!this.scene.input.mousePointer.leftButtonDown() && !this.scene.input.mousePointer.rightButtonDown() && this.pointerDown) {
+        else if (!this.scene.i.mouseLeftDown() && !this.scene.i.mouseRightDown() && this.pointerDown) {
             var a = new Vec2(Math.min(this.startTilePos.x, selectedTilePos.x), Math.min(this.startTilePos.y, selectedTilePos.y));
             var b = new Vec2(Math.max(this.startTilePos.x, selectedTilePos.x), Math.max(this.startTilePos.y, selectedTilePos.y));
             for (var i = a.x; i <= b.x; i++) {
@@ -1944,18 +2064,18 @@ var ArchitectMode = /** @class */ (function () {
         }
     };
     ArchitectMode.prototype.drawBrush = function (selectedTilePos) {
-        if (this.scene.input.mousePointer.leftButtonDown() || this.scene.input.mousePointer.rightButtonDown()) {
+        if (this.scene.i.mouseLeftDown() || this.scene.i.mouseRightDown()) {
             var change = new Vec2(this.scene.view.cursorWorld.x - this.scene.view.lastCursorWorld.x, this.scene.view.cursorWorld.y - this.scene.view.lastCursorWorld.y);
             var normalizeFactor = Math.sqrt(change.x * change.x + change.y * change.y);
             change.x /= normalizeFactor;
             change.y /= normalizeFactor;
             var place = new Vec2(this.scene.view.lastCursorWorld.x, this.scene.view.lastCursorWorld.y);
             while (Math.abs(this.scene.view.cursorWorld.x - place.x) >= 1 || Math.abs(this.scene.view.cursorWorld.y - place.y) >= 1) {
-                this.placeTileAndPushManip(new Vec2(Math.floor(place.x / 64), Math.floor(place.y / 64)), this.scene.input.mousePointer.leftButtonDown());
+                this.placeTileAndPushManip(new Vec2(Math.floor(place.x / 64), Math.floor(place.y / 64)), this.scene.i.mouseLeftDown());
                 place.x += change.x;
                 place.y += change.y;
             }
-            this.placeTileAndPushManip(new Vec2(selectedTilePos.x, selectedTilePos.y), this.scene.input.mousePointer.leftButtonDown());
+            this.placeTileAndPushManip(new Vec2(selectedTilePos.x, selectedTilePos.y), this.scene.i.mouseLeftDown());
         }
     };
     ArchitectMode.prototype.placeTileAndPushManip = function (manipPos, solid) {
@@ -2008,22 +2128,18 @@ var TokenMode = /** @class */ (function () {
         this.scene.add.existing(this.tokenPreview);
         this.tokenPreview.setVisible(false);
         this.tokenPreview.setAlpha(0.2);
-        // Add scrolling capture
-        this.onWheel = this.onWheel.bind(this);
-        document.documentElement.addEventListener("wheel", this.onWheel);
-        this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onWheel); });
-    };
-    TokenMode.prototype.onWheel = function (e) {
-        if (this.movingTokens) {
-            var dir_1 = e.deltaY > 0 ? 1 : -1;
-            this.selectedTokens.forEach(function (token) {
-                var frame = token.getFrame() + dir_1;
-                if (frame < 0)
-                    frame += token.frameCount();
-                frame %= token.frameCount();
-                token.setFrame(frame);
-            });
-        }
+        // Add scroll event
+        this.scene.i.bindScrollEvent(function (delta) {
+            if (_this.movingTokens) {
+                _this.selectedTokens.forEach(function (token) {
+                    var frame = token.getFrame() + delta;
+                    if (frame < 0)
+                        frame += token.frameCount();
+                    frame %= token.frameCount();
+                    token.setFrame(frame);
+                });
+            }
+        });
     };
     TokenMode.prototype.update = function () {
         this.active = true;
@@ -2062,7 +2178,7 @@ var TokenMode = /** @class */ (function () {
         }
     };
     TokenMode.prototype.selectedIncludes = function (t) {
-        var e_20, _a;
+        var e_16, _a;
         if (!t)
             return false;
         try {
@@ -2072,12 +2188,12 @@ var TokenMode = /** @class */ (function () {
                     return true;
             }
         }
-        catch (e_20_1) { e_20 = { error: e_20_1 }; }
+        catch (e_16_1) { e_16 = { error: e_16_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_20) throw e_20.error; }
+            finally { if (e_16) throw e_16.error; }
         }
         return false;
     };
@@ -2101,7 +2217,7 @@ var TokenMode = /** @class */ (function () {
         }
     };
     TokenMode.prototype.selecting = function () {
-        var e_21, _a, e_22, _b, e_23, _c;
+        var e_17, _a, e_18, _b, e_19, _c;
         var _this = this;
         var cursor = this.scene.view.cursorWorld;
         var clickedAddedThisFrame = false;
@@ -2122,12 +2238,12 @@ var TokenMode = /** @class */ (function () {
                     token.setHovered(false);
             }
         }
-        catch (e_21_1) { e_21 = { error: e_21_1 }; }
+        catch (e_17_1) { e_17 = { error: e_17_1 }; }
         finally {
             try {
                 if (_e && !_e.done && (_a = _d.return)) _a.call(_d);
             }
-            finally { if (e_21) throw e_21.error; }
+            finally { if (e_17) throw e_17.error; }
         }
         if (this.hoveredToken != null)
             this.hoveredToken.setHovered(true);
@@ -2193,12 +2309,12 @@ var TokenMode = /** @class */ (function () {
                             s.setSelected(false);
                         }
                     }
-                    catch (e_22_1) { e_22 = { error: e_22_1 }; }
+                    catch (e_18_1) { e_18 = { error: e_18_1 }; }
                     finally {
                         try {
                             if (_g && !_g.done && (_b = _f.return)) _b.call(_f);
                         }
-                        finally { if (e_22) throw e_22.error; }
+                        finally { if (e_18) throw e_18.error; }
                     }
                     this.selectedTokens = [];
                 }
@@ -2220,12 +2336,12 @@ var TokenMode = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_23_1) { e_23 = { error: e_23_1 }; }
+                catch (e_19_1) { e_19 = { error: e_19_1 }; }
                 finally {
                     try {
                         if (_j && !_j.done && (_c = _h.return)) _c.call(_h);
                     }
-                    finally { if (e_23) throw e_23.error; }
+                    finally { if (e_19) throw e_19.error; }
                 }
                 this.startTilePos = null;
                 this.clickedLastFrame = true;
@@ -2375,7 +2491,7 @@ var LightChunk = /** @class */ (function () {
         this.build([]);
     }
     LightChunk.prototype.build = function (sourceGfx) {
-        var e_24, _a;
+        var e_20, _a;
         // Reset
         var reset = new Phaser.GameObjects.Rectangle(this.light.scene, 0, 0, LightChunk.CHUNK_SIZE, LightChunk.CHUNK_SIZE, 0x000000);
         reset.setDisplayOrigin(0, 0);
@@ -2394,12 +2510,12 @@ var LightChunk = /** @class */ (function () {
                 }
             }
         }
-        catch (e_24_1) { e_24 = { error: e_24_1 }; }
+        catch (e_20_1) { e_20 = { error: e_20_1 }; }
         finally {
             try {
                 if (sourceGfx_1_1 && !sourceGfx_1_1.done && (_a = sourceGfx_1.return)) _a.call(sourceGfx_1);
             }
-            finally { if (e_24) throw e_24.error; }
+            finally { if (e_20) throw e_20.error; }
         }
     };
     LightChunk.CHUNK_SIZE = 512;
@@ -2484,7 +2600,7 @@ var Lighting = /** @class */ (function () {
         }
     };
     Lighting.prototype.update = function () {
-        var e_25, _a, e_26, _b, e_27, _c;
+        var e_21, _a, e_22, _b, e_23, _c;
         if (this.dirtyChunks.size > 0) {
             var sources = new Set();
             try {
@@ -2492,7 +2608,7 @@ var Lighting = /** @class */ (function () {
                     var chunk = _e.value;
                     var chunkBounds = new Vec4(chunk.pos.x * LightChunk.CHUNK_SIZE, chunk.pos.y * LightChunk.CHUNK_SIZE, (chunk.pos.x + 1) * LightChunk.CHUNK_SIZE, (chunk.pos.y + 1) * LightChunk.CHUNK_SIZE);
                     try {
-                        for (var _f = (e_26 = void 0, __values(this.sources)), _g = _f.next(); !_g.done; _g = _f.next()) {
+                        for (var _f = (e_22 = void 0, __values(this.sources)), _g = _f.next(); !_g.done; _g = _f.next()) {
                             var source = _g.value;
                             var sourceBounds = new Vec4(source.x - source.radius, source.y - source.radius, source.x + source.radius, source.y + source.radius);
                             if (chunkBounds.z >= sourceBounds.x && chunkBounds.x <= sourceBounds.z &&
@@ -2500,21 +2616,21 @@ var Lighting = /** @class */ (function () {
                                 sources.add(source);
                         }
                     }
-                    catch (e_26_1) { e_26 = { error: e_26_1 }; }
+                    catch (e_22_1) { e_22 = { error: e_22_1 }; }
                     finally {
                         try {
                             if (_g && !_g.done && (_b = _f.return)) _b.call(_f);
                         }
-                        finally { if (e_26) throw e_26.error; }
+                        finally { if (e_22) throw e_22.error; }
                     }
                 }
             }
-            catch (e_25_1) { e_25 = { error: e_25_1 }; }
+            catch (e_21_1) { e_21 = { error: e_21_1 }; }
             finally {
                 try {
                     if (_e && !_e.done && (_a = _d.return)) _a.call(_d);
                 }
-                finally { if (e_25) throw e_25.error; }
+                finally { if (e_21) throw e_21.error; }
             }
             var sourceGfx = Array.from(sources).map(function (src) { return { src: src, gfx: src.createGfx() }; });
             try {
@@ -2523,19 +2639,19 @@ var Lighting = /** @class */ (function () {
                     chunk.build(sourceGfx);
                 }
             }
-            catch (e_27_1) { e_27 = { error: e_27_1 }; }
+            catch (e_23_1) { e_23 = { error: e_23_1 }; }
             finally {
                 try {
                     if (_j && !_j.done && (_c = _h.return)) _c.call(_h);
                 }
-                finally { if (e_27) throw e_27.error; }
+                finally { if (e_23) throw e_23.error; }
             }
             sourceGfx.forEach(function (s) { return s.gfx.destroy(); });
             this.dirtyChunks.clear();
         }
     };
     Lighting.prototype.tileUpdatedAt = function (x, y) {
-        var e_28, _a;
+        var e_24, _a;
         try {
             for (var _b = __values(this.sources), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var source = _c.value;
@@ -2551,12 +2667,12 @@ var Lighting = /** @class */ (function () {
                 }
             }
         }
-        catch (e_28_1) { e_28 = { error: e_28_1 }; }
+        catch (e_24_1) { e_24 = { error: e_24_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_28) throw e_28.error; }
+            finally { if (e_24) throw e_24.error; }
         }
     };
     Lighting.prototype.addLightSource = function (x, y, radius, intensity) {
@@ -2596,7 +2712,7 @@ var MapChunk = /** @class */ (function () {
         }
     }
     MapChunk.prototype.dirty = function (pos) {
-        var e_29, _a;
+        var e_25, _a;
         if (!this.fullyDirty) {
             try {
                 for (var _b = __values(this.dirtyList), _c = _b.next(); !_c.done; _c = _b.next()) {
@@ -2605,12 +2721,12 @@ var MapChunk = /** @class */ (function () {
                         return;
                 }
             }
-            catch (e_29_1) { e_29 = { error: e_29_1 }; }
+            catch (e_25_1) { e_25 = { error: e_25_1 }; }
             finally {
                 try {
                     if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
-                finally { if (e_29) throw e_29.error; }
+                finally { if (e_25) throw e_25.error; }
             }
             this.dirtyList.push(pos);
             if (this.dirtyList.length > MapChunk.DIRTY_LIMIT) {
@@ -2620,7 +2736,7 @@ var MapChunk = /** @class */ (function () {
         }
     };
     MapChunk.prototype.rebuild = function () {
-        var e_30, _a;
+        var e_26, _a;
         if (this.fullyDirty) {
             for (var i = 0; i < MapChunk.CHUNK_SIZE * MapChunk.CHUNK_SIZE; i++) {
                 var x = i % MapChunk.CHUNK_SIZE;
@@ -2642,12 +2758,12 @@ var MapChunk = /** @class */ (function () {
                 this.drawTile(elem.x, elem.y);
             }
         }
-        catch (e_30_1) { e_30 = { error: e_30_1 }; }
+        catch (e_26_1) { e_26 = { error: e_26_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_30) throw e_30.error; }
+            finally { if (e_26) throw e_26.error; }
         }
         this.dirtyList = [];
         return true;
@@ -2680,9 +2796,9 @@ var MapData = /** @class */ (function () {
         this.scene = scene;
         this.manager = new TilesetManager(scene);
     }
-    MapData.prototype.init = function (size) {
+    MapData.prototype.init = function (size, assets) {
         this.size = size;
-        this.manager.init();
+        this.manager.init(assets);
         this.registerLayer(0 /* floor */, function () { return Math.floor(Math.random() * 6) + 54; }, 0);
         this.registerLayer(1 /* wall */, 0, -1);
         this.registerLayer(2 /* overlay */, 0, -1);
@@ -2694,34 +2810,34 @@ var MapData = /** @class */ (function () {
         }
     };
     MapData.prototype.update = function () {
-        var e_31, _a, e_32, _b;
+        var e_27, _a, e_28, _b;
         var start = Date.now();
         try {
             for (var _c = __values(this.chunks), _d = _c.next(); !_d.done; _d = _c.next()) {
                 var arr = _d.value;
                 try {
-                    for (var arr_1 = (e_32 = void 0, __values(arr)), arr_1_1 = arr_1.next(); !arr_1_1.done; arr_1_1 = arr_1.next()) {
+                    for (var arr_1 = (e_28 = void 0, __values(arr)), arr_1_1 = arr_1.next(); !arr_1_1.done; arr_1_1 = arr_1.next()) {
                         var chunk = arr_1_1.value;
                         chunk.rebuild();
                         if (Date.now() - start > 10)
                             break;
                     }
                 }
-                catch (e_32_1) { e_32 = { error: e_32_1 }; }
+                catch (e_28_1) { e_28 = { error: e_28_1 }; }
                 finally {
                     try {
                         if (arr_1_1 && !arr_1_1.done && (_b = arr_1.return)) _b.call(arr_1);
                     }
-                    finally { if (e_32) throw e_32.error; }
+                    finally { if (e_28) throw e_28.error; }
                 }
             }
         }
-        catch (e_31_1) { e_31 = { error: e_31_1 }; }
+        catch (e_27_1) { e_27 = { error: e_27_1 }; }
         finally {
             try {
                 if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
             }
-            finally { if (e_31) throw e_31.error; }
+            finally { if (e_27) throw e_27.error; }
         }
         if (this.scene.i.keyPressed('S'))
             this.saveMap();
@@ -2779,27 +2895,27 @@ var MapData = /** @class */ (function () {
     };
     MapData.prototype.smartTile = function (x, y) {
         var _this = this;
-        var _loop_1 = function (i) {
-            var _loop_2 = function (j) {
-                var solids = this_1.getTilesetsAt(1 /* wall */, i, j).map(function (i) { return i != -1; });
-                var wall = SmartTiler.wall(solids, this_1.getTile(1 /* wall */, i, j));
+        var _loop_2 = function (i) {
+            var _loop_3 = function (j) {
+                var solids = this_2.getTilesetsAt(1 /* wall */, i, j).map(function (i) { return i != -1; });
+                var wall = SmartTiler.wall(solids, this_2.getTile(1 /* wall */, i, j));
                 if (wall != -1)
-                    this_1.setTileRaw(1 /* wall */, i, j, wall);
-                var floor = SmartTiler.floor(solids, this_1.getTile(0 /* floor */, i, j));
+                    this_2.setTileRaw(1 /* wall */, i, j, wall);
+                var floor = SmartTiler.floor(solids, this_2.getTile(0 /* floor */, i, j));
                 if (floor != -1)
-                    this_1.setTileRaw(0 /* floor */, i, j, floor);
-                var overlay = SmartTiler.overlay(this_1.getTilesetsAt(2 /* overlay */, i, j)
-                    .map(function (t) { return t == _this.getTileset(2 /* overlay */, i, j); }), this_1.getTileset(2 /* overlay */, i, j));
+                    this_2.setTileRaw(0 /* floor */, i, j, floor);
+                var overlay = SmartTiler.overlay(this_2.getTilesetsAt(2 /* overlay */, i, j)
+                    .map(function (t) { return t == _this.getTileset(2 /* overlay */, i, j); }), this_2.getTileset(2 /* overlay */, i, j));
                 if (overlay != -1)
-                    this_1.setTileRaw(2 /* overlay */, i, j, overlay);
+                    this_2.setTileRaw(2 /* overlay */, i, j, overlay);
             };
-            for (var j = clamp(y - 1, this_1.size.y - 1, 0); j <= clamp(y + 1, this_1.size.y - 1, 0); j++) {
-                _loop_2(j);
+            for (var j = clamp(y - 1, this_2.size.y - 1, 0); j <= clamp(y + 1, this_2.size.y - 1, 0); j++) {
+                _loop_3(j);
             }
         };
-        var this_1 = this;
+        var this_2 = this;
         for (var i = clamp(x - 1, this.size.x - 1, 0); i <= clamp(x + 1, this.size.x - 1, 0); i++) {
-            _loop_1(i);
+            _loop_2(i);
         }
         // this.scene.lighting.tileUpdatedAt(x, y);
     };
@@ -3355,46 +3471,46 @@ var TilesetManager = /** @class */ (function () {
         this.indexes = {};
         this.scene = scene;
     }
-    TilesetManager.prototype.init = function () {
-        var e_33, _a, e_34, _b, e_35, _c;
+    TilesetManager.prototype.init = function (assets) {
+        var e_29, _a, e_30, _b, e_31, _c;
         try {
-            for (var WALLS_3 = __values(WALLS), WALLS_3_1 = WALLS_3.next(); !WALLS_3_1.done; WALLS_3_1 = WALLS_3.next()) {
-                var tileset = WALLS_3_1.value;
-                this.addTileset(tileset.key, 1 /* wall */);
+            for (var _d = __values(assets.filter(function (a) { return a.type == AssetType.WALL; })), _e = _d.next(); !_e.done; _e = _d.next()) {
+                var tileset = _e.value;
+                this.addTileset(tileset.identifier, 1 /* wall */);
             }
         }
-        catch (e_33_1) { e_33 = { error: e_33_1 }; }
+        catch (e_29_1) { e_29 = { error: e_29_1 }; }
         finally {
             try {
-                if (WALLS_3_1 && !WALLS_3_1.done && (_a = WALLS_3.return)) _a.call(WALLS_3);
+                if (_e && !_e.done && (_a = _d.return)) _a.call(_d);
             }
-            finally { if (e_33) throw e_33.error; }
+            finally { if (e_29) throw e_29.error; }
         }
         try {
-            for (var GROUNDS_3 = __values(GROUNDS), GROUNDS_3_1 = GROUNDS_3.next(); !GROUNDS_3_1.done; GROUNDS_3_1 = GROUNDS_3.next()) {
-                var tileset = GROUNDS_3_1.value;
-                this.addTileset(tileset.key, 0 /* floor */);
+            for (var _f = __values(assets.filter(function (a) { return a.type == AssetType.GROUND; })), _g = _f.next(); !_g.done; _g = _f.next()) {
+                var tileset = _g.value;
+                this.addTileset(tileset.identifier, 0 /* floor */);
             }
         }
-        catch (e_34_1) { e_34 = { error: e_34_1 }; }
+        catch (e_30_1) { e_30 = { error: e_30_1 }; }
         finally {
             try {
-                if (GROUNDS_3_1 && !GROUNDS_3_1.done && (_b = GROUNDS_3.return)) _b.call(GROUNDS_3);
+                if (_g && !_g.done && (_b = _f.return)) _b.call(_f);
             }
-            finally { if (e_34) throw e_34.error; }
+            finally { if (e_30) throw e_30.error; }
         }
         try {
-            for (var OVERLAYS_3 = __values(OVERLAYS), OVERLAYS_3_1 = OVERLAYS_3.next(); !OVERLAYS_3_1.done; OVERLAYS_3_1 = OVERLAYS_3.next()) {
-                var tileset = OVERLAYS_3_1.value;
-                this.addTileset(tileset.key, 2 /* overlay */);
+            for (var _h = __values(assets.filter(function (a) { return a.type == AssetType.OVERLAY; })), _j = _h.next(); !_j.done; _j = _h.next()) {
+                var tileset = _j.value;
+                this.addTileset(tileset.identifier, 2 /* overlay */);
             }
         }
-        catch (e_35_1) { e_35 = { error: e_35_1 }; }
+        catch (e_31_1) { e_31 = { error: e_31_1 }; }
         finally {
             try {
-                if (OVERLAYS_3_1 && !OVERLAYS_3_1.done && (_c = OVERLAYS_3.return)) _c.call(OVERLAYS_3);
+                if (_j && !_j.done && (_c = _h.return)) _c.call(_h);
             }
-            finally { if (e_35) throw e_35.error; }
+            finally { if (e_31) throw e_31.error; }
         }
     };
     TilesetManager.prototype.addTileset = function (key, layer) {
@@ -3434,6 +3550,7 @@ var OutlinePipeline = /** @class */ (function (_super) {
 }(Phaser.Renderer.WebGL.Pipelines.TextureTintPipeline));
 var InputManager = /** @class */ (function () {
     function InputManager(scene) {
+        this.hasFocus = true;
         this.leftMouseState = false;
         this.rightMouseState = false;
         this.middleMouseState = false;
@@ -3443,9 +3560,11 @@ var InputManager = /** @class */ (function () {
         this.keys = {};
         this.keysDown = {};
         this.keysDownLast = {};
+        this.scrollEvents = [];
         this.scene = scene;
     }
     InputManager.prototype.init = function () {
+        var _this = this;
         this.keys.TAB = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
         this.keys.SHIFT = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
         this.keys.CTRL = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
@@ -3465,6 +3584,9 @@ var InputManager = /** @class */ (function () {
             this.keysDown[key] = false;
             this.keysDownLast[key] = false;
         }
+        this.onScroll = this.onScroll.bind(this);
+        document.documentElement.addEventListener("wheel", this.onScroll);
+        this.scene.events.on('destroy', function () { return document.documentElement.removeEventListener("wheel", _this.onScroll); });
     };
     InputManager.prototype.update = function () {
         this.leftMouseStateLast = this.leftMouseState;
@@ -3472,47 +3594,102 @@ var InputManager = /** @class */ (function () {
         this.rightMouseStateLast = this.rightMouseState;
         this.rightMouseState = this.scene.input.activePointer.rightButtonDown();
         this.middleMouseStateLast = this.middleMouseState;
-        this.rightMouseState = this.scene.input.activePointer.middleButtonDown();
+        this.middleMouseState = this.scene.input.activePointer.middleButtonDown();
         for (var key in this.keys)
             this.keysDownLast[key] = this.keysDown[key];
         for (var key in this.keys)
             this.keysDown[key] = this.keys[key].isDown;
     };
+    InputManager.prototype.setFocus = function (focus) {
+        if (this.hasFocus != focus) {
+            if (focus)
+                this.scene.input.keyboard.enableGlobalCapture();
+            else
+                this.scene.input.keyboard.disableGlobalCapture();
+        }
+        this.hasFocus = focus;
+    };
     InputManager.prototype.mouseDown = function () {
+        if (!this.hasFocus)
+            return false;
         return this.leftMouseState || this.rightMouseState;
     };
     InputManager.prototype.mousePressed = function () {
+        if (!this.hasFocus)
+            return false;
         return (this.leftMouseState && !this.leftMouseStateLast) || (this.rightMouseState && !this.rightMouseStateLast);
     };
     InputManager.prototype.mouseReleased = function () {
+        if (!this.hasFocus)
+            return false;
         return (!this.leftMouseState && this.leftMouseStateLast) || (!this.rightMouseState && this.rightMouseStateLast);
     };
     InputManager.prototype.mouseLeftDown = function () {
+        if (!this.hasFocus)
+            return false;
         return this.leftMouseState;
     };
     InputManager.prototype.mouseLeftPressed = function () {
+        if (!this.hasFocus)
+            return false;
         return this.leftMouseState && !this.leftMouseStateLast;
     };
     InputManager.prototype.mouseLeftReleased = function () {
+        if (!this.hasFocus)
+            return false;
         return !this.leftMouseState && this.leftMouseStateLast;
     };
     InputManager.prototype.mouseRightDown = function () {
+        if (!this.hasFocus)
+            return false;
         return this.rightMouseState;
     };
     InputManager.prototype.mouseRightPressed = function () {
+        if (!this.hasFocus)
+            return false;
         return this.rightMouseState && !this.rightMouseStateLast;
     };
     InputManager.prototype.mouseRightReleased = function () {
+        if (!this.hasFocus)
+            return false;
         return !this.rightMouseState && this.rightMouseStateLast;
     };
     InputManager.prototype.keyDown = function (key) {
+        if (!this.hasFocus)
+            return false;
         return this.keysDown[key.toUpperCase()];
     };
     InputManager.prototype.keyPressed = function (key) {
+        if (!this.hasFocus)
+            return false;
         return this.keysDown[key.toUpperCase()] && !this.keysDownLast[key.toUpperCase()];
     };
     InputManager.prototype.keyReleased = function (key) {
+        if (!this.hasFocus)
+            return false;
         return !this.keysDown[key.toUpperCase()] && this.keysDownLast[key.toUpperCase()];
+    };
+    InputManager.prototype.onScroll = function (e) {
+        var e_32, _a;
+        if (!this.hasFocus)
+            return;
+        var delta = e.deltaY < 0 ? 1 : -1;
+        try {
+            for (var _b = __values(this.scrollEvents), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var evt = _c.value;
+                evt(delta);
+            }
+        }
+        catch (e_32_1) { e_32 = { error: e_32_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_32) throw e_32.error; }
+        }
+    };
+    InputManager.prototype.bindScrollEvent = function (evt) {
+        this.scrollEvents.push(evt);
     };
     return InputManager;
 }());

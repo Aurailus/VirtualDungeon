@@ -18,18 +18,12 @@ class WorldView {
 		this.camera = this.scene.cameras.main;
 		this.camera.setBackgroundColor("#090d24");
 
-		// Bind the scroll wheel event
-		this.onWheel = this.onWheel.bind(this);
-		document.documentElement.addEventListener("wheel", this.onWheel);
-		this.scene.events.on('destroy', () => document.documentElement.removeEventListener("wheel", this.onWheel));
-	}
-
-	private onWheel(e: WheelEvent) {
-		if (!this.scene.token.movingTokens && !this.scene.ui.uiActive) {
-			let dir = (e.deltaY < 0 ? 1 : -1);
-			this.zoomLevel = clamp(this.zoomLevel + dir, 0, this.zoomLevels.length - 1);
-			this.camera!.setZoom(this.zoomLevels[this.zoomLevel] / 100);
-		}
+		this.scene.i.bindScrollEvent((delta) => {
+			if (!this.scene.token.movingTokens && !this.scene.ui.uiActive) {
+				this.zoomLevel = clamp(this.zoomLevel + delta, 0, this.zoomLevels.length - 1);
+				this.camera!.setZoom(this.zoomLevels[this.zoomLevel] / 100);
+			}
+		});
 	}
 
 	private pan() {

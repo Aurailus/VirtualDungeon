@@ -14,11 +14,10 @@ class TilesetManager {
 		this.scene = scene;
 	}
 
-	init() {
-
-		for (let tileset of WALLS   ) this.addTileset(tileset.key, Layer.wall);
-		for (let tileset of GROUNDS ) this.addTileset(tileset.key, Layer.floor);
-		for (let tileset of OVERLAYS) this.addTileset(tileset.key, Layer.overlay);
+	init(assets: LoadedAsset[]) {
+		for (let tileset of assets.filter(a => a.type == AssetType.WALL   )) this.addTileset(tileset.identifier, Layer.wall);
+		for (let tileset of assets.filter(a => a.type == AssetType.GROUND )) this.addTileset(tileset.identifier, Layer.floor);
+		for (let tileset of assets.filter(a => a.type == AssetType.OVERLAY)) this.addTileset(tileset.identifier, Layer.overlay);
 	}
 
 	private addTileset(key: string, layer: Layer): void {

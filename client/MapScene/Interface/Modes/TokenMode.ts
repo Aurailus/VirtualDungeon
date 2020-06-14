@@ -37,23 +37,17 @@ class TokenMode {
 		this.tokenPreview.setVisible(false);
 		this.tokenPreview.setAlpha(0.2);
 
-		// Add scrolling capture
-		this.onWheel = this.onWheel.bind(this);
-		document.documentElement.addEventListener("wheel", this.onWheel);
-		this.scene.events.on('destroy', () => document.documentElement.removeEventListener("wheel", this.onWheel));
-	}
-
-	onWheel(e: WheelEvent) {
-		if (this.movingTokens) {
-			let dir = e.deltaY > 0 ? 1 : -1;
-
-			this.selectedTokens.forEach((token) => {
-				let frame = token.getFrame() + dir;
-				if (frame < 0) frame += token.frameCount();
-				frame %= token.frameCount();
-				token.setFrame(frame);
-			});
-		}
+		// Add scroll event
+		this.scene.i.bindScrollEvent((delta) => {
+			if (this.movingTokens) {
+				this.selectedTokens.forEach((token) => {
+					let frame = token.getFrame() + delta;
+					if (frame < 0) frame += token.frameCount();
+					frame %= token.frameCount();
+					token.setFrame(frame);
+				});
+			}
+		});
 	}
 
 	update() {

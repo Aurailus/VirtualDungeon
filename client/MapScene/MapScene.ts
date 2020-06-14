@@ -1,4 +1,6 @@
 class MapScene extends Phaser.Scene {
+	assets: LoadedAsset[] | null = null;
+
 	i: InputManager = new InputManager(this);
 	history: HistoryManager = new HistoryManager(this);
 	view: WorldView = new WorldView(this);
@@ -12,12 +14,15 @@ class MapScene extends Phaser.Scene {
 	map: MapData = new MapData(this);
 	lighting: Lighting = new Lighting(this);
 
-
 	mode: number = 0;
 	tokens: Token[] = [];
 
 	constructor() { 
-		super({key: "MapScene"}); 
+		super({key: "MapScene"});
+	}
+
+	init(assets: LoadedAsset[]): void {
+		this.assets = assets;
 	}
 
 	preload(): void {
@@ -35,9 +40,9 @@ class MapScene extends Phaser.Scene {
 		this.view.init();
 
 		this.size = new Vec2(64, 64);
-		this.map.init(this.size);
+		this.map.init(this.size, this.assets!);
 
-		this.ui.init();
+		this.ui.init(this.assets!);
 		this.architect.init();
 		this.token.init();
 
@@ -53,6 +58,10 @@ class MapScene extends Phaser.Scene {
 
 		this.map.update();
 		this.lighting.update();
+
+		if (this.i.keyPressed("U")) {
+			new AssetUploader(this);
+		}
 	}
 }
  

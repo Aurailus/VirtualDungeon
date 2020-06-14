@@ -17,7 +17,7 @@ class UIView {
 		this.scene = scene;
 	}
 
-	init() {
+	init(assets: LoadedAsset[]) {
 		this.camera = this.scene.cameras.add(0, 0, this.scene.cameras.main.width, this.scene.cameras.main.height, false, "ui_camera");
 		this.camera.scrollX = -10000;
 
@@ -30,11 +30,10 @@ class UIView {
 
 		this.tokenSidebar = new UITokenSidebar(this.scene, -205, 0);
 		this.o.add(this.tokenSidebar);
-		for (let t of TOKENS) {
-			this.tokenSidebar.addToken(t.key);
-		}
+		for (let token of assets.filter((a) => a.type == AssetType.TOKEN))
+			this.tokenSidebar.addToken(token.identifier);
 
-		this.tileSidebar = new UITileSidebar(this.scene, 0, 0);
+		this.tileSidebar = new UITileSidebar(this.scene, 0, 0, assets);
 		this.o.add(this.tileSidebar);
 
 		this.tokenProps = new UITokenProps(this.scene, 24, 0);

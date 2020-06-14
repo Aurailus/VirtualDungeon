@@ -1,21 +1,23 @@
 doctype html
 html(lang="en")
 	head
-		include includes/head.pug
-		title Virtual Dungeon
-	body#login
-		.wrap
+		include ../includes/head.pug
+		link(rel="stylesheet", href="/public/style/build/css/overview.css")
+		title Log In &bullet; Virtual Dungeon
+	body
+		.wrap#modal
 			h1 Log In
 
 			form#login_form(method="post")
-				input(type="email", name="email", placeholder="Email", autofocus)
+				input(type="email", name="email", placeholder="Email", autofocus, required)
 				input(type="password", name="pass", placeholder="Password")
 				button Log In
-				#warn_wrap
+				a.alt(href="/register") or register
+				#warning
 
 			script.
 				const form = document.getElementById("login_form");
-				const err = document.getElementById("warn_wrap");
+				const err = document.getElementById("warning");
 		
 				let reqSent = false;
 				form.addEventListener('submit', (e) => {
@@ -23,13 +25,15 @@ html(lang="en")
 						reqSent = true;
 						err.innerText = "";
 
-						let xhr = new XMLHttpRequest();
+						const xhr = new XMLHttpRequest();
 						xhr.open("POST", "/auth", true);
 						xhr.setRequestHeader('Content-Type', 'application/json');
 
 						xhr.onload = function() {
 							reqSent = false;
-							if (xhr.status != 200) err.innerText = "Error logging in, please try again.";
+							if (xhr.status != 200) {
+								err.innerText = this.responseText;
+							}
 							else {
 								Cookies.set('tkn', this.responseText, { expires: 3 });
 								location.href = "/campaigns";
@@ -38,7 +42,8 @@ html(lang="en")
 
 						xhr.send(JSON.stringify({ 
 							email: form.querySelector("input[name=email]").value, 
-							pass: form.querySelector("input[name=pass]").value }));
+							pass: form.querySelector("input[name=pass]").value 
+						}));
 					}
 
 					e.preventDefault();

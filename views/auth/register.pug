@@ -1,0 +1,74 @@
+doctype html
+html(lang="en")
+	head
+		include ../includes/head.pug
+		link(rel="stylesheet", href="/public/style/build/css/overview.css")
+		title Register &bullet; Virtual Dungeon
+	body
+		.wrap#modal
+			h1 Register Account
+
+			form#register_form(method="post")
+				input(type="email", name="email", placeholder="Email", minlength=6, autofocus, required)
+				input(type="text", name="name", placeholder="Username", minlength=3, maxlength=32, required)
+				input(type="password", name="pass", placeholder="Password", required)
+				//- input(type="password", name="pass_verify", placeholder="Password (again)")
+				button Register
+				a.alt(href="/") or log in
+				#warning
+
+			script.
+				const form = document.getElementById("register_form");
+				const err = document.getElementById("warning");
+		
+				let reqSent = false;
+				form.addEventListener('submit', (e) => {
+					e.preventDefault();
+					if (!reqSent) {
+						err.innerText = "";
+
+						const email = document.querySelector("input[name=email]").value;
+						const name = document.querySelector("input[name=name]").value;
+						const pass = document.querySelector("input[name=pass]").value;
+						
+						try {
+							if (!/^\w+@\w+\.[\w.]{0,9}\w$/g.test(email)) 
+								throw "The inputted email is invalid.";
+							if (!/^\w{3,32}$/g.test(name)) 
+								throw "Username must be 3-32 characters long, and only contain alphanumeric characters.";
+							if (!/.{8,}/g.test(pass) || !/\d+/g.test(pass) || !/[^\w ]+/g.test(pass)) 
+								throw "Password must be at least 8 characters long, and contain a letter and a symbol."
+							//- if (pass != document.querySelector("input[name=pass_verify]").value) 
+							//- 	throw "Passwords must match."
+						}
+						catch (e) {
+							setTimeout(() => err.innerText = e, 50);
+							return false;
+						}
+
+						reqSent = true;
+
+						const xhr = new XMLHttpRequest();
+						xhr.open("POST", "/register", true);
+						xhr.setRequestHeader('Content-Type', 'application/json');
+
+						xhr.onload = function() {
+							reqSent = false;
+							if (xhr.status != 200) {
+								err.innerText = this.responseText;
+							}
+							else {
+								Cookies.set('tkn', this.responseText, { expires: 3 });
+								location.href = "/campaigns";
+							}
+						}
+
+						xhr.send(JSON.stringify({ 
+							email: email,
+							name: name,
+							pass: pass 
+						}));
+					}
+
+					return false;
+				});

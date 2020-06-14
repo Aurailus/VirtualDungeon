@@ -19,9 +19,9 @@ class MapData {
 		this.manager = new TilesetManager(scene);
 	}
 
-	init(size: Vec2) {
+	init(size: Vec2, assets: LoadedAsset[]) {
 		this.size = size;
-		this.manager.init();
+		this.manager.init(assets);
 		
 		this.registerLayer(Layer.floor,   () => Math.floor(Math.random() * 6) + 54, 0);
 		this.registerLayer(Layer.wall,    0, -1);

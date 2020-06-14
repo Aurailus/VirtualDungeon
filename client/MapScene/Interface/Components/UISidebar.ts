@@ -41,14 +41,12 @@ class UISidebar extends UIContainer {
 
 		// Bind the scroll wheel event
 		this.onWheel = this.onWheel.bind(this);
-		document.documentElement.addEventListener("wheel", this.onWheel);
-		this.scene.events.on('destroy', () => document.documentElement.removeEventListener("wheel", this.onWheel));
+		this.scene.i.bindScrollEvent(this.onWheel);
 	}
 
-	private onWheel(e: WheelEvent) {
+	private onWheel(delta: number) {
 		if (this.scene.ui.uiActive) {
-			let dir = (e.deltaY < 0 ? 1 : -1);
-			this.scrollY = clamp(this.scrollY + dir * 63, 0, -1000);
+			this.scrollY = clamp(this.scrollY + delta * 63, 0, -1000);
 
 			this.scene.tweens.add({
 				targets: this,
@@ -58,7 +56,7 @@ class UISidebar extends UIContainer {
 				repeat: 0
 			});
 		}
-	}		
+	}
 
 	mouseIntersects(): boolean {
 		return (this.mousePos().x < 69); 

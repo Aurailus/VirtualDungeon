@@ -1,121 +1,59 @@
 class LoadScene extends Phaser.Scene {
 	loaderOutline: Phaser.GameObjects.Sprite | null = null;
 	loaderFilled: Phaser.GameObjects.Sprite | null = null;
-	patching: Phaser.GameObjects.Sprite | null = null;
-
-	text: Phaser.GameObjects.BitmapText | null = null;
-
-	loadedTween: number = 0;
-	preloading: boolean = true;
-
-	spinTimer: number = 0;
-	spinFrame: number = 0;
 
 	constructor() {
 		super({key: "LoadScene"});
 	}
 
-	preload(): void {
-		this.cameras.main.setBackgroundColor("#090d24");
-
+	private setup(): void {
 		this.loaderOutline = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_unfilled", 0);
-		this.loaderOutline.setScale(6);
 		this.loaderFilled = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_filled", 0);
+
+		this.loaderOutline.setScale(6);
 		this.loaderFilled.setScale(6);
-		
-		this.text = this.add.bitmapText(this.cameras.main.width / 2 - 130, this.cameras.main.height / 2 - 20, "font2x", "Loading Assets...", 22, 1);
 		
 		this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height - 140, "logo");
 
 		this.load.on('progress', (val: number) => {
-			this.tweens.add({
-				targets: this,
-				loadedTween: val,
-				ease: 'Cubic',
-				duration: 150,
-				repeat: 0
-			});
-
+	   	this.loaderFilled!.setCrop(0, this.loaderFilled!.height - this.loaderFilled!.height * val, 
+		   	this.loaderFilled!.width, this.loaderFilled!.height * val);
 		});
-
-		this.pre_update();
-		this.loadAssets();	
 	}
 
-	pre_update() {
-		if (!this.preloading) return;
+	preload(): void {
+		this.setup();
 
-   	this.loaderFilled!.setCrop(0, this.loaderFilled!.height - this.loaderFilled!.height * this.loadedTween, 
-	   	this.loaderFilled!.width, this.loaderFilled!.height * this.loadedTween);
+		this.load.image("cursor", "/public/res/cursor.png");
+		this.load.image("grid_tile", "/public/res/grid_tile.png");
 
-	  this.spinTimer++;
-	  if (this.spinTimer > 80 - this.loadedTween * 70) {
-	  	this.spinTimer = 0;
-	  	this.spinFrame = (this.spinFrame + 1) % 4;
-	  	this.loaderOutline!.setFrame(this.spinFrame);
-	  	this.loaderFilled!.setFrame(this.spinFrame);
-	  }
+		this.load.image("ui_button_grid", "/public/res/ui/button_grid.png");
+		this.load.spritesheet("ui_button_side_menu", "/public/res/ui/button_side_menu.png", {frameWidth: 21, frameHeight: 18});
+		this.load.spritesheet("ui_history_manipulation", "/public/res/ui/history_manipulation.png", {frameWidth: 39, frameHeight: 18});
+		this.load.spritesheet("ui_mode_switch", "/public/res/ui/mode_switch.png", {frameWidth: 39, frameHeight: 18});
+		this.load.image("ui_quick_selector", "/public/res/ui/quick_selector.png");
+		this.load.spritesheet("ui_sidebar_bg", "/public/res/ui/sidebar_bg.png", {frameWidth: 68, frameHeight: 21});
+		this.load.image("ui_sidebar_cursor", "/public/res/ui/sidebar_cursor.png");
+		this.load.image("ui_sidebar_overlay", "/public/res/ui/sidebar_overlay.png");
+		this.load.spritesheet("ui_button_select_cursor", "/public/res/ui/button_select_cursor.png", {frameWidth: 21, frameHeight: 18});
+		this.load.spritesheet("ui_background_9x", "/public/res/ui/background_9x.png", {frameWidth: 8, frameHeight: 8});
+		this.load.image("ui_sidebar_browse", "/public/res/ui/sidebar_browse.png");
+		this.load.spritesheet("ui_button_sidebar_toggle", "/public/res/ui/button_sidebar_toggle.png", {frameWidth: 30, frameHeight: 18});
 
+		this.load.image("shader_light_mask", "/public/res/shader/light_mask.png");
 
-		if (this.preloading) setTimeout(this.pre_update.bind(this), 1/60);
-	}
-
-	private loadAssets(): void {
-		this.load.image("loader_patching", "/public/res/loader/loader_patching.png");
-
-		for (let s of this.cache.text.get("assets").split("\n")) {
-			let tokens = s.split(" ");
-			if (tokens.length == 2) this.load.image(tokens[0], "/public/res/" + tokens[1] + ".png");
-			else if (tokens.length == 4) this.load.spritesheet(tokens[0], "/public/res/" + tokens[1] + ".png", {frameWidth: parseInt(tokens[2]), frameHeight: parseInt(tokens[3])});
+		let assets = JSON.parse(this.cache.text.get("assets"));
+		for (let asset of assets) {
+			if (asset.size) this.load.spritesheet(asset.identifier, asset.path, {frameWidth: asset.size.x, frameHeight: asset.size.y});
+			else this.load.image(asset.identifier, asset.path);
 		}
-
-		for (let t of TOKENS) {
-			if (t.split_by != undefined) this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.split_by, frameHeight: t.split_by});
-			else this.load.image(t.key, t.file + ".png");
-		}
-
-		for (let t of WALLS)
-			this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.res, frameHeight: t.res});
-		for (let t of GROUNDS)
-			this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.res, frameHeight: t.res});
-		for (let t of OVERLAYS)
-			this.load.spritesheet(t.key, t.file + ".png", {frameWidth: t.res, frameHeight: t.res});
 	}
 
 	create(): void {
-		this.preloading = false;
-
-		this.loaderOutline!.setFrame(0);
-		this.loaderFilled!.setFrame(0);
-
-		setTimeout(() => {
-	   	this.text!.setText("Loading Assets...");
-			this.loaderFilled!.setCrop(0, 0, 100, 100);
-
-			this.tweens.add({
-				targets: [this.loaderOutline, this.loaderFilled],
-				y: -400,
-				alpha: 0,
-				ease: 'Cubic',
-				duration: 500,
-				repeat: 0
-			});
-
-			setTimeout(() => {
-				this.patching = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, "loader_patching");
-				this.patching.setScale(6);
-
-				this.text!.setText(" Loading Map...");	
-		
-				setTimeout(() => {
-					this.game.scene.start('MapScene');
-					this.game.scene.stop('LoadScene');
-					this.game.scene.swapPosition('MapScene', 'LoadScene');
-				}, 100);
-			}, 300);
-		}, 50);
-
+		this.game.scene.start('MapScene', JSON.parse(this.cache.text.get("assets")));
 		this.cache.text.remove("assets");
+		this.game.scene.stop('LoadScene');
+		this.game.scene.swapPosition('MapScene', 'LoadScene');
 	}
 }
  
