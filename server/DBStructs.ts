@@ -6,6 +6,8 @@ export interface User {
 	name: string;
 	user: string;
 	pass: string;
+
+	assetSpace: number;
 }
 
 export interface AuthToken {
@@ -43,6 +45,7 @@ export enum AssetType {
 export interface AssetListing {
 	_id?: ObjectID;
 
+	user: string;
 	group: string;
 	identifier?: string;
 }
@@ -50,18 +53,24 @@ export interface AssetListing {
 export interface AssetGroup {
 	_id?: ObjectID;
 
+	user: string;
 	identifier: string;
 	name: string;
+
 	contents: Asset[];
 }
 
 export interface Asset {
 	_id?: ObjectID;
-
+	
 	type: AssetType;
 	identifier: string;
 	name: string;
-
+	
+	user: string;
 	path: string;
-	size?: {x: number, y: number};
+	size: number;
+
+	tileSize: {x: number, y: number};
+	spriteSize?: {x: number, y: number};
 }

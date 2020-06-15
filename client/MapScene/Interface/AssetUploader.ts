@@ -27,6 +27,7 @@ class AssetUploader {
 	private uploadButton: HTMLButtonElement;
 
 	private uploading: boolean = false;
+	private done: boolean = false;
 
 	constructor(scene: MapScene) {
 		this.scene = scene;
@@ -61,13 +62,19 @@ class AssetUploader {
 		});
 
 		this.uploadButton.addEventListener("click", (e) => {
-			this.uploadButton.disabled = true;
-			this.uploadButton.innerHTML = "<p>Uploading</p>";
-			this.root.querySelector(".upload_form")!.remove();
+			if (!this.done) {
+				this.uploadButton.disabled = true;
+				this.uploadButton.innerHTML = "<p>Uploading</p>";
+				this.root.querySelector(".upload_form")!.remove();
 
-			this.uploading = true;
-			this.renderFileList();
-			this.initiateUpload();
+				this.uploading = true;
+				this.renderFileList();
+				this.initiateUpload();
+			}
+			else {
+				this.root.remove();
+				this.scene.i.setFocus(true);
+			}
 		});
 	}
 
@@ -104,7 +111,9 @@ class AssetUploader {
 	private initiateUpload() {
 		setTimeout(() => {
 			Promise.all(this.filesList.map(async (file) => await this.uploadFile(file))).then(() => {
-				console.log("all done~");
+				this.done = true;
+				this.uploadButton.disabled = false;
+				this.uploadButton.innerHTML = "<p>Done</p>";
 			})
 		}, 300);
 	}
@@ -132,7 +141,7 @@ class AssetUploader {
 	private renderFileList() {
 		this.filesWrapper.innerHTML = "";
 
-		let allValid = true;
+		let allValid = (this.filesList.length == 0 ? false : true);
 		for (let i = 0; i < this.filesList.length; i++) {
 			let file = this.filesList[i];
 
@@ -140,21 +149,23 @@ class AssetUploader {
 				file.status == FileStatus.FAILED       ? "An unknown error occured." :
 				file.status == FileStatus.TYPE_INVALID ? "Assets must be a JPEG or PNG." :
 				file.status == FileStatus.FILE_LIMIT   ? "Assets must be less than 2 MB." :
-				file.status == FileStatus.ACCT_LIMIT   ? "You've exceeded your asset limit." : ""
+				file.status == FileStatus.ACCT_LIMIT   ? "You've exceeded your storage limit." : ""
 
 			const fileDiv = document.createElement("div");
 			fileDiv.classList.add("upload_file");
 			fileDiv.innerHTML = `
 				<div class="upload_preview_wrap">
-					<button title="Cancel" class="upload_preview" style="background-image: url(${file.image});"></button>
+					<div class="upload_preview" style="background-image: url(${file.image});"></div>
 				</div>
-				<div class="input_wrap"><input placeholder="Name" name="name"/></div>
+				<div class="input_wrap"><input placeholder="Name" name="name" maxlength=32 spellcheck="false"/></div>
 				${(file.status == -1 || file.status == 0) ?
-					'<div class="input_wrap"><input name="identifier"/></div>' : '<p class="error">' + errorString + '</p>'}
+					'<div class="input_wrap"><input name="identifier" maxlength=32 spellcheck="false"/></div>' : '<p class="error">' + errorString + '</p>'}
+				<button class="status" title="Cancel"></button>
 			`;
 
 			const name = fileDiv.querySelector("input[name=name]") as HTMLInputElement;
 			const identifier = fileDiv.querySelector("input[name=identifier]") as HTMLInputElement | null;
+			const status = fileDiv.querySelector(".status") as HTMLDivElement;
 
 			name.value = file.name;
 
@@ -191,13 +202,15 @@ class AssetUploader {
 			}
 
 			fileDiv.querySelector("button")!.addEventListener("click", () => {
-				this.filesList.splice(i, 1);
-				this.renderFileList();
+				if (!this.uploading && file.status != 0) {
+					this.filesList.splice(i, 1);
+					this.renderFileList();
+				}
 			});			
 
-			if (this.uploading && file.status == -1) fileDiv.classList.add("loading");
-			else if (file.status == 0) fileDiv.classList.add("success");
-			else if (file.status != -1) fileDiv.classList.add("failed");
+			if (this.uploading && file.status == -1) status.classList.add("loading");
+			else if (file.status == 0) status.classList.add("success");
+			else if (file.status != -1) status.classList.add("failed");
 
 			this.filesWrapper.append(fileDiv);
 

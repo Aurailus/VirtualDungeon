@@ -101,7 +101,7 @@ html, body {
 
 .upload_modal {
 	@include ui;
-	@include align-center(550px, 903px, 16px);
+	@include align-center(600px, 903px, 16px);
 
 	display: flex;
 	flex-direction: column;
@@ -231,47 +231,77 @@ html, body {
 		    color: #ffc3dc;
 		    font-size: 20px;
 		    margin-left: 6px;
+
+		    &::before {
+		    	content: " ";
+					display: inline-block;
+					width: 28px;
+					height: 28px;
+					margin-right: 8px;
+					vertical-align: -29%;
+			
+					image-rendering: pixelated;
+					background-size: 32px 32px;
+					background-position: center center;
+					background-repeat: no-repeat;
+					background-image: url(/public/res/ui/status_failed.png);
+		    }
 			}
 
-			&.success .upload_preview::after, &.failed .upload_preview::after, 
-			&.loading .upload_preview::after, & .upload_preview:not(.success):hover::after {
-				content: " ";
+			.status {
 				display: block;
 				position: absolute;
+				z-index: 1;
 
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				
-				background-color: rgba(47, 61, 143, 0.6);
+				top: 20px;
+				right: 20px;
+				width: 32px;
+				height: 32px;
+		
+				image-rendering: pixelated;
+				background-color: transparent;
 				background-size: contain;
 				background-position: center center;
 				background-repeat: no-repeat;
-			}
 
-			&.success .upload_preview::after {
-				background-image: url(/public/res/ui/status_success.png);
-			}
+				&.success {
+					background-image: url(/public/res/ui/status_success.png);
+				}
 
-			&.failed .upload_preview::after, & .upload_preview:hover::after {
-				background-image: url(/public/res/ui/status_failed.png);
-			}
+				&.failed {
+					background-image: url(/public/res/ui/status_failed.png);
+				}
 
-			&.loading .upload_preview::after {
-				background-image: url(/public/res/ui/status_pending.png);
-				background-color: transparent;
-				background-size: 512px 64px;
-				width: 64px;
-				height: 64px;
-				left: 4px;
-				top: 16px;
+			// & .upload_preview.upload_preview:hover::after, & .upload_preview.upload_preview:focus::after {
+			// 	background-color: rgba(255, 163, 186, 0.7);
+			// 	background-image: url(/public/res/ui/status_failed_symbolic.png);
+			// }
 
-			  animation: animate 1s steps(8) infinite;
+				&.loading {
+					background-image: url(/public/res/ui/status_pending.png);
+					background-color: transparent;
+					background-size: 256px 32px;
 
-				@keyframes animate {
-					from { background-position: 0px 0px };
-					to   { background-position: -512px 0px };
+				  animation: animate 1s steps(8) infinite;
+
+					@keyframes animate {
+						from { background-position: 0px 0px };
+						to   { background-position: -256px 0px };
+					}
+				}
+
+				&:not(.loading):not(.success) {
+					opacity: 0.6;
+					background-image: url(/public/res/ui/indicator_trash.png);
+
+					&:hover, &:focus {
+						opacity: 0.8;
+						background-color: rgba(97, 129, 245, 0.8);
+					}
+
+					&:active {
+						opacity: 1;
+					}
 				}
 			}
 		}

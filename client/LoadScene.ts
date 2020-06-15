@@ -44,7 +44,7 @@ class LoadScene extends Phaser.Scene {
 
 		let assets = JSON.parse(this.cache.text.get("assets"));
 		for (let asset of assets) {
-			if (asset.size) this.load.spritesheet(asset.identifier, asset.path, {frameWidth: asset.size.x, frameHeight: asset.size.y});
+			if (asset.tileSize) this.load.spritesheet(asset.identifier, asset.path, {frameWidth: asset.tileSize.x, frameHeight: asset.tileSize.y});
 			else this.load.image(asset.identifier, asset.path);
 		}
 	}

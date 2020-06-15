@@ -3,14 +3,16 @@ import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { MongoClient, Db } from 'mongodb';
-import { FileArray, UploadedFile } from 'express-fileupload';
+import { UploadedFile } from 'express-fileupload';
 
 import * as DB from './DBStructs'
 
-const DEFAULT_ASSET_GROUP = "auri/16x_fantasy";
+const PERSONAL_ASSETS = "_";
 
 export const uploadLimit = 2 * 1024 * 1024;
-export enum FileStatus { ACCEPTED, FAILED, TYPE_INVALID, FILE_LIMIT, ACCT_LIMIT }
+export const accountLimit = 5 * 1024 * 1024;
+
+export enum FileStatus { ACCEPTED, FAILED, TYPE_INVALID, FILE_LIMIT, ACCT_LIMIT, NAME_USED }
 
 export default class Database {
 	client: MongoClient | null = null;
@@ -31,28 +33,41 @@ export default class Database {
 		await this.db.collection('assets').deleteMany({});
 		// await this.db.collection('tokens').deleteMany({});
 		await this.db.collection('campaigns').deleteMany({});
+		await this.db.collection('assets').deleteMany({});
 
 		await this.db.collection('assets').insertOne({
-			identifier: DEFAULT_ASSET_GROUP,
+			user: "me@auri.xyz",
+			identifier: "16x_fantasy",
 			name: "Fantasy (16x)",
+
 			contents: [{
 				type: DB.AssetType.GROUND,
-				name: "Rocky Ground",
 				identifier: "floor_rock",
+				name: "Rocky Ground",
+
 				path: "/public/assets/16x_fantasy_floor_rock.png",
-				size: {x: 16, y: 16}
+				size: 0,
+				
+				tileSize: {x: 16, y: 16}
 			}, {
 				type: DB.AssetType.WALL,
-				name: "Dungeon Bricks",
 				identifier: "wall_dungeon",
+				name: "Dungeon Bricks",
+
 				path: "/public/assets/16x_fantasy_wall_dungeon.png",
-				size: {x: 16, y: 16}
+				size: 0,
+				
+				tileSize: {x: 16, y: 16}
 			}, {
 				type: DB.AssetType.TOKEN,
-				name: "Cadin 1",
 				identifier: "cadin_1",
+				name: "Cadin 1",
+
 				path: "/public/assets/16x_fantasy_cadin_1.png",
-				size: {x: 18, y: 18}
+				size: 0,
+				
+				tileSize: {x: 18, y: 18},
+				spriteSize: {x: 1, y: 1}
 			}]
 		});
 	}
@@ -72,7 +87,7 @@ export default class Database {
 		if (await collection.findOne({user: user}) != null) throw "A user with this email address already exists.";
 
 		let pass = await bcrypt.hash(password, 10);
-		await collection.insertOne({ name: name, user: user, pass: pass });
+		await collection.insertOne({ name: name, user: user, pass: pass, assetSpace: 0 });
 	}
 
 
@@ -125,7 +140,10 @@ export default class Database {
 			name: name,
 			
 			maps: [],
-			assets: [{group: "auri/16x_fantasy"}]
+			assets: [
+				{user: "me@auri.xyz", group: PERSONAL_ASSETS}, 
+				{user: "me@auri.xyz", group: "16x_fantasy"}
+			]
 		}
 
 		await collection.insertOne(campaign)
@@ -217,7 +235,8 @@ export default class Database {
 		let vals: DB.Asset[] = [];
 
 		await Promise.all(camp.assets.map(async (v: DB.AssetListing) => {
-			(await this.db!.collection('assets').findOne({identifier: v.group})).contents.forEach((e: DB.Asset) => {
+			let campaign = await this.db!.collection('assets').findOne({user: v.user, identifier: v.group});
+			if (campaign) campaign.contents.forEach((e: DB.Asset) => {
 				if (!v.identifier || v.identifier === e.identifier) vals.push(e);
 			});
 		}))
@@ -237,36 +256,60 @@ export default class Database {
 	*/
 
 	async acceptAsset(user: string, type: DB.AssetType, file: UploadedFile, name: string, identifier: string): Promise<FileStatus> {
-		const userObj = await this.getUser(user);
+		let spaceAdded: boolean = false;
+		try {
+			const userObj = await this.getUser(user);
+			
+			if (userObj.assetSpace + file.size > accountLimit)
+				return FileStatus.ACCT_LIMIT;
 
-		if (file.mimetype != "image/png" && file.mimetype != "image/jpeg") return FileStatus.TYPE_INVALID;
-		// if (acctSizeAllocated + file.size > acctSizeLimit) return FileStatus.ACCT_LIMIT;
-		if (file.size > uploadLimit || file.truncated) return FileStatus.FILE_LIMIT;
+			if (file.mimetype != "image/png" && file.mimetype != "image/jpeg") 
+				return FileStatus.TYPE_INVALID;
 
-		try { if (this.sanitizeName(identifier) != identifier) return FileStatus.FAILED; }
-		catch (e) { return FileStatus.FAILED; }
+			if (file.size > uploadLimit || file.truncated) 
+				return FileStatus.FILE_LIMIT;
 
-		let exportName: string;
-		let exportExt = file.mimetype == "image/png" ? ".png" : ".jpg";
+			if (identifier.length > 32 || name.length > 32 || this.sanitizeName(identifier) != identifier) 
+				return FileStatus.FAILED;
 
-		do exportName = crypto.createHash('md5').update(identifier + await crypto.randomBytes(8)).digest("hex");
-		while (fs.existsSync(path.join(__dirname, "/../public/assets/" + exportName + exportExt)));
+			await this.db!.collection('users').update({user: user}, { $inc: { assetSpace: file.size }});
+			spaceAdded = true;
 
-		await file.mv(path.join(__dirname, "/../public/assets/" + exportName + exportExt));
+			let exportName: string;
+			let exportExt = file.mimetype == "image/png" ? ".png" : ".jpg";
 
-		await this.db!.collection('assets').updateOne({identifier: DEFAULT_ASSET_GROUP}, {
-			$push: {
-				contents: {
-					type: DB.AssetType.TOKEN,
+			do exportName = crypto.createHash('md5').update(identifier + await crypto.randomBytes(8)).digest("hex");
+			while (fs.existsSync(path.join(__dirname, "/../public/assets/" + exportName + exportExt)));
+
+			await file.mv(path.join(__dirname, "/../public/assets/" + exportName + exportExt));
+
+			await this.db!.collection('assets').findOneAndUpdate({user: user, identifier: PERSONAL_ASSETS}, {
+				$set: {
+					user: user, 
+					identifier: PERSONAL_ASSETS, 
+					name: "Personal Assets"
+				},
+
+				$push: { contents: {
+					type: type,
 					name: name,
 					identifier: identifier,
 					path: `/public/assets/${exportName}${exportExt}`,
-					size: {x: 18, y: 18}
-				}
-			}
-		});
+					size: file.size,
+					tileSize: {x: 18, y: 18},
+					spriteSize: {x: 1, y: 1}
+				}}
+			}, {upsert: true});
 
-		return FileStatus.ACCEPTED;
+			console.log((await this.getUser(user)).assetSpace);
+
+			return FileStatus.ACCEPTED;
+		}
+		catch(e) {
+			console.log(e);
+			if (spaceAdded) await this.db!.collection('users').update({user: user}, { $inc: { assetSpace: -file.size }});
+			return FileStatus.FAILED;
+		}
 	}
 
 

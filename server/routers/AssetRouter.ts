@@ -20,6 +20,7 @@ export default class AssetRouter extends Router {
 				res.send(await this.db.getCampaignAssets(user, campaign));
 			}
 			catch (e) { 
+				console.log(e)
 				res.sendStatus(403) 
 			};
 		});

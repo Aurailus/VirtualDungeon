@@ -136,8 +136,8 @@ var LoadScene = /** @class */ (function (_super) {
         try {
             for (var assets_1 = __values(assets), assets_1_1 = assets_1.next(); !assets_1_1.done; assets_1_1 = assets_1.next()) {
                 var asset = assets_1_1.value;
-                if (asset.size)
-                    this.load.spritesheet(asset.identifier, asset.path, { frameWidth: asset.size.x, frameHeight: asset.size.y });
+                if (asset.tileSize)
+                    this.load.spritesheet(asset.identifier, asset.path, { frameWidth: asset.tileSize.x, frameHeight: asset.tileSize.y });
                 else
                     this.load.image(asset.identifier, asset.path);
             }
@@ -214,84 +214,6 @@ var AssetType;
     AssetType[AssetType["OVERLAY"] = 2] = "OVERLAY";
     AssetType[AssetType["TOKEN"] = 3] = "TOKEN";
 })(AssetType || (AssetType = {}));
-var WALLS = [
-    { name: "Dungeon Wall", key: "wall_dungeon", file: "/public/res/tileset/wall_dungeon", res: 16 },
-    { name: "Wood Wall", key: "wall_wood", file: "/public/res/tileset/wall_wood", res: 16 },
-    { name: "Shadow Wall", key: "wall_shadow", file: "/public/res/tileset/wall_shadow", res: 16 },
-];
-var GROUNDS = [
-    { name: "Cave Floor", key: "ground_cave", file: "/public/res/tileset/ground_cave", res: 16 },
-    { name: "Lawn", key: "ground_grass", file: "/public/res/tileset/ground_grass", res: 16 },
-    { name: "Wood Floor", key: "ground_wood", file: "/public/res/tileset/ground_wood", res: 16 },
-];
-var OVERLAYS = [
-    { name: "Water", key: "overlay_water", file: "/public/res/tileset/overlay_water", res: 16 },
-    { name: "Hole", key: "overlay_hole", file: "/public/res/tileset/overlay_hole", res: 16 },
-];
-var TOKENS = [
-    { name: "Armor 1", key: "tkn_armor_1", file: "/public/res/token/armor_1", split_by: 18 },
-    { name: "Cadin 1", key: "tkn_cadin_1", file: "/public/res/token/cadin_1", split_by: 18 },
-    { name: "Cadin 2", key: "tkn_cadin_2", file: "/public/res/token/cadin_2", split_by: 18 },
-    { name: "Cadin 3", key: "tkn_cadin_3", file: "/public/res/token/cadin_3", split_by: 18 },
-    { name: "Cleric F", key: "tkn_cleric_f", file: "/public/res/token/cleric_female", split_by: 18 },
-    { name: "Cleric M", key: "tkn_cleric_m", file: "/public/res/token/cleric_male", split_by: 18 },
-    { name: "Dragonfolk 1", key: "tkn_dragonfolk_1", file: "/public/res/token/dragonfolk_1", split_by: 18 },
-    { name: "Dragonfolk 2", key: "tkn_dragonfolk_2", file: "/public/res/token/dragonfolk_2", split_by: 18 },
-    { name: "Dragonfolk 3", key: "tkn_dragonfolk_3", file: "/public/res/token/dragonfolk_3", split_by: 18 },
-    { name: "Tori 1", key: "tkn_tori_1", file: "/public/res/token/tori_1", split_by: 18 },
-    { name: "Tori 2", key: "tkn_tori_2", file: "/public/res/token/tori_2", split_by: 18 },
-    { name: "Tori 3", key: "tkn_tori_3", file: "/public/res/token/tori_3", split_by: 18 },
-    { name: "Tori 4", key: "tkn_tori_4", file: "/public/res/token/tori_4", split_by: 18 },
-    { name: "Tori 5", key: "tkn_tori_5", file: "/public/res/token/tori_5", split_by: 18 },
-    { name: "Dragonfolk Knight 1", key: "tkn_dragonknight_1", file: "/public/res/token/dragonfolk_knight_1", split_by: 18 },
-    { name: "Dragonfolk Knight 2", key: "tkn_dragonknight_2", file: "/public/res/token/dragonfolk_knight_2", split_by: 18 },
-    { name: "Dragonfolk Knight 3", key: "tkn_dragonknight_3", file: "/public/res/token/dragonfolk_knight_3", split_by: 18 },
-    { name: "Druid M", key: "tkn_druid_m", file: "/public/res/token/druid_male", split_by: 18 },
-    { name: "Feline 1", key: "tkn_feline_1", file: "/public/res/token/feline_1", split_by: 18 },
-    { name: "Knight 1", key: "tkn_knight_1", file: "/public/res/token/knight_1", split_by: 18 },
-    { name: "Robot 1", key: "tkn_robot_1", file: "/public/res/token/robot_1", split_by: 18 },
-    { name: "Rockfriend Green", key: "tkn_rockfriend_g", file: "/public/res/token/rockfriend_1", split_by: 18 },
-    { name: "Rockfriend Blue", key: "tkn_rockfriend_b", file: "/public/res/token/rockfriend_2", split_by: 18 },
-    { name: "Rockfriend Red", key: "tkn_rockfriend_r", file: "/public/res/token/rockfriend_3", split_by: 18 },
-    { name: "Rockfriend Teal", key: "tkn_rockfriend_t", file: "/public/res/token/rockfriend_4", split_by: 18 },
-    { name: "Wizard F", key: "tkn_wizard_f", file: "/public/res/token/wizard_female", split_by: 18 },
-    { name: "Wizard M", key: "tkn_wizard_m", file: "/public/res/token/wizard_male", split_by: 18 },
-    { name: "Cloaked Person", key: "tkn_cloaked_person", file: "/public/res/token/cloaked_person", split_by: 18 },
-    { name: "Lich", key: "tkn_lich", file: "/public/res/token/lich", split_by: 18 },
-    { name: "Squidman", key: "tkn_squidman", file: "/public/res/token/squidman", split_by: 18 },
-    { name: "Dwarf M 1", key: "tkn_dwarf_m_1", file: "/public/res/token/dwarf_m_1", split_by: 18 },
-    { name: "Dwarf M 2", key: "tkn_dwarf_m_2", file: "/public/res/token/dwarf_m_2", split_by: 18 },
-    { name: "Bones", key: "tkn_bones", file: "/public/res/token/bones" },
-    { name: "Skeleton", key: "tkn_skeleton", file: "/public/res/token/skeleton", split_by: 18 },
-    { name: "Gnoll", key: "tkn_gnoll", file: "/public/res/token/gnoll", split_by: 18 },
-    { name: "Gnoll Leader", key: "tkn_gnoll_leader", file: "/public/res/token/gnoll_leader", split_by: 18 },
-    { name: "Orc", key: "tkn_orc", file: "/public/res/token/orc", split_by: 18 },
-    { name: "Orc Lord", key: "tkn_orc_lord", file: "/public/res/token/orc_lord", split_by: 18 },
-    { name: "Tiefling 1", key: "tkn_tiefling_1", file: "/public/res/token/tiefling_1", split_by: 18 },
-    { name: "Dark Wolf", key: "tkn_wolf_dark", file: "/public/res/token/wolf_dark", split_by: 18 },
-    { name: "Light Wolf", key: "tkn_wolf_light", file: "/public/res/token/wolf_light", split_by: 18 },
-    { name: "Tan Dog", key: "tkn_tan_dog", file: "/public/res/token/tan_dog", split_by: 18 },
-    { name: "Chest", key: "tkn_chest", file: "/public/res/token/chest", split_by: 18 },
-    { name: "Mimic", key: "tkn_mimic", file: "/public/res/token/mimic", split_by: 18 },
-    { name: "Egg", key: "tkn_egg", file: "/public/res/token/egg", split_by: 18 },
-    { name: "Baby Tin Dragon", key: "tkn_baby_tin_dragon", file: "/public/res/token/baby_tin_dragon", split_by: 18 },
-    { name: "Baby Gold Dragon", key: "tkn_baby_gold_dragon", file: "/public/res/token/baby_gold_dragon", split_by: 18 },
-    { name: "Baby Amethyst Dragon", key: "tkn_baby_amethyst_dragon", file: "/public/res/token/baby_amethyst_dragon", split_by: 18 },
-    { name: "Baby Black Dragon", key: "tkn_baby_black_dragon", file: "/public/res/token/baby_black_dragon", split_by: 18 },
-    { name: "Baby Blue Dragon", key: "tkn_baby_blue_dragon", file: "/public/res/token/baby_blue_dragon", split_by: 18 },
-    { name: "Baby Green Dragon", key: "tkn_baby_green_dragon", file: "/public/res/token/baby_green_dragon", split_by: 18 },
-    { name: "Baby Red Dragon", key: "tkn_baby_red_dragon", file: "/public/res/token/baby_red_dragon", split_by: 18 },
-    { name: "Dino", key: "tkn_dino", file: "/public/res/token/dino", split_by: 18 },
-    { name: "Naexi", key: "tkn_naexi", file: "/public/res/token/naexi_human_noweapon", split_by: 18 },
-    { name: "Naexi w/ Yklwa", key: "tkn_naexi_yklwa", file: "/public/res/token/naexi_human_yklwa", split_by: 18 },
-    // { name: "Naexi Anthro Form",								key: "tkn_naexi_anthro",						file: "/public/res/token/naexi_anthro",	  			split_by: 18 },
-    { name: "Crab", key: "tkn_crab", file: "/public/res/token/crab", split_by: 18 },
-    { name: "Blue Slime", key: "tkn_blue_slime", file: "/public/res/token/blue_slime", },
-    { name: "Green Goo", key: "tkn_green_goo", file: "/public/res/token/green_goo", },
-    { name: "White Ooze", key: "tkn_white_ooze", file: "/public/res/token/white_ooze", },
-    { name: "Water Slime", key: "tkn_water_slime", file: "/public/res/token/water_slime", },
-    { name: "Treasure", key: "tkn_treasure", file: "/public/res/token/treasure" },
-];
 // class FogOfWar {
 // 	scene: MapScene;
 // 	tex: Phaser.GameObjects.RenderTexture;
@@ -778,6 +700,7 @@ var AssetUploader = /** @class */ (function () {
         var _this = this;
         this.filesList = [];
         this.uploading = false;
+        this.done = false;
         this.scene = scene;
         this.scene.i.setFocus(false);
         this.root = document.createElement("div");
@@ -798,12 +721,18 @@ var AssetUploader = /** @class */ (function () {
             _this.fileSelector.value = "";
         });
         this.uploadButton.addEventListener("click", function (e) {
-            _this.uploadButton.disabled = true;
-            _this.uploadButton.innerHTML = "<p>Uploading</p>";
-            _this.root.querySelector(".upload_form").remove();
-            _this.uploading = true;
-            _this.renderFileList();
-            _this.initiateUpload();
+            if (!_this.done) {
+                _this.uploadButton.disabled = true;
+                _this.uploadButton.innerHTML = "<p>Uploading</p>";
+                _this.root.querySelector(".upload_form").remove();
+                _this.uploading = true;
+                _this.renderFileList();
+                _this.initiateUpload();
+            }
+            else {
+                _this.root.remove();
+                _this.scene.i.setFocus(true);
+            }
         });
     }
     AssetUploader.prototype.addFileToList = function (file) {
@@ -852,7 +781,9 @@ var AssetUploader = /** @class */ (function () {
                     case 1: return [2 /*return*/, _a.sent()];
                 }
             }); }); })).then(function () {
-                console.log("all done~");
+                _this.done = true;
+                _this.uploadButton.disabled = false;
+                _this.uploadButton.innerHTML = "<p>Done</p>";
             });
         }, 300);
     };
@@ -880,19 +811,20 @@ var AssetUploader = /** @class */ (function () {
     AssetUploader.prototype.renderFileList = function () {
         var _this = this;
         this.filesWrapper.innerHTML = "";
-        var allValid = true;
+        var allValid = (this.filesList.length == 0 ? false : true);
         var _loop_1 = function (i) {
             var file = this_1.filesList[i];
             var errorString = file.status == FileStatus.FAILED ? "An unknown error occured." :
                 file.status == FileStatus.TYPE_INVALID ? "Assets must be a JPEG or PNG." :
                     file.status == FileStatus.FILE_LIMIT ? "Assets must be less than 2 MB." :
-                        file.status == FileStatus.ACCT_LIMIT ? "You've exceeded your asset limit." : "";
+                        file.status == FileStatus.ACCT_LIMIT ? "You've exceeded your storage limit." : "";
             var fileDiv = document.createElement("div");
             fileDiv.classList.add("upload_file");
-            fileDiv.innerHTML = "\n\t\t\t\t<div class=\"upload_preview_wrap\">\n\t\t\t\t\t<button title=\"Cancel\" class=\"upload_preview\" style=\"background-image: url(" + file.image + ");\"></button>\n\t\t\t\t</div>\n\t\t\t\t<div class=\"input_wrap\"><input placeholder=\"Name\" name=\"name\"/></div>\n\t\t\t\t" + ((file.status == -1 || file.status == 0) ?
-                '<div class="input_wrap"><input name="identifier"/></div>' : '<p class="error">' + errorString + '</p>') + "\n\t\t\t";
+            fileDiv.innerHTML = "\n\t\t\t\t<div class=\"upload_preview_wrap\">\n\t\t\t\t\t<div class=\"upload_preview\" style=\"background-image: url(" + file.image + ");\"></div>\n\t\t\t\t</div>\n\t\t\t\t<div class=\"input_wrap\"><input placeholder=\"Name\" name=\"name\" maxlength=32 spellcheck=\"false\"/></div>\n\t\t\t\t" + ((file.status == -1 || file.status == 0) ?
+                '<div class="input_wrap"><input name="identifier" maxlength=32 spellcheck="false"/></div>' : '<p class="error">' + errorString + '</p>') + "\n\t\t\t\t<button class=\"status\" title=\"Cancel\"></button>\n\t\t\t";
             var name_1 = fileDiv.querySelector("input[name=name]");
             var identifier = fileDiv.querySelector("input[name=identifier]");
+            var status_1 = fileDiv.querySelector(".status");
             name_1.value = file.name;
             if (!identifier) {
                 name_1.disabled = true;
@@ -921,15 +853,17 @@ var AssetUploader = /** @class */ (function () {
                 });
             }
             fileDiv.querySelector("button").addEventListener("click", function () {
-                _this.filesList.splice(i, 1);
-                _this.renderFileList();
+                if (!_this.uploading && file.status != 0) {
+                    _this.filesList.splice(i, 1);
+                    _this.renderFileList();
+                }
             });
             if (this_1.uploading && file.status == -1)
-                fileDiv.classList.add("loading");
+                status_1.classList.add("loading");
             else if (file.status == 0)
-                fileDiv.classList.add("success");
+                status_1.classList.add("success");
             else if (file.status != -1)
-                fileDiv.classList.add("failed");
+                status_1.classList.add("failed");
             this_1.filesWrapper.append(fileDiv);
             if (file.status != -1)
                 allValid = false;
