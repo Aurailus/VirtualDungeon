@@ -32,7 +32,7 @@ html(lang="en")
 						const pass = document.querySelector("input[name=pass]").value;
 						
 						try {
-							if (!/^\w+@\w+\.[\w.]{0,9}\w$/g.test(email)) 
+							if (!/^[\w.]+@\w+\.[\w.]{0,9}\w$/g.test(email)) 
 								throw "The inputted email is invalid.";
 							if (!/^\w{3,32}$/g.test(name)) 
 								throw "Username must be 3-32 characters long, and only contain alphanumeric characters.";

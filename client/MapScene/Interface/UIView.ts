@@ -31,7 +31,7 @@ class UIView {
 		this.tokenSidebar = new UITokenSidebar(this.scene, -205, 0);
 		this.o.add(this.tokenSidebar);
 		for (let token of assets.filter((a) => a.type == AssetType.TOKEN))
-			this.tokenSidebar.addToken(token.identifier);
+			this.tokenSidebar.addToken(token.key);
 
 		this.tileSidebar = new UITileSidebar(this.scene, 0, 0, assets);
 		this.o.add(this.tileSidebar);

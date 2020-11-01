@@ -2,6 +2,8 @@ class LoadScene extends Phaser.Scene {
 	loaderOutline: Phaser.GameObjects.Sprite | null = null;
 	loaderFilled: Phaser.GameObjects.Sprite | null = null;
 
+	assets: LoadedAsset[] = [];
+
 	constructor() {
 		super({key: "LoadScene"});
 	}
@@ -42,15 +44,23 @@ class LoadScene extends Phaser.Scene {
 
 		this.load.image("shader_light_mask", "/public/res/shader/light_mask.png");
 
-		let assets = JSON.parse(this.cache.text.get("assets"));
-		for (let asset of assets) {
-			if (asset.tileSize) this.load.spritesheet(asset.identifier, asset.path, {frameWidth: asset.tileSize.x, frameHeight: asset.tileSize.y});
-			else this.load.image(asset.identifier, asset.path);
+		this.assets = JSON.parse(this.cache.text.get("assets"));
+		for (let asset of this.assets) {
+			let key = 
+				(asset.type == AssetType.WALL    ? "wall_"    :
+				 asset.type == AssetType.GROUND  ? "ground_"  :
+				 asset.type == AssetType.OVERLAY ? "overlay_" :
+				 asset.type == AssetType.TOKEN   ? "token_"   : "ERR_") 
+				+ asset.identifier;
+			asset.key = key;
+
+			if (asset.tileSize) this.load.spritesheet(key, asset.path, {frameWidth: asset.tileSize.x, frameHeight: asset.tileSize.y});
+			else this.load.image(key, asset.path);
 		}
 	}
 
 	create(): void {
-		this.game.scene.start('MapScene', JSON.parse(this.cache.text.get("assets")));
+		this.game.scene.start('MapScene', this.assets);
 		this.cache.text.remove("assets");
 		this.game.scene.stop('LoadScene');
 		this.game.scene.swapPosition('MapScene', 'LoadScene');

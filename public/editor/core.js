@@ -101,6 +101,7 @@ var LoadScene = /** @class */ (function (_super) {
         var _this = _super.call(this, { key: "LoadScene" }) || this;
         _this.loaderOutline = null;
         _this.loaderFilled = null;
+        _this.assets = [];
         return _this;
     }
     LoadScene.prototype.setup = function () {
@@ -132,26 +133,32 @@ var LoadScene = /** @class */ (function (_super) {
         this.load.image("ui_sidebar_browse", "/public/res/ui/sidebar_browse.png");
         this.load.spritesheet("ui_button_sidebar_toggle", "/public/res/ui/button_sidebar_toggle.png", { frameWidth: 30, frameHeight: 18 });
         this.load.image("shader_light_mask", "/public/res/shader/light_mask.png");
-        var assets = JSON.parse(this.cache.text.get("assets"));
+        this.assets = JSON.parse(this.cache.text.get("assets"));
         try {
-            for (var assets_1 = __values(assets), assets_1_1 = assets_1.next(); !assets_1_1.done; assets_1_1 = assets_1.next()) {
-                var asset = assets_1_1.value;
+            for (var _b = __values(this.assets), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var asset = _c.value;
+                var key = (asset.type == AssetType.WALL ? "wall_" :
+                    asset.type == AssetType.GROUND ? "ground_" :
+                        asset.type == AssetType.OVERLAY ? "overlay_" :
+                            asset.type == AssetType.TOKEN ? "token_" : "ERR_")
+                    + asset.identifier;
+                asset.key = key;
                 if (asset.tileSize)
-                    this.load.spritesheet(asset.identifier, asset.path, { frameWidth: asset.tileSize.x, frameHeight: asset.tileSize.y });
+                    this.load.spritesheet(key, asset.path, { frameWidth: asset.tileSize.x, frameHeight: asset.tileSize.y });
                 else
-                    this.load.image(asset.identifier, asset.path);
+                    this.load.image(key, asset.path);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (assets_1_1 && !assets_1_1.done && (_a = assets_1.return)) _a.call(assets_1);
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
             finally { if (e_1) throw e_1.error; }
         }
     };
     LoadScene.prototype.create = function () {
-        this.game.scene.start('MapScene', JSON.parse(this.cache.text.get("assets")));
+        this.game.scene.start('MapScene', this.assets);
         this.cache.text.remove("assets");
         this.game.scene.stop('LoadScene');
         this.game.scene.swapPosition('MapScene', 'LoadScene');
@@ -1059,7 +1066,7 @@ var UIView = /** @class */ (function () {
         try {
             for (var _b = __values(assets.filter(function (a) { return a.type == AssetType.TOKEN; })), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var token = _c.value;
-                this.tokenSidebar.addToken(token.identifier);
+                this.tokenSidebar.addToken(token.key);
             }
         }
         catch (e_8_1) { e_8 = { error: e_8_1 }; }
@@ -1587,7 +1594,7 @@ var UITileSidebar = /** @class */ (function (_super) {
         try {
             for (var _d = __values(assets.filter(function (a) { return a.type == AssetType.WALL; })), _e = _d.next(); !_e.done; _e = _d.next()) {
                 var tileset = _e.value;
-                _this.addWall(tileset.identifier);
+                _this.addWall(tileset.key);
             }
         }
         catch (e_12_1) { e_12 = { error: e_12_1 }; }
@@ -1606,7 +1613,7 @@ var UITileSidebar = /** @class */ (function (_super) {
         try {
             for (var _f = __values(assets.filter(function (a) { return a.type == AssetType.GROUND; })), _g = _f.next(); !_g.done; _g = _f.next()) {
                 var tileset = _g.value;
-                _this.addGround(tileset.identifier);
+                _this.addGround(tileset.key);
             }
         }
         catch (e_13_1) { e_13 = { error: e_13_1 }; }
@@ -1625,7 +1632,7 @@ var UITileSidebar = /** @class */ (function (_super) {
         try {
             for (var _h = __values(assets.filter(function (a) { return a.type == AssetType.OVERLAY; })), _j = _h.next(); !_j.done; _j = _h.next()) {
                 var tileset = _j.value;
-                _this.addOverlay(tileset.identifier);
+                _this.addOverlay(tileset.key);
             }
         }
         catch (e_14_1) { e_14 = { error: e_14_1 }; }
@@ -1893,11 +1900,11 @@ var ArchitectMode = /** @class */ (function () {
                 this.placeMode = "brush";
         }
         // Push history to HistoryManager
-        if (this.scene.i.mouseLeftDown() && !this.pointerDown) {
+        if (this.scene.i.mouseDown() && !this.pointerDown) {
             this.pointerDown = true;
             this.pointerPrimaryDown = this.scene.i.mouseLeftDown();
         }
-        else if (!this.scene.i.mouseLeftDown() && this.pointerDown) {
+        else if (!this.scene.i.mouseDown() && this.pointerDown) {
             if (this.manipulated.length != 0) {
                 try {
                     for (var _b = __values(this.manipulated), _c = _b.next(); !_c.done; _c = _b.next()) {
@@ -3410,7 +3417,7 @@ var TilesetManager = /** @class */ (function () {
         try {
             for (var _d = __values(assets.filter(function (a) { return a.type == AssetType.WALL; })), _e = _d.next(); !_e.done; _e = _d.next()) {
                 var tileset = _e.value;
-                this.addTileset(tileset.identifier, 1 /* wall */);
+                this.addTileset(tileset.key, 1 /* wall */);
             }
         }
         catch (e_29_1) { e_29 = { error: e_29_1 }; }
@@ -3423,7 +3430,7 @@ var TilesetManager = /** @class */ (function () {
         try {
             for (var _f = __values(assets.filter(function (a) { return a.type == AssetType.GROUND; })), _g = _f.next(); !_g.done; _g = _f.next()) {
                 var tileset = _g.value;
-                this.addTileset(tileset.identifier, 0 /* floor */);
+                this.addTileset(tileset.key, 0 /* floor */);
             }
         }
         catch (e_30_1) { e_30 = { error: e_30_1 }; }
@@ -3436,7 +3443,7 @@ var TilesetManager = /** @class */ (function () {
         try {
             for (var _h = __values(assets.filter(function (a) { return a.type == AssetType.OVERLAY; })), _j = _h.next(); !_j.done; _j = _h.next()) {
                 var tileset = _j.value;
-                this.addTileset(tileset.identifier, 2 /* overlay */);
+                this.addTileset(tileset.key, 2 /* overlay */);
             }
         }
         catch (e_31_1) { e_31 = { error: e_31_1 }; }

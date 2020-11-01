@@ -7,6 +7,10 @@ interface LoadedAsset {
 	name: string;
 	
 	identifier: string;
+	key: string; //Set by LoadScene
 	path: string;
-	size: Vec2;
+	size: number;
+
+	tileSize: Vec2;
+	spriteSize?: Vec2;
 }

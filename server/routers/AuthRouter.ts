@@ -30,7 +30,6 @@ export default class AuthRouter extends Router {
 		this.app.get('/register', async (req, res) => res.render('auth/register'));
 
 		this.app.post('/register', async (req, res) => {
-			console.log("THIS IS HAPPENING");
 			try {
 				const email: string = req.body.email;
 				const name: string = req.body.name;
@@ -39,7 +38,7 @@ export default class AuthRouter extends Router {
 				if (typeof email != "string" || typeof name != "string" || typeof pass != "string")
 					throw "Request is missing required parameters.";
 
-				if (!/^\w+@\w+\.[\w.]{0,9}\w$/g.test(email)) 
+				if (!/^[\w.]+@\w+\.[\w.]{0,9}\w$/g.test(email)) 
 					throw "The inputted email is invalid.";
 				if (!/^\w{3,32}$/g.test(name)) 
 					throw "Username must be 3-32 characters long, and only contain alphanumeric characters.";

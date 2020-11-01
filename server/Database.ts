@@ -129,10 +129,14 @@ export default class Database {
 	*/
 
 	async createCampaign(user: string, name: string): Promise<string> {
+		if (name.length < 3 || name.length > 64) throw "Campaign name must be 3-64 characters long.";
+
 		let identifier = this.sanitizeName(name);
+		if (identifier.length < 3) "Campaign name must contain at least 3 alphanumeric characters.";
 		const collection = this.db!.collection('campaigns');
 		const exists = await collection.findOne({user: user, identifier: identifier});
 		if (exists) throw "A campaign of this name already exists.";
+
 		
 		let campaign = {
 			user: user,
@@ -178,8 +182,13 @@ export default class Database {
 	*/
 
 	async createMap(user: string, campaign: string, map: string) {
-		let campIdentifier = this.sanitizeName(campaign);
+		if (campaign.length > 64) throw "Invalid campaign specified.";
+		if (map.length < 3 || map.length > 64) throw "Map name must be 3-64 characters long.";
+
 		let mapIdentifier = this.sanitizeName(map);
+		if (mapIdentifier.length < 3) "Map name must contain at least 3 alphanumeric characters.";
+
+		let campIdentifier = this.sanitizeName(campaign);
 
 		const collection = this.db!.collection('campaigns');
 		
@@ -220,6 +229,7 @@ export default class Database {
 		return mapObj;
 	}
 
+
 	/**
 	* Get a campaign's asset keys & urls.
 	* Throws if the campaign doesn't exist.
@@ -244,6 +254,7 @@ export default class Database {
 		return vals;
 	}
 
+
 	/**
 	* Accepts an asset that was uploaded by users, and links it to the DB.
 	* Returns a status code for the file.
@@ -256,12 +267,9 @@ export default class Database {
 	*/
 
 	async acceptAsset(user: string, type: DB.AssetType, file: UploadedFile, name: string, identifier: string): Promise<FileStatus> {
-		let spaceAdded: boolean = false;
 		try {
-			const userObj = await this.getUser(user);
-			
-			if (userObj.assetSpace + file.size > accountLimit)
-				return FileStatus.ACCT_LIMIT;
+
+			// Validate that the file is able to be used as an asset.
 
 			if (file.mimetype != "image/png" && file.mimetype != "image/jpeg") 
 				return FileStatus.TYPE_INVALID;
@@ -272,8 +280,15 @@ export default class Database {
 			if (identifier.length > 32 || name.length > 32 || this.sanitizeName(identifier) != identifier) 
 				return FileStatus.FAILED;
 
-			await this.db!.collection('users').update({user: user}, { $inc: { assetSpace: file.size }});
-			spaceAdded = true;
+			// Check that there's space in the user's account and modify the assetSpace.
+
+			const ret = await this.db!.collection('users').findOneAndUpdate(
+				{user: user, assetSpace: {$lte: accountLimit - file.size }}, { $inc: { assetSpace: file.size }});
+			
+			if (ret.value == null)
+				return FileStatus.ACCT_LIMIT;
+
+			// Move the file to the public assets directory. 
 
 			let exportName: string;
 			let exportExt = file.mimetype == "image/png" ? ".png" : ".jpg";
@@ -282,6 +297,8 @@ export default class Database {
 			while (fs.existsSync(path.join(__dirname, "/../public/assets/" + exportName + exportExt)));
 
 			await file.mv(path.join(__dirname, "/../public/assets/" + exportName + exportExt));
+
+			// Update the database.
 
 			await this.db!.collection('assets').findOneAndUpdate({user: user, identifier: PERSONAL_ASSETS}, {
 				$set: {
@@ -301,13 +318,10 @@ export default class Database {
 				}}
 			}, {upsert: true});
 
-			console.log((await this.getUser(user)).assetSpace);
-
 			return FileStatus.ACCEPTED;
 		}
 		catch(e) {
 			console.log(e);
-			if (spaceAdded) await this.db!.collection('users').update({user: user}, { $inc: { assetSpace: -file.size }});
 			return FileStatus.FAILED;
 		}
 	}

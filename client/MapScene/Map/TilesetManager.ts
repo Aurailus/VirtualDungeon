@@ -15,9 +15,9 @@ class TilesetManager {
 	}
 
 	init(assets: LoadedAsset[]) {
-		for (let tileset of assets.filter(a => a.type == AssetType.WALL   )) this.addTileset(tileset.identifier, Layer.wall);
-		for (let tileset of assets.filter(a => a.type == AssetType.GROUND )) this.addTileset(tileset.identifier, Layer.floor);
-		for (let tileset of assets.filter(a => a.type == AssetType.OVERLAY)) this.addTileset(tileset.identifier, Layer.overlay);
+		for (let tileset of assets.filter(a => a.type == AssetType.WALL   )) this.addTileset(tileset.key, Layer.wall);
+		for (let tileset of assets.filter(a => a.type == AssetType.GROUND )) this.addTileset(tileset.key, Layer.floor);
+		for (let tileset of assets.filter(a => a.type == AssetType.OVERLAY)) this.addTileset(tileset.key, Layer.overlay);
 	}
 
 	private addTileset(key: string, layer: Layer): void {

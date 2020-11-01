@@ -60,11 +60,11 @@ class ArchitectMode {
 		}
 
 		// Push history to HistoryManager
-		if (this.scene.i.mouseLeftDown() && !this.pointerDown) {
+		if (this.scene.i.mouseDown() && !this.pointerDown) {
 			this.pointerDown = true;
 			this.pointerPrimaryDown = this.scene.i.mouseLeftDown();
 		}
-		else if (!this.scene.i.mouseLeftDown() && this.pointerDown) {
+		else if (!this.scene.i.mouseDown() && this.pointerDown) {
 			if (this.manipulated.length != 0) {
 				for (let tile of this.manipulated) {
 					this.scene.lighting.tileUpdatedAt(tile.pos.x, tile.pos.y);
