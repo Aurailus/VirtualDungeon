@@ -1,0 +1,9 @@
+@mixin auto_width($width: 300px, $gap: 12px)
+	// Clear list styling (Lists will commonly be used with this mixin.)
+	list-style-type: none
+	padding: 0
+	margin: 0
+
+	display: grid
+	grid-gap: $gap
+	grid-template-columns: repeat(auto-fill, minmax(Min(100%, $width), 1fr))

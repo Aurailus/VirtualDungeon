@@ -1,0 +1,5 @@
+{
+	"db": { "url": "mongodb://localhost:27017", "name": "virtual-dungeon" },
+	"port": 3000,
+	"verbose": true
+}

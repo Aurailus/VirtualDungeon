@@ -19,7 +19,8 @@
 		"removeComments": true,
 		"noUnusedLocals": true,
 		"noImplicitReturns": true,
-		"noUnusedParameters": true
+		"noUnusedParameters": true,
+		"downlevelIteration": true
 	},
 	"include": [ "src/**/*" ]
 }

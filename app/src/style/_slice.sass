@@ -1,0 +1,54 @@
+$slice-cell-size: 6px
+
+@mixin slice($texture: 'background', $scale: 3)
+
+	min-height: $scale * $slice-cell-size * 2
+	min-width: $scale * $slice-cell-size * 2
+
+	image-rendering: pixelated
+	background-color: transparent
+	border: #{$slice-cell-size * $scale} solid
+	border-radius: $slice-cell-size * $scale
+	border-image: url('/app/static/ui/slice/#{$texture}.png') 33% fill
+
+	& > *
+		image-rendering: initial
+
+.slice_background
+	@include slice
+
+.slice_button
+	@include slice('button')
+	
+	outline: none
+	cursor: pointer
+
+	&:active, &:focus-visible
+		@include slice('button_active')
+
+	&:disabled, &.Disabled
+		@include slice('button_disabled')
+
+.slice_highlight
+	@include slice('highlight')
+
+.slice_outline
+	@include slice('outline')
+
+.slice_outline_button
+	@include slice('outline')
+	
+	outline: none
+	cursor: pointer
+
+	&:active, &:focus-visible
+		@include slice('highlight')
+
+@mixin slice_invert($scale: 3, $pad: 1px)
+	width: calc(100% + #{$slice-cell-size * $scale * 2})
+	height: calc(100% + #{$slice-cell-size * $scale * 2})
+	margin: -$slice-cell-size * $scale
+	padding: $pad * $scale
+
+	overflow: hidden
+	border-radius: $slice-cell-size * $scale

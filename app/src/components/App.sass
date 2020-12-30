@@ -1,0 +1,35 @@
+@use '../style/reset'
+@use '../style/def' as *
+
+.App
+	display: grid
+	height: 100%
+	overflow: auto
+	position: relative
+	grid-template-rows: auto 1fr
+
+	color: $accent-050
+	font-family: $font-main
+	background-color: $neutral-1000
+
+	-webkit-tap-highlight-color: rgba(255, 255, 255, 0)
+
+	::selection
+		background-color: transparentize($neutral-300, 0.5)
+
+	h1, h2, h3, h4, h5, h6
+		font-family: $font-header
+
+	@media (pointer: fine)
+		&::-webkit-scrollbar, *::-webkit-scrollbar
+			width: 8px
+			height: 8px
+
+		&::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb
+			background-color: rgba(87, 87, 87, .38)
+
+			&:hover
+				background-color: rgba(87, 87, 87, .6)
+
+	.App-Main
+		display: grid

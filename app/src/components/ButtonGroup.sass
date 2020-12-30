@@ -1,0 +1,37 @@
+@use '../style/slice'
+
+.ButtonGroup
+	@mixin button_group($sect)
+		position: relative
+
+		@include slice.slice('button_group_' + $sect)
+	
+		&:active, &:focus-visible
+			@include slice.slice('button_group_' + $sect + '_active')
+			z-index: 2
+
+		&:disabled, &.Disabled
+			@include slice.slice('button_group_' + $sect + '_disabled')
+			z-index: 1
+
+	%button_group_left
+		@include button_group('left')
+	
+	%button_group_middle
+		@include button_group('middle')
+	
+	%button_group_right
+		@include button_group('right')
+
+	.Button
+		@extend %button_group_middle
+		
+		display: inline-block
+		margin-right: -3px
+
+	.Button:first-child
+		@extend %button_group_left
+
+	.Button:last-child
+		@extend %button_group_right
+		margin-right: 0

@@ -1,0 +1,44 @@
+@use '../style/def' as *
+@use '../style/slice'
+
+.Button
+	@extend .slice_button
+
+	padding: 0
+	height: 54px
+	display: inline-block
+
+	outline: none
+	user-select: none
+	vertical-align: top
+
+	.Button-Icon
+		width: 48px
+		height: 48px
+		margin: -15px -12px
+
+		object-fit: contain
+		pointer-events: none
+		image-rendering: pixelated !important
+
+	&:disabled, &.Disabled
+		pointer-events: none
+		 
+		.Button-Icon
+			filter: brightness(45%) sepia(1) contrast(2.25) hue-rotate(185deg)
+
+		.Button-Label
+			color: $accent-200
+
+	.Button-Label
+		display: inline-block
+		margin: 6px
+		margin-top: -2px
+
+		font-size: 20px
+		vertical-align: 15%
+		color: $accent-000
+
+	.Button-Icon + .Button-Label
+		margin-left: 9px
+		vertical-align: top

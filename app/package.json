@@ -1,0 +1,53 @@
+{
+  "name": "virtual-dungeon-client",
+  "version": "0.0.1",
+  "description": "Client-side-application for Virtual Dungeon.",
+  "scripts": {
+    "dev": "webpack --watch --progress --config webpack.ts",
+    "build": "webpack --mode=production --progress --config webpack.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aurailus/VirtualDungeonClient.git"
+  },
+  "author": "Auri Collings",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/Aurailus/VirtualDungeonClient/issues"
+  },
+  "homepage": "https://github.com/Aurailus/VirtualDungeonClient#readme",
+  "dependencies": {
+    "js-cookie": "^2.2.1",
+    "phaser": "^3.50.1",
+    "preact": "^10.5.7",
+    "react-router-dom": "^5.2.0",
+    "tslib": "^2.0.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.10",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/plugin-transform-react-jsx": "^7.12.12",
+    "@babel/preset-env": "^7.12.11",
+    "@babel/preset-typescript": "^7.12.7",
+    "@types/js-cookie": "^2.2.6",
+    "@types/node": "^14.14.16",
+    "@types/react-router-dom": "^5.1.6",
+    "@types/webpack": "^4.41.25",
+    "@typescript-eslint/eslint-plugin": "^4.11.1",
+    "@typescript-eslint/parser": "^4.11.1",
+    "babel-loader": "^8.2.2",
+    "css-loader": "^5.0.1",
+    "eslint": "^7.16.0",
+    "eslint-plugin-jsdoc": "^30.7.9",
+    "fork-ts-checker-webpack-plugin": "^6.0.8",
+    "mini-css-extract-plugin": "^1.3.3",
+    "sass": "^1.30.0",
+    "sass-loader": "^10.1.0",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^4.3.0",
+    "webpack-livereload-plugin": "^2.3.0",
+    "webpack-merge": "^5.7.3"
+  }
+}
