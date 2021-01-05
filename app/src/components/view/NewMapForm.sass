@@ -1,0 +1,33 @@
+@use '../../style/ext'
+@use '../../style/text'
+@use '../../style/def' as *
+
+.NewMapForm
+	padding: 16px
+	padding-top: 72px
+
+	.NewMapForm-Title
+		@include text.line_clamp
+
+		margin-top: 0
+		margin-bottom: 8px
+		padding-right: 6px
+
+		font-weight: 500
+		font-size: 34px
+		font-family: $font-header
+	
+	.NewMapForm-Card
+		@extend %card
+
+		width: 100%
+		max-width: 1000px
+		display: block
+		margin: 0 auto
+
+
+		.NewMapForm-Description
+			min-height: 100px
+
+		.NewMapForm-Submit
+			margin-top: 20px

@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-d
 
 import './App.sass';
 
-import AppHeader from './AppHeader';
+import AppSidebar from './AppSidebar';
 import * as Routes from './route/Routes';
 
 import { AppData } from '../../../common/AppData';
@@ -42,22 +42,24 @@ export default function App() {
 			}
 			{state === 'AUTH' &&
 				<div class='App'>
-					<div class='App-Main'>
-						<Router basename='/app'>
-							<AppHeader />
-							<Switch>
-								<Route exact path='/:campaign/' component={Routes.Home as any} />
-								<Route exact path='/:campaign/details' component={Routes.Campaign as any} />
-								<Route exact path='/:campaign/:map' component={Routes.Map as any} />
-
-								<Route exact path='/:campaign/:map/edit' component={Routes.Editor as any} />
-								{/* <Route exact path='/:campaign/play' component={Route.Play as any} />*/}
-								
-								<Route exact path='/' component={Routes.Home as any} />
-								<Redirect to='/' />
-							</Switch>
-						</Router>
-					</div>
+					<Router basename='/app'>
+						<Switch>
+							<Route path='/edit/:campaign/:map' component={Routes.Editor} />
+							<Route>
+								<div class='App-Main'>
+									<AppSidebar />
+									<Switch>
+										<Route path='/assets' component={Routes.Assets} />
+										
+										<Route path='/campaigns' component={Routes.Campaigns} />
+										<Route path='/campaign/:id?' component={Routes.Campaign} />
+										
+										<Redirect to='/campaigns' />
+									</Switch>
+								</div>
+							</Route>
+						</Switch>
+					</Router>
 				</div>
 			}
 		</AppDataContext.Provider>

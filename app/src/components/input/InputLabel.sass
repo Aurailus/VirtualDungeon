@@ -1,0 +1,13 @@
+@use '../../style/ext'
+@use '../../style/def' as *
+@use '../../style/text'
+
+.InputLabel
+	display: block
+	overflow: auto
+	position: relative
+	
+	.InputLabel-Label
+		@include text.line_clamp
+		@extend %material_label
+		margin: 0

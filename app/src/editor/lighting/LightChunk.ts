@@ -19,7 +19,7 @@ export default class LightChunk {
 		this.light = light;
 		this.canvas.setScale(4);
 		this.canvas.setOrigin(0, 0);
-		this.canvas.setAlpha(0.4);
+		this.canvas.setAlpha(0);
 
 		this.build([]);
 	}

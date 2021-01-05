@@ -78,16 +78,16 @@ export default class MapChunk {
 
 		let wallTile = this.map.getTile(Layer.wall, mX, mY);
 		if (this.map.getTileset(Layer.wall, mX, mY) === -1 || (wallTile < 54 || wallTile > 60)) {
-			this.canvas.drawFrame(this.map.manager.groundLocations[this.map.getTileset(Layer.floor, mX, mY)].key,
+			this.canvas.drawFrame(this.map.manager.groundLocations[this.map.getTileset(Layer.floor, mX, mY)].identifier,
 				this.map.getTile(Layer.floor, mX, mY), x * MapChunk.TILE_SIZE, y * MapChunk.TILE_SIZE);
 			
 			if (this.map.getTileset(Layer.overlay, mX, mY) !== -1)
-				this.canvas.drawFrame(this.map.manager.overlayLocations[this.map.getTileset(Layer.overlay, mX, mY)].key,
+				this.canvas.drawFrame(this.map.manager.overlayLocations[this.map.getTileset(Layer.overlay, mX, mY)].identifier,
 					this.map.getTile(Layer.overlay, mX, mY), x * MapChunk.TILE_SIZE, y * MapChunk.TILE_SIZE);
 		}
 
 		if (this.map.getTileset(Layer.wall, mX, mY) !== -1)
-			this.canvas.drawFrame(this.map.manager.wallLocations[this.map.getTileset(Layer.wall, mX, mY)].key,
+			this.canvas.drawFrame(this.map.manager.wallLocations[this.map.getTileset(Layer.wall, mX, mY)].identifier,
 				this.map.getTile(Layer.wall, mX, mY), x * MapChunk.TILE_SIZE, y * MapChunk.TILE_SIZE);
 
 		if ((x % 2 === 0 && y % 2 === 0) || (x % 2 !== 0 && y % 2 !== 0))

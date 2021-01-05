@@ -1,18 +1,15 @@
 import { Vec2 } from './Vec';
 
-export enum AssetType {
-	GROUND, WALL, OVERLAY, TOKEN
-}
+export type AssetType = 'ground' | 'wall' | 'token';
 
 export interface Asset {
 	type: AssetType;
 	name: string;
 	
 	identifier: string;
-	key: string;
 	path: string;
 	size: number;
 
-	tileSize: Vec2;
-	spriteSize?: Vec2;
+	tileSize: number;
+	dimensions?: Vec2;
 }

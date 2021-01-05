@@ -1,0 +1,21 @@
+@use '../../style/def' as *
+@use '../../style/text'
+
+.NewCampaignForm
+	.NewCampaignForm-Title
+		@include text.line_clamp
+
+		margin-top: 0
+		margin-bottom: 8px
+		padding-right: 6px
+
+		font-weight: 500
+		font-size: 34px
+		font-family: $font-header
+
+
+	.NewCampaignForm-Description
+		min-height: 100px
+
+	.NewCampaignForm-Submit
+		margin-top: 20px

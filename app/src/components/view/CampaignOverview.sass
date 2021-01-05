@@ -1,0 +1,91 @@
+@use '../../style/ext'
+@use '../../style/text'
+@use '../../style/slice'
+@use '../../style/def' as *
+
+.CampaignOverview
+
+	.CampaignOverview-Carousel
+		position: relative
+		height: 0
+		width: 100%
+		margin-top: 16px
+		margin-bottom: 32px
+		padding-bottom: min(360px, 33.33%)
+
+		display: flex
+		align-items: center
+
+		.CampaignOverview-CarouselInner
+			display: grid
+			grid-gap: 24px
+			position: absolute
+			grid-template-columns: 1fr min(80%, 1000px) 1fr
+			top: 0
+			left: 0
+			width: 100%
+			height: 100%
+
+			justify-content: center
+
+			.CampaignOverview-CarouselImage
+				width: 100%
+				height: 100%
+
+				border-radius: 4px
+				object-fit: cover
+
+				&.Unfocused
+					filter: saturate(0%) contrast(0.5) brightness(0.25) sepia(1) saturate(150%) hue-rotate(185deg)
+
+				&:first-child
+					border-radius: 0 4px 4px 0
+
+				&:last-child
+					border-radius: 4px 0 0 4px
+
+	.CampaignOverview-Details
+		@extend %card
+		margin: 0 auto
+		max-width: 1000px
+
+		.CampaignOverview-Title
+			@include text.line_clamp
+
+			margin-top: 0
+			margin-bottom: 8px
+			padding-right: 6px
+
+			font-weight: 500
+			font-size: 34px
+			font-family: $font-header
+
+		.CampaignOverview-Description
+			margin-top: 20px
+			min-height: 6em
+			color: $neutral-800
+
+		.CampaignOverview-Actions
+			float: right
+
+	.CampaignOverview-CharactersWrap
+		@extend .slice_highlight_neutral
+
+		height: 64px
+		width: max-content
+
+		.CampaignOverview-Characters
+			@include slice.slice_invert
+		
+			display: flex
+			padding: 6px 12px
+			width: max-content
+			gap: 12px
+
+		.CampaignOverview-Character
+			width: #{18px * 3}
+			height: #{18px * 3}
+
+			background-size: #{18px * 3 * 2} #{18px * 3 * 2}
+			background-position: top left
+			image-rendering: pixelated

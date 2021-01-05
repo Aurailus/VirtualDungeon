@@ -2,7 +2,7 @@ import UISidebar from './UISidebar';
 import type MapScene from '../../scene/MapScene';
 
 import Layer from '../../util/Layer';
-import { Asset, AssetType } from '../../util/Asset';
+import { Asset } from '../../util/Asset';
 
 export default class UITileSidebar extends UISidebar {
 	
@@ -20,8 +20,8 @@ export default class UITileSidebar extends UISidebar {
 		this.list.push(add_wall);
 		this.sprites.push(add_wall);
 
-		for (let tileset of assets.filter((a) => a.type === AssetType.WALL))
-			this.addWall(tileset.key);
+		for (let tileset of assets.filter((a) => a.type === 'wall'))
+			this.addWall(tileset.identifier);
 		
 		let add_ground = new Phaser.GameObjects.Sprite(this.scene, 9 + x * 21 * 3, 9 + y * 21 * 3, 'ui_sidebar_browse');
 		add_ground.setName('add_ground');
@@ -30,8 +30,8 @@ export default class UITileSidebar extends UISidebar {
 		this.list.push(add_ground);
 		this.sprites.push(add_ground);
 
-		for (let tileset of assets.filter((a) => a.type === AssetType.GROUND))
-			this.addGround(tileset.key);
+		for (let tileset of assets.filter((a) => a.type === 'ground'))
+			this.addGround(tileset.identifier);
 
 		let add_overlay = new Phaser.GameObjects.Sprite(this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, 'ui_sidebar_browse');
 		add_overlay.setName('add_overlay');
@@ -40,8 +40,8 @@ export default class UITileSidebar extends UISidebar {
 		this.list.push(add_overlay);
 		this.sprites.push(add_overlay);
 
-		for (let tileset of assets.filter((a) => a.type === AssetType.OVERLAY))
-			this.addOverlay(tileset.key);
+		for (let tileset of assets.filter((a) => a.type === 'ground'))
+			this.addOverlay(tileset.identifier);
 
 		for (let i = 0; i < 12; i++) {
 			if (i % 4 !== 0) this.backgrounds[i].setFrame(0);

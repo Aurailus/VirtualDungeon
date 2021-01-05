@@ -12,12 +12,14 @@ import ArchitectMode from '../ArchitectMode';
 import Token from '../Token';
 import MapData from '../MapData';
 import Lighting from '../lighting/Lighting';
+import TilesetPatcher from '../TilesetPatcher';
 
 // import OutlinePipeline from '../shader/OutlinePipeline';
 // import BrightenPipeline from '../shader/BrightenPipeline';
 
 import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
+import EditorData from '../EditorData';
 
 export default class MapScene extends Phaser.Scene {
 	assets: Asset[] | null = null;
@@ -38,30 +40,25 @@ export default class MapScene extends Phaser.Scene {
 	mode: number = 0;
 	tokens: Token[] = [];
 
-	constructor() {
-		super({key: 'MapScene'});
-	}
+	constructor() { super({key: 'MapScene'}); }
 
-	init(assets: Asset[]): void {
-		this.assets = assets;
-	}
-
-	preload(): void {
-		// window.addEventListener('resize', () => {
-		// 	let frame = document.getElementById('root')!;
-		// 	this.game.scale.resize(frame.offsetWidth, frame.offsetHeight);
-		// });
-	}
-
-	create(): void {
+	create(data: EditorData): void {
+		this.assets = data.assets;
 		// const webRenderer = this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
 		// webRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
 		// webRenderer.pipelines.add('brighten', new BrightenPipeline(this.game));
 
+		const t = new TilesetPatcher(this);
+		t.patch('tileset_partial', 16);
+
+		const s = this.add.sprite(300, 300, 'tileset_partial');
+		s.setOrigin(0, 0);
+		s.setScale(4);
+
 		this.i.init();
 		this.view.init();
 
-		this.size = new Vec2(64, 64);
+		this.size = new Vec2(data.data.size);
 		this.map.init(this.size, this.assets!);
 
 		this.ui.init(this.assets!);

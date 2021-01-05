@@ -1,15 +1,21 @@
 import * as Phaser from 'phaser';
 
-import { Asset, AssetType } from '../util/Asset';
+import EditorData from '../EditorData';
+import { Asset } from '../util/Asset';
 
 export default class LoadScene extends Phaser.Scene {
 	loaderOutline: Phaser.GameObjects.Sprite | null = null;
 	loaderFilled: Phaser.GameObjects.Sprite | null = null;
 
 	assets: Asset[] = [];
+	editorData: EditorData | undefined;
 
 	constructor() {
 		super({key: 'LoadScene'});
+	}
+
+	init(data: EditorData) {
+		this.editorData = data;
 	}
 
 	preload(): void {
@@ -18,6 +24,8 @@ export default class LoadScene extends Phaser.Scene {
 		this.load.image('cursor', '/app/static/cursor.png');
 		this.load.image('grid_tile', '/app/static/grid_tile.png');
 
+		this.load.image('tileset_partial', '/app/static/tileset/water_new.png');
+		this.load.image('tileset_template', '/app/static/tileset_template.png');
 		this.load.image('ui_button_grid', '/app/static/ui/button_grid.png');
 		this.load.spritesheet('ui_button_side_menu', '/app/static/ui/button_side_menu.png', {frameWidth: 21, frameHeight: 18});
 		this.load.spritesheet('ui_history_manipulation', '/app/static/ui/history_manipulation.png', {frameWidth: 39, frameHeight: 18});
@@ -35,21 +43,14 @@ export default class LoadScene extends Phaser.Scene {
 
 		this.assets = JSON.parse(this.cache.text.get('assets'));
 		for (let asset of this.assets) {
-			let key =
-				(asset.type === AssetType.WALL    ? 'wall_'    :
-				 asset.type === AssetType.GROUND  ? 'ground_'  :
-				 asset.type === AssetType.OVERLAY ? 'overlay_' :
-				 asset.type === AssetType.TOKEN   ? 'token_'   : 'ERR_')
-				+ asset.identifier;
-			asset.key = key;
-
-			if (asset.tileSize) this.load.spritesheet(key, asset.path, {frameWidth: asset.tileSize.x, frameHeight: asset.tileSize.y});
-			else this.load.image(key, asset.path);
+			if (asset.tileSize) this.load.spritesheet(asset.identifier, '/app/asset/' + asset.path,
+				{ frameWidth: asset.tileSize, frameHeight: asset.tileSize });
+			else this.load.image(asset.identifier, asset.path);
 		}
 	}
 
 	create(): void {
-		this.game.scene.start('MapScene', this.assets);
+		this.game.scene.start('MapScene', { ...this.editorData, data: JSON.parse(this.cache.text.get('data')), assets: this.assets });
 		this.cache.text.remove('assets');
 		this.game.scene.stop('LoadScene');
 		this.game.scene.swapPosition('MapScene', 'LoadScene');

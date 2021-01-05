@@ -5,14 +5,14 @@
 		position: relative
 
 		@include slice.slice('button_group_' + $sect)
+
+		&:disabled, &.Disabled, &.Inactive
+			@include slice.slice('button_group_' + $sect + '_disabled')
+			z-index: 1
 	
 		&:active, &:focus-visible
 			@include slice.slice('button_group_' + $sect + '_active')
 			z-index: 2
-
-		&:disabled, &.Disabled
-			@include slice.slice('button_group_' + $sect + '_disabled')
-			z-index: 1
 
 	%button_group_left
 		@include button_group('left')

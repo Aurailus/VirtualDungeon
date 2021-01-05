@@ -8,7 +8,7 @@ import UISidebarToggle from './components/UISidebarToggle';
 import UIModeSwitchButton from './components/UIModeSwitchButton';
 import UIHistoryManipulation from './components/UIHistoryManipulation';
 
-import { Asset, AssetType } from '../util/Asset';
+import { Asset } from '../util/Asset';
 
 export default class UIView {
 	scene: MapScene;
@@ -42,8 +42,8 @@ export default class UIView {
 
 		this.tokenSidebar = new UITokenSidebar(this.scene, -205, 0);
 		this.o.add(this.tokenSidebar);
-		for (let token of assets.filter((a) => a.type === AssetType.TOKEN))
-			this.tokenSidebar.addToken(token.key);
+		for (let token of assets.filter((a) => a.type === 'token'))
+			this.tokenSidebar.addToken(token.identifier);
 
 		this.tileSidebar = new UITileSidebar(this.scene, 0, 0, assets);
 		this.o.add(this.tileSidebar);

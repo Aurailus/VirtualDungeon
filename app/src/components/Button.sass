@@ -23,12 +23,14 @@
 
 	&:disabled, &.Disabled
 		pointer-events: none
-		 
-		.Button-Icon
-			filter: brightness(45%) sepia(1) contrast(2.25) hue-rotate(185deg)
 
-		.Button-Label
-			color: $accent-200
+	&:disabled, &.Disabled, &.Inactive
+		&:not(:active):not(:focus-visible)
+			.Button-Icon
+				filter: brightness(45%) sepia(1) contrast(2.25) hue-rotate(185deg)
+
+			.Button-Label
+				color: $accent-200
 
 	.Button-Label
 		display: inline-block

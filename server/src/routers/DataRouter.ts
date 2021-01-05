@@ -1,7 +1,7 @@
-import Express from "express";
+import Express from 'express';
 
-import Router from "./Router"
-import Database from "../Database";
+import Router from './Router'
+import Database from '../Database';
 import { AppData, AppDataSpecifier } from '../../../common/AppData';
 
 
@@ -30,6 +30,10 @@ export default class DataRouter extends Router {
 
 					case 'campaigns':
 						data.campaigns = await this.db.getCampaigns(user);
+						break;
+
+					case 'assets':
+						data.assets = await this.db.getUserAssets(user);
 						break;
 				}
 			}));
@@ -109,7 +113,34 @@ export default class DataRouter extends Router {
 
 		this.router.get('/assets/:campaign/', this.authRoute(async (user, req, res) => {
 			const campaign = this.db.sanitizeName(req.params.campaign);
-			res.send(await this.db.getCampaignAssets(user, campaign));
+			const assets = await this.db.getCampaignAssets(user, campaign);
+			res.send(assets);
+		}));
+
+		this.router.post('/asset/upload/', this.authRoute(async (user, req, res) => {
+			const type: 'ground' | 'token' | 'wall' = req.body.type;
+			const tokenType: '1' | '4' | '8' = req.body.tokenType;
+
+			const name = req.body.name;
+			const identifier = req.body.identifier;
+
+			if (typeof name != 'string' || typeof identifier != 'string' ||
+				(type != 'token' && type != 'ground' && type != 'wall') ||
+				(type === 'token' && tokenType !== '1' && tokenType !== '4' && tokenType !== '8'))
+				return res.status(400)
+
+			const file = req.files?.file;
+			if (!file || Array.isArray(file)) return res.sendStatus(400);
+
+			res.sendStatus((await this.db.uploadAsset(user, {
+				type,
+				identifier,
+				name,
+				file,
+				tokenType: Number.parseInt(tokenType, 10) as 1 | 4 | 8
+			})));
+
+			return 0;
 		}));
 
 

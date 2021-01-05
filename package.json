@@ -33,6 +33,7 @@
     "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.7-alpha.3",
+    "image-size": "^0.9.3",
     "log4js": "^6.3.0",
     "minimist": "^1.2.5",
     "mongodb": "^3.6.3",

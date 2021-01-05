@@ -1,0 +1,41 @@
+@use '../../style/ext'
+@use '../../style/slice'
+@use '../../style/def' as *
+
+.PlayerList
+	@extend %card
+	max-width: 1000px
+	margin: 48px auto
+
+	.PlayerList-List
+		list-style-type: none
+		padding: 0
+		margin: 0
+
+		.PlayerList-PlayerWrap
+			@extend .slice_outline_neutral
+			margin-bottom: 6px
+
+			.PlayerList-Player
+				@include slice.slice_invert
+				padding: 9px
+				display: grid
+				grid-gap: 12px
+				grid-template-columns: #{18px * 5} 1fr
+
+				.PlayerList-PlayerImageWrap
+					@extend .slice_highlight_neutral
+					
+					width: 18px * 5
+					height: 18px * 5
+
+					.PlayerList-PlayerImage
+						@include slice.slice_invert
+
+						background-size: #{18px * 5 * 2} #{18px * 5 * 2}
+						background-position: top left
+						image-rendering: pixelated
+
+				.PlayerList-PlayerName
+					font-size: 30px
+					margin: 8px 0

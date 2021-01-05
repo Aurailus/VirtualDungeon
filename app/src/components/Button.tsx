@@ -8,6 +8,7 @@ interface Props {
 	icon?: string;
 	alt?: string;
 
+	inactive?: boolean;
 	disabled?: boolean;
 
 	to?: string;
@@ -27,7 +28,8 @@ export default function Button(props: Props) {
 		class='Button-Icon' alt={props.alt ?? (props.label ? '' : undefined)} />;
 	const label = props.label && <span class='Button-Label'>{props.label}</span>;
 
-	const classes = ('Button ' + (props.class ?? '') + (props.disabled ? ' Disabled' : '')).trim();
+	const classes = ('Button ' + (props.class ?? '') + (props.disabled ? ' Disabled' : '') +
+		(props.inactive ? ' Inactive' : '')).trim();
 
 	if (props.to) return <Link className={classes} style={props.style} to={props.disabled ? '' : props.to}
 		tabIndex={props.disabled ? -1 : undefined}>{icon}{label}</Link>;

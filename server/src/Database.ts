@@ -1,21 +1,40 @@
-import fs from 'fs';
 import path from 'path';
 import log4js from 'log4js';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
+import { promisify } from 'util';
+import sizeOfRaw from 'image-size';
 import { MongoClient, Db } from 'mongodb';
 import { UploadedFile } from 'express-fileupload';
+import { promises as fs, constants as fsc } from 'fs';
 
 import * as DB from '../../common/DBStructs'
 
+const sizeOf = promisify(sizeOfRaw);
 const logger = log4js.getLogger();
 
-const PERSONAL_ASSETS = "_";
+const PERSONAL_IDENTIFIER = '_';
 
 export const uploadLimit = 2 * 1024 * 1024;
 export const accountLimit = 5 * 1024 * 1024;
 
-export enum FileStatus { ACCEPTED, FAILED, TYPE_INVALID, FILE_LIMIT, ACCT_LIMIT, NAME_USED }
+interface BaseAssetData {
+	name: string;
+	identifier: string;
+	file: UploadedFile;
+}
+
+interface TilesetData {
+	type: 'ground' | 'wall'
+}
+
+interface TokenData {
+	type: 'token',
+	tokenType: 1 | 4 | 8
+}
+
+export type UploadError = 'req_invalid' | 'server_error';
+export type AssetData = BaseAssetData & (TilesetData | TokenData);
 
 export default class Database {
 	client: MongoClient | null = null;
@@ -31,49 +50,71 @@ export default class Database {
 			this.db = this.client.db(db);
 
 			// Temp: Delete all users.
-			await this.db.collection('users').deleteMany({});
-			await this.db.collection('assets').deleteMany({});
+			// await this.db.collection('users').deleteMany({});
 			// await this.db.collection('tokens').deleteMany({});
-			await this.db.collection('campaigns').deleteMany({});
-			await this.db.collection('assets').deleteMany({});
+			// await this.db.collection('campaigns').deleteMany({});
+			// await this.db.collection('assets').deleteMany({});
+			// await this.db.collection('collections').deleteMany({});
 
-			await this.createUser('me@auri.xyz', 'Auri', 'password');
+			// await this.createUser('me@auri.xyz', 'Auri', 'password');
 
-			await this.db.collection('assets').insertOne({
-				user: "me@auri.xyz",
-				identifier: "16x_fantasy",
-				name: "Fantasy (16x)",
+			// await this.db.collection('assets').insertMany([{
+			// 	type: 'ground',
 
-				contents: [{
-					type: DB.AssetType.GROUND,
-					identifier: "floor_rock",
-					name: "Rocky Ground",
+			// 	user: 'me@auri.xyz',
+			// 	identifier: 'fantasy_floor_rock',
+			// 	name: 'Rocky Ground',
 
-					path: "/app/asset/16x_fantasy_floor_rock.png",
-					size: 0,
-					
-					tileSize: {x: 16, y: 16}
-				}, {
-					type: DB.AssetType.WALL,
-					identifier: "wall_dungeon",
-					name: "Dungeon Bricks",
+			// 	path: 'auri_16x_fantasy_floor_rock.png',
+			// 	size: 0,
+				
+			// 	tileSize: 16
+			// }, {
+			// 	type: 'wall',
 
-					path: "/app/asset/16x_fantasy_wall_dungeon.png",
-					size: 0,
-					
-					tileSize: {x: 16, y: 16}
-				}, {
-					type: DB.AssetType.TOKEN,
-					identifier: "cadin_1",
-					name: "Cadin 1",
+			// 	user: 'me@auri.xyz',
+			// 	identifier: 'fantasy_wall_dungeon',
+			// 	name: 'Dungeon Bricks',
 
-					path: "/app/asset/16x_fantasy_cadin_1.png",
-					size: 0,
-					
-					tileSize: {x: 18, y: 18},
-					spriteSize: {x: 1, y: 1}
-				}]
-			});
+			// 	path: 'auri_16x_fantasy_wall_dungeon.png',
+			// 	size: 0,
+				
+			// 	tileSize: 16
+			// }, {
+			// 	type: 'token',
+
+			// 	user: 'me@auri.xyz',
+			// 	identifier: 'fantasy_cadin_1',
+			// 	name: 'Cadin 1',
+
+			// 	path: 'auri_16x_fantasy_cadin_1.png',
+			// 	fileSize: 0,
+				
+			// 	dimensions: {x: 18, y: 18},
+			// 	tileSize: 18
+			// }] as DB.Asset[]);
+
+			// await this.db.collection('collections').insertMany([{
+			// 	user: 'me@auri.xyz',
+			// 	identifier: '16x_fantasy',
+			// 	name: 'Fantasy (16x)',
+
+			// 	items: [
+			// 		'me@auri.xyz:fantasy_cadin_1',
+			// 		'me@auri.xyz:fantasy_wall_dungeon',
+			// 		'me@auri.xyz:fantasy_floor_rock'
+			// 	]
+			// }, {
+			// 	user: 'me@auri.xyz',
+			// 	identifier: PERSONAL_IDENTIFIER,
+			// 	name: 'Personal Assets',
+
+			// 	items: [
+			// 		'me@auri.xyz:fantasy_cadin_1',
+			// 		'me@auri.xyz:fantasy_wall_dungeon',
+			// 		'me@auri.xyz:fantasy_floor_rock'
+			// 	]
+			// }] as DB.AssetCollection[]);
 		}
 		catch (e) {
 			logger.fatal('Failed to connect to MongoDB instance %s with database %s.\n %s', url, db, e);
@@ -93,10 +134,10 @@ export default class Database {
 
 	async createUser(user: string, name: string, password: string) {
 		const collection = this.db!.collection('users');
-		if (await collection.findOne({user: user}) != null) throw "A user with this email address already exists.";
+		if (await collection.findOne({user: user}) != null) throw 'A user with this email address already exists.';
 
 		let pass = await bcrypt.hash(password, 10);
-		await collection.insertOne({ name: name, user: user, pass: pass, assetSpace: 0 });
+		await collection.insertOne({ name: name, user: user, pass: pass, assetSize: 0 });
 	}
 
 
@@ -110,7 +151,7 @@ export default class Database {
 	async getUser(user: string): Promise<DB.User> {
 		const users = this.db!.collection('users');
 		const userObj: DB.User | null = await users.findOne({user: user});
-		if (!userObj) throw "This user no longer exists.";
+		if (!userObj) throw 'This user no longer exists.';
 
 		return userObj;
 	}
@@ -138,15 +179,14 @@ export default class Database {
 	 */
 
 	async createCampaign(user: string, title: string, description?: string): Promise<string> {
-		if (title.length < 3 || title.length > 64) throw "Campaign name must be 3-64 characters long.";
+		if (title.length < 3 || title.length > 64) throw 'Campaign name must be 3-64 characters long.';
 
 		let identifier = this.sanitizeName(title);
-		if (identifier.length < 3) "Campaign name must contain at least 3 alphanumeric characters.";
+		if (identifier.length < 3) 'Campaign name must contain at least 3 alphanumeric characters.';
 		const collection = this.db!.collection('campaigns');
 		const exists = await collection.findOne({user: user, identifier: identifier});
-		if (exists) throw "A campaign of this name already exists.";
+		if (exists) throw 'A campaign of this name already exists.';
 
-		
 		let campaign: DB.Campaign = {
 			user: user,
 			identifier: identifier,
@@ -155,10 +195,7 @@ export default class Database {
 			description: description ?? '',
 			
 			maps: [],
-			assets: [
-				{user: "me@auri.xyz", group: PERSONAL_ASSETS},
-				{user: "me@auri.xyz", group: "16x_fantasy"}
-			]
+			assets: [ '#' + user + ':' + PERSONAL_IDENTIFIER ]
 		}
 
 		await collection.insertOne(campaign)
@@ -177,7 +214,7 @@ export default class Database {
 	async getCampaign(user: string, identifier: string): Promise<DB.Campaign> {
 		const collection = this.db!.collection('campaigns');
 		let camp = await collection.findOne({user: user, identifier: identifier});
-		if (!camp) throw "This campaign no longer exists.";
+		if (!camp) throw 'This campaign no longer exists.';
 		return camp;
 	}
 
@@ -193,29 +230,31 @@ export default class Database {
 	 */
 
 	async createMap(user: string, campaign: string, map: string) {
-		if (campaign.length > 64) throw "Invalid campaign specified.";
-		if (map.length < 3 || map.length > 64) throw "Map name must be 3-64 characters long.";
+		if (campaign.length > 64) throw 'Invalid campaign specified.';
+		if (map.length < 3 || map.length > 64) throw 'Map name must be 3-64 characters long.';
 
 		let mapIdentifier = this.sanitizeName(map);
-		if (mapIdentifier.length < 3) "Map name must contain at least 3 alphanumeric characters.";
+		if (mapIdentifier.length < 3) 'Map name must contain at least 3 alphanumeric characters.';
 
 		let campIdentifier = this.sanitizeName(campaign);
 
 		const collection = this.db!.collection('campaigns');
 		
 		let exists = await collection.findOne({user: user, identifier: campIdentifier});
-		if (!exists) throw "This campaign no longer exists.";
+		if (!exists) throw 'This campaign no longer exists.';
 		let mapExists = await collection.findOne({
 			user: user,
 			identifier: campIdentifier,
-			maps: { $elemMatch: {
+			maps: {
+				$elemMatch: {
 					identifier: mapIdentifier
-			}}
+				}
+			}
 		});
-		if (mapExists) throw "A map of this name already exists.";
+		if (mapExists) throw 'A map of this name already exists.';
 
 		await collection.updateOne({user: user, identifier: campIdentifier}, {
-			$push: {maps: {name: map, identifier: mapIdentifier, size: {x: 100, y: 100}, tiles: ""}}});
+			$push: { maps: { name: map, identifier: mapIdentifier, size: { x: 200, y: 200 }, tiles: '' }}});
 		return mapIdentifier;
 	}
 
@@ -232,7 +271,7 @@ export default class Database {
 	async getMap(user: string, campaign: string, map: string) {
 		const collection = this.db!.collection('campaigns');
 		let exists = await collection.findOne({user: user, identifier: campaign, maps: { $elemMatch: {identifier: map}}});
-		if (!exists) throw "This map no longer exists.";
+		if (!exists) throw 'This map no longer exists.';
 		let mapObj = null;
 		for (let i of exists.maps) {
 			if (i.identifier == map) { mapObj = i; break; }
@@ -250,19 +289,32 @@ export default class Database {
 	 */
 
 	async getCampaignAssets(user: string, identifier: string): Promise<DB.Asset[]> {
-		const camp = await this.db!.collection('campaigns').findOne({user: user, identifier: identifier});
-		if (!camp) throw "This campaign no longer exists.";
+		const camp: DB.Campaign | null = await this.db!.collection('campaigns').findOne({user: user, identifier: identifier});
+		if (!camp) throw 'This campaign no longer exists.';
 
-		let vals: DB.Asset[] = [];
+		const collections = camp.assets.filter(a => a.startsWith('#'));
+		let assetIdentifiers = camp.assets.filter(a => !a.startsWith('#'));
 
-		await Promise.all(camp.assets.map(async (v: DB.AssetListing) => {
-			let campaign = await this.db!.collection('assets').findOne({user: v.user, identifier: v.group});
-			if (campaign) campaign.contents.forEach((e: DB.Asset) => {
-				if (!v.identifier || v.identifier === e.identifier) vals.push(e);
-			});
-		}))
+		await Promise.all(collections.map(async (colString) => {
+			const user = colString.substring(1, colString.indexOf(':'));
+			const iden = colString.substring(colString.indexOf(':') + 1);
+			assetIdentifiers.push(...(await this.db!.collection('collections').findOne({ user: user, identifier: iden })).items);
+		}));
 
-		return vals;
+		return await Promise.all(assetIdentifiers.map(async (idenString) => {
+			const user = idenString.substring(0, idenString.indexOf(':'));
+			const identifier = idenString.substring(idenString.indexOf(':') + 1);
+			return await this.db!.collection('assets').findOne({ user, identifier });
+		}));
+	}
+
+
+	/**
+	 * Get a users's uploaded assets.
+	 */
+
+	async getUserAssets(user: string): Promise<DB.Asset[]> {
+		return await this.db!.collection('assets').find({ user: user }).toArray();
 	}
 
 
@@ -271,70 +323,58 @@ export default class Database {
 	 * Returns a status code for the file.
 	 *
 	 * @param {string} user - The user identifier.
-	 * @param {DB.AssetType} type - The type of the asset.
-	 * @param {UploadedFile} file - The file to accept.
-	 * @param {string} name - The name of the asset.
-	 * @param {string} identifier - The identifier of the asset.
+	 * @param {AssetData} data - Data for the new asset.
 	 */
 
-	async acceptAsset(user: string, type: DB.AssetType, file: UploadedFile, name: string, identifier: string): Promise<FileStatus> {
-		try {
+	async uploadAsset(user: string, data: AssetData): Promise<number> {
+		// Validate that the file is the right format, and under the file size limit.
+		if (data.file.mimetype !== 'image/png' || data.file.size > uploadLimit || data.file.truncated) return 400;
+		// Validate that the identifier and name formats are valid and within the required lengths.
+		if (data.identifier.length > 32 || data.name.length > 64 || this.sanitizeName(data.identifier) != data.identifier) return 400;
 
-			// Validate that the file is able to be used as an asset.
+		// Check that there's space in the user's account and modify their asset space.
+		const ret = await this.db!.collection('users').findOneAndUpdate(
+			{ user: user, assetSize: { $lte: accountLimit - data.file.size }}, { $inc: { assetSize: data.file.size }});
+		if (ret.value === null) return 402;
 
-			if (file.mimetype != "image/png" && file.mimetype != "image/jpeg")
-				return FileStatus.TYPE_INVALID;
+		// Move the file to the asset directory.
 
-			if (file.size > uploadLimit || file.truncated)
-				return FileStatus.FILE_LIMIT;
-
-			if (identifier.length > 32 || name.length > 32 || this.sanitizeName(identifier) != identifier)
-				return FileStatus.FAILED;
-
-			// Check that there's space in the user's account and modify the assetSpace.
-
-			const ret = await this.db!.collection('users').findOneAndUpdate(
-				{user: user, assetSpace: {$lte: accountLimit - file.size }}, { $inc: { assetSpace: file.size }});
-			
-			if (ret.value == null)
-				return FileStatus.ACCT_LIMIT;
-
-			// Move the file to the public assets directory.
-
-			let exportName: string;
-			let exportExt = file.mimetype == "image/png" ? ".png" : ".jpg";
-
-			do exportName = crypto.createHash('md5').update(identifier + await crypto.randomBytes(8)).digest("hex");
-			while (fs.existsSync(path.join(__dirname, "/../public/assets/" + exportName + exportExt)));
-
-			await file.mv(path.join(__dirname, "/../public/assets/" + exportName + exportExt));
-
-			// Update the database.
-
-			await this.db!.collection('assets').findOneAndUpdate({user: user, identifier: PERSONAL_ASSETS}, {
-				$set: {
-					user: user,
-					identifier: PERSONAL_ASSETS,
-					name: "Personal Assets"
-				},
-
-				$push: { contents: {
-					type: type,
-					name: name,
-					identifier: identifier,
-					path: `/public/assets/${exportName}${exportExt}`,
-					size: file.size,
-					tileSize: { x: 18, y: 18 },
-					spriteSize: { x: 1, y: 1 }
-				}}
-			}, {upsert: true});
-
-			return FileStatus.ACCEPTED;
+		let assetName = '', assetPath = '';
+		while (true) {
+			assetName = crypto.createHash('md5').update(data.identifier + await crypto.randomBytes(8)).digest('hex') + '.png';
+			assetPath = path.join(path.dirname(path.dirname(__dirname)), 'assets', assetName);
+			try { await fs.access(assetPath, fsc.R_OK | fsc.W_OK); }
+			catch (e) { if (e.code === 'ENOENT') break; }
 		}
-		catch(e) {
-			console.log(e);
-			return FileStatus.FAILED;
+
+		await data.file.mv(assetPath);
+		let tokenSize: number | undefined = undefined;
+		const size: { width: number, height: number } = await sizeOf(assetPath) as any;
+
+		if (data.type === 'token') {
+			if (data.tokenType === 1) tokenSize = Math.round(size.width);
+			if (data.tokenType === 4) tokenSize = Math.round(size.width / 2);
+			if (data.tokenType === 8) tokenSize = Math.round(size.width / 3);
 		}
+
+		await this.db!.collection('assets').insertOne({
+			type: data.type,
+			user: user,
+			identifier: data.identifier,
+			name: data.name,
+			path: assetName,
+			fileSize: data.file.size,
+			tileSize: tokenSize ?? 16,
+			dimensions: { x: size.width, y: size.height }
+		} as DB.Asset);
+
+		await this.db!.collection('collections').findOneAndUpdate({ user: user, identifier: PERSONAL_IDENTIFIER }, {
+			$push: {  items: user + ':' + data.identifier }
+		}, {upsert: true});
+
+		// console.log((await this.db!.collection('collection.find({})).toArray());
+
+		return 200;
 	}
 
 
@@ -350,7 +390,7 @@ export default class Database {
 		const users = this.db!.collection('users');
 		const userObj: DB.User | null = await users.findOne({user: user.toLowerCase()});
 
-		if (!userObj || !await bcrypt.compare(password, userObj.pass)) throw "Incorrect email or password.";
+		if (!userObj || !await bcrypt.compare(password, userObj.pass)) throw 'Incorrect email or password.';
 
 		const buffer = await crypto.randomBytes(48);
 		const token = buffer.toString('hex');
@@ -372,14 +412,14 @@ export default class Database {
 	 */
 
 	async authUser(token: string | any): Promise<string> {
-		if (typeof token !== "string") {
-			if (!token.cookies || !token.cookies.tkn || typeof token.cookies.tkn != "string")
-				throw "Auth token is no longer valid, please reload the page.";
+		if (typeof token !== 'string') {
+			if (!token.cookies || !token.cookies.tkn || typeof token.cookies.tkn != 'string')
+				throw 'Auth token is no longer valid, please reload the page.';
 			token = token.cookies.tkn;
 		}
 		await this.pruneTokens();
 		let inst: DB.AuthToken | null = await this.db!.collection('tokens').findOne({token: token});
-		if (!inst) throw "Auth token is no longer valid, please reload the page.";
+		if (!inst) throw 'Auth token is no longer valid, please reload the page.';
 		return inst.user;
 	}
 
@@ -402,9 +442,9 @@ export default class Database {
 	 */
 
 	sanitizeName(name: string) {
-		if (typeof name != "string" || name.length < 1) throw "Name must not be empty.";
+		if (typeof name != 'string' || name.length < 1) throw 'Name must not be empty.';
 		const sanitized = name.toLowerCase().replace(/[ -]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-		if (sanitized.length == 0) throw "Name must include at least one alphanumeric character.";
+		if (sanitized.length == 0) throw 'Name must include at least one alphanumeric character.';
 		return sanitized;
 	}
 }

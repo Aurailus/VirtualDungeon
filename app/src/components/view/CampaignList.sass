@@ -1,0 +1,77 @@
+@use '../../style/ext'
+@use '../../style/grid'
+@use '../../style/text'
+@use '../../style/slice'
+@use '../../style/def' as *
+
+.CampaignList
+	max-width: 1000px
+	display: block
+	margin: 0 auto
+	margin-top: 56px
+
+	.CampaignList-Grid
+		@include grid.auto_width(300px, 16px)
+
+		.CampaignList-CampaignWrap
+			.CampaignList-Campaign
+				display: grid
+				user-select: none
+
+				overflow: hidden
+				border-radius: 4px
+				text-decoration: none
+				background-color: $neutral-200
+				box-shadow: 0px 2px 12px 0px transparentize($neutral-000, 0.9)
+
+				.CampaignList-CampaignInner
+					.CampaignList-CampaignPreview
+						position: relative
+						width: 100%
+						height: 0
+						padding-bottom: 56.25%
+						
+						img
+							position: absolute
+							top: 0
+							left: 0
+							width: 100%
+							height: 100%
+
+							object-fit: cover
+							user-select: none
+							pointer-events: none
+
+					.CampaignList-CampaignTitle
+						@include text.line_clamp
+
+						margin: 0
+						font-size: 18px
+						padding: 16px 12px
+
+			.CampaignList-NewCampaign
+				display: flex
+				user-select: none
+				flex-direction: column
+				justify-content: center
+				align-items: center
+
+				overflow: hidden
+				border-radius: 4px
+				background-color: $neutral-100
+				box-shadow: 0px 2px 12px 0px transparentize($neutral-000, 0.9)
+
+				border: 3px dotted $neutral-300
+
+				min-height: 220px
+				height: 100%
+
+				img
+					width: 80px
+					height: 80px
+					image-rendering: pixelated
+
+				p
+					font-size: 18px
+					margin: 0
+					margin-top: 4px

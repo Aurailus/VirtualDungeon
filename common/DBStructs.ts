@@ -1,4 +1,4 @@
-import { ObjectID } from 'mongodb';
+import type { ObjectID } from 'mongodb';
 
 export interface User {
 	_id?: ObjectID;
@@ -7,7 +7,7 @@ export interface User {
 	user: string;
 	pass: string;
 
-	assetSpace: number;
+	assetSize: number;
 }
 
 export interface AuthToken {
@@ -29,7 +29,7 @@ export interface Campaign {
 	description: string;
 	
 	maps: Map[];
-	assets: AssetListing[];
+	assets: string[];
 }
 
 export interface Map {
@@ -41,39 +41,29 @@ export interface Map {
 	tiles: string;
 }
 
-export enum AssetType {
-	GROUND, WALL, OVERLAY, TOKEN
-}
+export type AssetType =	'wall' | 'ground' | 'token';
 
-export interface AssetListing {
-	_id?: ObjectID;
-
-	user: string;
-	group: string;
-	identifier?: string;
-}
-
-export interface AssetGroup {
+export interface AssetCollection {
 	_id?: ObjectID;
 
 	user: string;
 	identifier: string;
 	name: string;
 
-	contents: Asset[];
+	items: string[];
 }
 
 export interface Asset {
 	_id?: ObjectID;
 	
 	type: AssetType;
-	identifier: string;
-	name: string;
-	
 	user: string;
+	identifier: string;
+	
+	name: string;
 	path: string;
-	size: number;
+	fileSize: number;
 
-	tileSize: {x: number, y: number};
-	spriteSize?: {x: number, y: number};
+	tileSize?: number; // Amount of tiles a token takes (on both axis)
+	dimensions: {x: number, y: number} // Image dimensions;
 }

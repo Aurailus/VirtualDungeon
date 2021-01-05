@@ -91,6 +91,9 @@ export default class MapData {
 			for (let j = clamp(y - 1, this.size.y - 1, 0); j <= clamp(y + 1, this.size.y - 1, 0); j++) {
 				const solids = this.getTilesetsAt(Layer.wall, i, j).map(i => i !== -1);
 
+				// const bits = SmartTiler.bitsToIndices(solids);
+				// if (i === x && j === y) console.log(bits, Math.floor(bits / 16), bits % 16);
+
 				const wall = SmartTiler.wall(solids, this.getTile(Layer.wall, i, j));
 				if (wall !== -1) this.setTileRaw(Layer.wall, i, j, wall);
 

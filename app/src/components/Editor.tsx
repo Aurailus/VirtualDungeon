@@ -1,8 +1,11 @@
 import * as Preact from 'preact';
 import type Phaser from 'phaser';
-import { useRef, useEffect } from 'preact/hooks';
+import { useParams } from 'react-router-dom';
+import { useEffect, useRef } from 'preact/hooks';
 
 import './Editor.sass';
+
+import { ExternalData } from '../editor/EditorData';
 
 // // Prevent scrolling hotkeys as the app implements its own scrolling.
 // document.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -23,6 +26,8 @@ import './Editor.sass';
 export default function Editor() {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<Phaser.Game | null>(null);
+
+	const { campaign, map } = useParams<{ campaign: string; map: string }>();
 	
 	/**
 	 * Lazy-load the editor, display it when ready,
@@ -33,7 +38,21 @@ export default function Editor() {
 		let ignore = false;
 		import('../editor/Main').then(({ default: create }) => {
 			if (ignore || !rootRef.current) return;
-			editorRef.current = create(rootRef.current);
+			
+			const data: ExternalData = {
+				campaign,
+				map
+			};
+
+			editorRef.current = create(rootRef.current, data);
+
+			const resizeCallback = () => {
+				const { width, height } = rootRef.current.getBoundingClientRect();
+				editorRef.current!.scale.resize(width, height);
+			};
+
+			window.addEventListener('resize', resizeCallback);
+			return () => window.removeEventListener('resize', resizeCallback);
 		});
 
 		return () => {
@@ -61,6 +80,6 @@ export default function Editor() {
 	}, []);
 
 	return (
-		<div ref={rootRef} class='Editor'></div>
+		<div ref={rootRef} class='Editor' />
 	);
 }

@@ -102,7 +102,7 @@ export default class Token extends Phaser.GameObjects.Container {
 		else {
 			this.sprite.setPipeline('outline');
 			// @ts-ignore
-			this.sprite.pipeline.setFloat1('tex_size', this.sprite.texture.source[0].width);
+			// this.sprite.pipeline.setFloat1('tex_size', this.sprite.texture.source[0].width);
 		}
 	}
 

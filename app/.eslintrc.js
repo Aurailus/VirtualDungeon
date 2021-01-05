@@ -109,7 +109,6 @@ module.exports = {
 				"code": 150
 			}
 		],
-		"no-bitwise": "error",
 		"no-caller": "error",
 		"no-console": [
 			"error",
