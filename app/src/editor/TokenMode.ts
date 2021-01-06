@@ -31,7 +31,7 @@ export default class TokenMode {
 	init() {
 		// Create cursor hover sprite
 		this.cursor = this.scene.add.sprite(0, 0, 'cursor');
-		this.cursor.setScale(4, 4);
+		this.cursor.setScale(1 / 16, 1 / 16);
 		this.cursor.setDepth(1000);
 		this.cursor.setOrigin(0, 0);
 		this.cursor.setVisible(false);
@@ -58,15 +58,15 @@ export default class TokenMode {
 	update() {
 		this.active = true;
 
-		let selectedTilePos = new Vec2(Math.floor(this.scene.view.cursorWorld.x / 64), Math.floor(this.scene.view.cursorWorld.y / 64));
+		let selectedTilePos = new Vec2(Math.floor(this.scene.view.cursorWorld.x), Math.floor(this.scene.view.cursorWorld.y));
 
 		if (this.movingTokens) this.moving();
 		if (!this.movingTokens) this.selecting();
 
 		if (this.selectedTokens.length > 0 && !this.movingTokens) this.tokenMoveControls();
 
-		this.tokenPreview!.setPosition(selectedTilePos.x * 16, selectedTilePos.y * 16);
-		this.cursor!.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
+		this.tokenPreview!.setPosition(selectedTilePos.x, selectedTilePos.y);
+		this.cursor!.setPosition(selectedTilePos.x, selectedTilePos.y);
 
 		if (this.selectedTokenType === '') this.tokenPreview!.setVisible(false);
 		if (this.selectedTokenType !== '') this.cursor!.setVisible(false);
@@ -80,7 +80,7 @@ export default class TokenMode {
 
 	updateRectangleSelect() {
 		const cursor = this.scene.view.cursorWorld;
-		let selectedTilePos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+		let selectedTilePos = new Vec2(Math.floor(cursor.x), Math.floor(cursor.y));
 
 		this.primitives.forEach((v) => v.destroy());
 		this.primitives = [];
@@ -97,7 +97,6 @@ export default class TokenMode {
 
 			this.primitives.forEach((v) => {
 				v.setOrigin(0, 0);
-				v.setScale(64, 64);
 				v.setLineWidth(0.03);
 				v.setDepth(300);
 			});
@@ -109,14 +108,14 @@ export default class TokenMode {
 		this.movingTokens = true;
 		const cursor = this.scene.view.cursorWorld;
 
-		this.tileGrabPos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+		this.tileGrabPos = new Vec2(Math.floor(cursor.x), Math.floor(cursor.y));
 		this.prevSerialized = [];
 		this.selectedTokens.forEach(t => this.prevSerialized.push(t.serialize()));
 	}
 
 	createToken(): Token {
-		let token = new Token(this.scene, Math.floor(this.scene.view.cursorWorld.x / 4 / 16) * 16,
-			Math.floor(this.scene.view.cursorWorld.y / 4 / 16) * 16, this.selectedTokenType);
+		let token = new Token(this.scene, Math.floor(this.scene.view.cursorWorld.x),
+			Math.floor(this.scene.view.cursorWorld.y), this.selectedTokenType);
 
 		this.scene.add.existing(token);
 		this.scene.tokens.push(token);
@@ -150,16 +149,16 @@ export default class TokenMode {
 
 	private tokenMoveControls(): void {
 		if (this.scene.i.keyPressed('UP')) {
-			this.moveToken(0, -16, 2);
+			this.moveToken(0, -1, 2);
 		}
 		if (this.scene.i.keyPressed('LEFT')) {
-			this.moveToken(-16, 0, 1);
+			this.moveToken(-1, 0, 1);
 		}
 		if (this.scene.i.keyPressed('DOWN')) {
-			this.moveToken(0, 16, 0);
+			this.moveToken(0, 1, 0);
 		}
 		if (this.scene.i.keyPressed('RIGHT')) {
-			this.moveToken(16, 0, 3);
+			this.moveToken(1, 0, 3);
 		}
 	}
 
@@ -175,8 +174,8 @@ export default class TokenMode {
 		let prevSerialized: string[] = [];
 		this.selectedTokens.forEach((token) => {
 			prevSerialized.push(token.serialize());
-			token.x += x * 4;
-			token.y += y * 4;
+			token.x += x;
+			token.y += y;
 			token.setFrame(frame);
 		});
 
@@ -201,7 +200,7 @@ export default class TokenMode {
 
 		for (let i = this.scene.tokens.length - 1; i >= 0; i--) {
 			let token = this.scene.tokens[i];
-			if (cursor.x >= token.x && cursor.y >= token.y && cursor.x <= token.x + token.width - 8 && cursor.y <= token.y + token.height - 8) {
+			if (cursor.x >= token.x && cursor.y >= token.y && cursor.x <= token.x + token.width && cursor.y <= token.y + token.height) {
 				this.hoveredToken = token;
 				break;
 			}
@@ -237,7 +236,7 @@ export default class TokenMode {
 				}
 				// Start a rectangle selection
 				else {
-					this.startTilePos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+					this.startTilePos = new Vec2(Math.floor(cursor.x), Math.floor(cursor.y));
 				}
 			}
 			// Selecting existing token to move
@@ -251,7 +250,7 @@ export default class TokenMode {
 				}
 				else {
 					this.selectedTokens.forEach(t => t.setSelected(false));
-					this.selectedTokens = [this.hoveredToken];
+					this.selectedTokens = [ this.hoveredToken ];
 					this.clickedLastFrame = true;
 					clickedAddedThisFrame = true;
 					this.hoveredToken.setSelected(true);
@@ -266,7 +265,7 @@ export default class TokenMode {
 				this.primitives.forEach((v) => v.destroy());
 				this.primitives = [];
 
-				let selectedTilePos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+				let selectedTilePos = new Vec2(Math.floor(cursor.x), Math.floor(cursor.y));
 
 				let a = new Vec2(Math.min(this.startTilePos.x, selectedTilePos.x), Math.min(this.startTilePos.y, selectedTilePos.y));
 				let b = new Vec2(Math.max(this.startTilePos.x, selectedTilePos.x), Math.max(this.startTilePos.y, selectedTilePos.y));
@@ -278,7 +277,7 @@ export default class TokenMode {
 				}
 
 				for (let token of this.scene.tokens) {
-					let tokenTilePos = new Vec2(Math.floor(token.x / 64), Math.floor(token.y / 64));
+					let tokenTilePos = new Vec2(Math.floor(token.x), Math.floor(token.y));
 
 					if (tokenTilePos.x >= a.x && tokenTilePos.y >= a.y && tokenTilePos.x <= b.x && tokenTilePos.y <= b.y) {
 						let selected = this.scene.i.keyDown('CTRL') ? !this.selectedIncludes(token) : true;
@@ -360,13 +359,13 @@ export default class TokenMode {
 				return;
 			}
 			
-			let newTileGrabPos = new Vec2(Math.floor(cursor.x / 64), Math.floor(cursor.y / 64));
+			let newTileGrabPos = new Vec2(Math.floor(cursor.x), Math.floor(cursor.y));
 			let offset = new Vec2(newTileGrabPos.x - this.tileGrabPos.x, newTileGrabPos.y - this.tileGrabPos.y);
 			if (offset.x === 0 && offset.y === 0) return;
 			this.movedTokens = true;
 			this.tileGrabPos = newTileGrabPos;
 
-			this.selectedTokens.forEach(tkn => tkn.setPosition(tkn.x / 4 + offset.x * 16, tkn.y / 4 + offset.y * 16));
+			this.selectedTokens.forEach(tkn => tkn.setPosition(tkn.x + offset.x, tkn.y + offset.y));
 		}
 	}
 }

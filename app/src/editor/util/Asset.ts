@@ -1,6 +1,6 @@
 import { Vec2 } from './Vec';
 
-export type AssetType = 'ground' | 'wall' | 'token';
+export type AssetType = 'floor' | 'detail' | 'wall' | 'token';
 
 export interface Asset {
 	type: AssetType;

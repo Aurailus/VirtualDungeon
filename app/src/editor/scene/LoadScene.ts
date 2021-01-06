@@ -1,7 +1,9 @@
 import * as Phaser from 'phaser';
 
-import EditorData from '../EditorData';
+import TilesetPatcher from '../TilesetPatcher';
+
 import { Asset } from '../util/Asset';
+import EditorData from '../EditorData';
 
 export default class LoadScene extends Phaser.Scene {
 	loaderOutline: Phaser.GameObjects.Sprite | null = null;
@@ -24,8 +26,6 @@ export default class LoadScene extends Phaser.Scene {
 		this.load.image('cursor', '/app/static/cursor.png');
 		this.load.image('grid_tile', '/app/static/grid_tile.png');
 
-		this.load.image('tileset_partial', '/app/static/tileset/water_new.png');
-		this.load.image('tileset_template', '/app/static/tileset_template.png');
 		this.load.image('ui_button_grid', '/app/static/ui/button_grid.png');
 		this.load.spritesheet('ui_button_side_menu', '/app/static/ui/button_side_menu.png', {frameWidth: 21, frameHeight: 18});
 		this.load.spritesheet('ui_history_manipulation', '/app/static/ui/history_manipulation.png', {frameWidth: 39, frameHeight: 18});
@@ -43,17 +43,22 @@ export default class LoadScene extends Phaser.Scene {
 
 		this.assets = JSON.parse(this.cache.text.get('assets'));
 		for (let asset of this.assets) {
-			if (asset.tileSize) this.load.spritesheet(asset.identifier, '/app/asset/' + asset.path,
-				{ frameWidth: asset.tileSize, frameHeight: asset.tileSize });
-			else this.load.image(asset.identifier, asset.path);
+			if (asset.tileSize && asset.type !== 'wall' && asset.type !== 'detail')
+				this.load.spritesheet(asset.identifier, '/app/asset/' + asset.path, { frameWidth: asset.tileSize, frameHeight: asset.tileSize });
+			else this.load.image(asset.identifier, '/app/asset/' + asset.path);
 		}
 	}
 
 	create(): void {
-		this.game.scene.start('MapScene', { ...this.editorData, data: JSON.parse(this.cache.text.get('data')), assets: this.assets });
-		this.cache.text.remove('assets');
-		this.game.scene.stop('LoadScene');
-		this.game.scene.swapPosition('MapScene', 'LoadScene');
+		const t = new TilesetPatcher(this);
+		Promise.all(this.assets.filter(a => a.type === 'wall' || a.type === 'detail')
+			.map(async (a) => await t.patch(a.identifier, a.tileSize)))
+			.then(() => {
+				this.game.scene.start('MapScene', { ...this.editorData, data: JSON.parse(this.cache.text.get('data')), assets: this.assets });
+				this.cache.text.remove('assets');
+				this.game.scene.stop('LoadScene');
+				this.game.scene.swapPosition('MapScene', 'LoadScene');
+			});
 	}
 
 	private setup(): void {
@@ -66,8 +71,8 @@ export default class LoadScene extends Phaser.Scene {
 		this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height - 140, 'logo');
 
 		this.load.on('progress', (val: number) => {
-	   	this.loaderFilled!.setCrop(0, this.loaderFilled!.height - this.loaderFilled!.height * val,
-		   	this.loaderFilled!.width, this.loaderFilled!.height * val);
+	 		this.loaderFilled!.setCrop(0, this.loaderFilled!.height - this.loaderFilled!.height * val,
+				this.loaderFilled!.width, this.loaderFilled!.height * val);
 		});
 	}
 }

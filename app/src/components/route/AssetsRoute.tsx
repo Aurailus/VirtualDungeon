@@ -1,30 +1,37 @@
 import * as Preact from 'preact';
-import { Switch, Route, Redirect, NavLink as Link } from 'react-router-dom';
+import { useAppData } from '../../Hooks';
+import { Switch, Route, NavLink as Link, useHistory } from 'react-router-dom';
 
+import AssetList from '../view/AssetList';
 import NewAssetForm from '../view/NewAssetForm';
-import MyAssetsList from '../view/MyAssetsList';
+import AssetCollectionList from '../view/AssetCollectionList';
 
 export default function AssetsRoute() {
+	const history = useHistory();
+	const [ { assets, collections, user } ] = useAppData([ 'assets', 'collections', 'user' ]);
 	return (
 		<div class='AssetsRoute Page'>
 			<aside class='Page-Sidebar'>
 				<h2 class='Page-SidebarTitle'>Assets</h2>
 
-				{/* <Link className='Page-SidebarCategory' activeClassName='Active' exact to='/assets/'>Featured Assets</Link>
-				<Link className='Page-SidebarCategory' activeClassName='Active' exact to='/assets/subscribed'>Subscribed Assets</Link>*/}
-				<Link className='Page-SidebarCategory' activeClassName='Active' to='/assets/uploaded'>Uploaded Assets</Link>
+				<Link className='Page-SidebarCategory' activeClassName='Active' exact to='/assets/'>My Assets</Link>
+				<Link className='Page-SidebarCategory' activeClassName='Active' to='/assets/collections/'>My Collections</Link>
 			</aside>
 			<main class='AssetsRoute-Main'>
 				<Switch>
-					{/* <Route exact path='/assets/'>
-						<h1>Storefront</h1>
+					<Route exact path='/assets/'>
+						<AssetList assets={(assets || []).filter(a => a.user === user!.user)}
+							onClick={(user, identifier) => history.push(`/asset/${user}/${identifier}`)}
+							onNew={() => history.push('/assets/new')} />
 					</Route>
-					<Route exact path='/assets/subscribed'>
-						<h1>Subscribed</h1>
-					</Route>*/}
-					<Route exact path='/assets/uploaded'><MyAssetsList/></Route>
+
+					<Route exact path='/assets/collections'>
+						<AssetCollectionList collections={collections || []}
+							onClick={(user, identifier) => history.push(`/assets/collection/${user}/${identifier}`)} />
+					</Route>
+
 					<Route exact path='/assets/new'><NewAssetForm/></Route>
-					<Redirect to='/assets/uploaded' />
+					{/* <Redirect to='/assets/uploaded' />*/}
 				</Switch>
 			</main>
 		</div>

@@ -49,12 +49,16 @@ export default function App() {
 								<div class='App-Main'>
 									<AppSidebar />
 									<Switch>
+										<Redirect exact path='/' to='/campaigns' />
+
+										<Route path='/assets/collection/:user/:id' component={Routes.Collection} />
+										<Route path='/asset/:user/:id' component={Routes.Asset} />
 										<Route path='/assets' component={Routes.Assets} />
 										
-										<Route path='/campaigns' component={Routes.Campaigns} />
 										<Route path='/campaign/:id?' component={Routes.Campaign} />
+										<Route path='/campaigns' component={Routes.Campaigns} />
 										
-										<Redirect to='/campaigns' />
+										<Redirect to='/' />
 									</Switch>
 								</div>
 							</Route>

@@ -41,7 +41,7 @@ export interface Map {
 	tiles: string;
 }
 
-export type AssetType =	'wall' | 'ground' | 'token';
+export type AssetType =	'wall' | 'detail' | 'ground' | 'token';
 
 export interface AssetCollection {
 	_id?: ObjectID;

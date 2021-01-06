@@ -35,11 +35,16 @@ export default class DataRouter extends Router {
 					case 'assets':
 						data.assets = await this.db.getUserAssets(user);
 						break;
+
+					case 'collections':
+						data.collections = await this.db.getUserCollections(user);
+						break;
 				}
 			}));
 
 			return data;
 		};
+
 
 		/**
 		 * Attempts to authenticate a user from a username and password.
@@ -97,7 +102,7 @@ export default class DataRouter extends Router {
 
 
 		/**
-		 * Creates a new campaign.
+		 * Creates a new map within a campaign.
 		 */
 		 
 	 	this.router.post('/map/new', this.authRoute(async (user, req, res) => {
@@ -118,16 +123,16 @@ export default class DataRouter extends Router {
 		}));
 
 		this.router.post('/asset/upload/', this.authRoute(async (user, req, res) => {
-			const type: 'ground' | 'token' | 'wall' = req.body.type;
+			const type: 'floor' | 'token' | 'detail' | 'wall' = req.body.type;
 			const tokenType: '1' | '4' | '8' = req.body.tokenType;
 
 			const name = req.body.name;
 			const identifier = req.body.identifier;
 
-			if (typeof name != 'string' || typeof identifier != 'string' ||
-				(type != 'token' && type != 'ground' && type != 'wall') ||
+			if (typeof name !== 'string' || typeof identifier !== 'string' ||
+				(type !== 'token' && type !== 'floor' && type !== 'wall' && type !== 'detail') ||
 				(type === 'token' && tokenType !== '1' && tokenType !== '4' && tokenType !== '8'))
-				return res.status(400)
+				return res.sendStatus(400);
 
 			const file = req.files?.file;
 			if (!file || Array.isArray(file)) return res.sendStatus(400);
@@ -141,6 +146,33 @@ export default class DataRouter extends Router {
 			})));
 
 			return 0;
+		}));
+
+
+		/**
+		 * Deletes an asset from the database & filesystem.
+		 */
+
+		this.router.post('/asset/delete/', this.authRoute(async (user, req, res) => {
+			const identifier = req.body.identifier;
+
+			if (typeof identifier !== 'string') res.sendStatus(400);
+			else {
+				await this.db.deleteAsset(user, identifier);
+				res.sendStatus(200);
+			}
+		}));
+
+
+		/**
+		 * Adds an asset to a collection.
+		 */
+		 
+	 	this.router.post('/collection/add', this.authRoute(async (user, req, res) => {
+			if (typeof req.body.collection !== 'string' || typeof req.body.asset !== 'string') throw 'Invalid parameters.';
+
+			await this.db.addCollectionAsset(user, req.body.collection, req.body.asset);
+			res.send(await getAppData(user, 'collections'));
 		}));
 
 

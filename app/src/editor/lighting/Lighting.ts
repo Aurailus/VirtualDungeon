@@ -1,4 +1,4 @@
-import MapChunk from '../MapChunk';
+import { CHUNK_SIZE } from '../map/MapChunk';
 import type MapScene from '../scene/MapScene';
 
 import LightChunk from './LightChunk';
@@ -23,9 +23,9 @@ export default class Lighting {
 	init(size: Vec2) {
 		this.size = size;
 
-		for (let i = 0; i < Math.ceil(size.y / (MapChunk.CHUNK_SIZE * 2)); i++) {
+		for (let i = 0; i < Math.ceil(size.y / (CHUNK_SIZE * 2)); i++) {
 			this.chunks[i] = [];
-			for (let j = 0; j < Math.ceil(size.x / (MapChunk.CHUNK_SIZE * 2)); j++) {
+			for (let j = 0; j < Math.ceil(size.x / (CHUNK_SIZE * 2)); j++) {
 				this.chunks[i][j] = new LightChunk(this, j, i);
 			}
 		}

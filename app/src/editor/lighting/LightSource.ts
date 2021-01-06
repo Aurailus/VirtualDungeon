@@ -1,6 +1,5 @@
 import type Lighting from './Lighting';
 
-import Layer from '../util/Layer';
 import { Vec2 } from '../util/Vec';
 
 export default class LightSource {
@@ -36,7 +35,7 @@ export default class LightSource {
 			let dir = new Vec2(Math.cos(i * 1.25 * (Math.PI / 180)) / 32, Math.sin(i * 1.25 * (Math.PI / 180)) / 32);
 
 			let dist = 0;
-			while (this.light.scene.map.getTileset(Layer.wall, Math.floor(start.x + ray.x), Math.floor(start.y + ray.y)) === -1 &&
+			while (this.light.scene.map.activeLayer.getTile('wall', Math.floor(start.x + ray.x), Math.floor(start.y + ray.y)) === -1 &&
 				(dist = Math.sqrt(Math.pow(ray.x, 2) + Math.pow(ray.y, 2))) < this.radius / 16) {
 
 				ray.x += dir.x;

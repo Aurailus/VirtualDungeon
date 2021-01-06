@@ -74,7 +74,7 @@ export default class UITokenSidebar extends UISidebar {
 
 		let token = new Token(this.scene, 0, 0, sprite);
 		Phaser.GameObjects.Sprite.prototype.setPosition.call(token, 12 + x * 21 * 3, 12 + y * 21 * 3);
-		token.setScale(3 / 4);
+		token.setScale(3);
 
 		this.sprites.push(token);
 		this.list.push(token);

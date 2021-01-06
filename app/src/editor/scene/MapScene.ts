@@ -9,10 +9,9 @@ import WorldView from '../WorldView';
 import TokenMode from '../TokenMode';
 import ArchitectMode from '../ArchitectMode';
 
+import Map from '../map/Map';
 import Token from '../Token';
-import MapData from '../MapData';
 import Lighting from '../lighting/Lighting';
-import TilesetPatcher from '../TilesetPatcher';
 
 // import OutlinePipeline from '../shader/OutlinePipeline';
 // import BrightenPipeline from '../shader/BrightenPipeline';
@@ -34,7 +33,7 @@ export default class MapScene extends Phaser.Scene {
 
 	size: Vec2 = new Vec2();
 
-	map: MapData = new MapData(this);
+	map: Map = new Map();
 	lighting: Lighting = new Lighting(this);
 
 	mode: number = 0;
@@ -48,18 +47,11 @@ export default class MapScene extends Phaser.Scene {
 		// webRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
 		// webRenderer.pipelines.add('brighten', new BrightenPipeline(this.game));
 
-		const t = new TilesetPatcher(this);
-		t.patch('tileset_partial', 16);
-
-		const s = this.add.sprite(300, 300, 'tileset_partial');
-		s.setOrigin(0, 0);
-		s.setScale(4);
-
 		this.i.init();
 		this.view.init();
 
 		this.size = new Vec2(data.data.size);
-		this.map.init(this.size, this.assets!);
+		this.map.init(this, this.size, this.assets!);
 
 		this.ui.init(this.assets!);
 		this.architect.init();

@@ -25,6 +25,13 @@
 		display: grid
 		grid-gap: 16px
 		grid-template-columns: 1fr 1fr
+	
+	.NewAssetForm-Col2-60
+		@extend .NewAssetForm-Col2
+		grid-template-columns: 5fr 4fr
+
+		& > div:nth-child(2)
+			text-align: right
 
 	.NewAssetForm-UploadWrap
 		@extend %material_button

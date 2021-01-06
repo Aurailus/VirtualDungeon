@@ -1,4 +1,3 @@
-import { Vec2 } from './util/Vec';
 import { generateId } from './util/Helpers';
 
 export interface SerializedToken {
@@ -10,8 +9,8 @@ export interface SerializedToken {
 }
 
 export default class Token extends Phaser.GameObjects.Container {
-	sprite: Phaser.GameObjects.Sprite | null = null;
-	shadow: Phaser.GameObjects.Sprite | null = null;
+	sprite: Phaser.GameObjects.Sprite;
+	shadow: Phaser.GameObjects.Sprite;
 
 	currentFrame: number = 0;
 
@@ -25,6 +24,20 @@ export default class Token extends Phaser.GameObjects.Container {
 
 	constructor(scene: Phaser.Scene, x: number, y: number, tex: string) {
 		super(scene, x, y);
+
+		this.shadow = new Phaser.GameObjects.Sprite(this.scene, 0, 0, '');
+		this.shadow.setOrigin(0, 0);
+		this.shadow.setScale(1 / this.shadow.width, 0.25 / this.shadow.height);
+		this.shadow.setTint(0x000000);
+		this.shadow.setAlpha(0.1, 0.1, 0.3, 0.3);
+		this.list.push(this.shadow);
+
+		this.sprite = new Phaser.GameObjects.Sprite(this.scene, 0, 0, '');
+		this.sprite.setOrigin(0, 0);
+		this.sprite.setScale(1 / this.sprite.width, 1 / this.sprite.height);
+		this.setPosition(this.x, this.y);
+		this.list.push(this.sprite);
+
 		this.setTexture(tex);
 
 		this.uuid = generateId(32);
@@ -37,28 +50,16 @@ export default class Token extends Phaser.GameObjects.Container {
 	}
 
 	setTexture(tex: string) {
-		if (this.shadow != null) this.shadow.setTexture(tex);
-		else {
-			this.shadow = new Phaser.GameObjects.Sprite(this.scene, -4, -4, tex);
-			this.shadow.setOrigin(0, 0);
-			this.shadow.setScale(4, 1);
-			this.shadow.setTint(0x000000);
-			this.shadow.setAlpha(0.1, 0.1, 0.3, 0.3);
-			this.list.push(this.shadow);
-		}
+		this.shadow.setTexture(tex);
+		this.sprite.setTexture(tex);
 
-		this.width = this.shadow.width * 4;
-		this.height = this.shadow.height * 4;
-		this.shadow.y = this.height - 26;
+		this.shadow.setScale(1 / this.shadow.width, 0.25 / this.shadow.height);
+		this.sprite.setScale(1 / this.sprite.width, 1 / this.sprite.height);
 
-		if (this.sprite != null) this.sprite.setTexture(tex);
-		else {
-			this.sprite = new Phaser.GameObjects.Sprite(this.scene, -4, -4, tex);
-			this.sprite.setOrigin(0, 0);
-			this.sprite.setScale(4, 4);
-			this.setPosition(this.x / 4, this.y / 4);
-			this.list.push(this.sprite);
-		}
+		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.025;
+
+		this.width = this.sprite.displayWidth;
+		this.height = this.sprite.displayHeight;
 	}
 
 	setFrame(frame: number): void {
@@ -83,11 +84,14 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.hovered = hovered;
 
 		if (!hovered && !this.selected) {
-			this.sprite.resetPipeline();
+			// this.sprite.resetPipeline();
+			this.sprite.setTint(0xffffff);
 			return;
 		}
 
-		if (!this.selected) this.sprite.setPipeline('brighten');
+		if (!this.selected) this.sprite.setTint(0x999999);
+
+		// if (!this.selected) this.sprite.setPipeline('brighten');
 	}
 
 	setSelected(selected: boolean) {
@@ -96,23 +100,17 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.selected = selected;
 
 		if (!selected) {
-			if (!this.hovered) this.sprite.resetPipeline();
-			else this.sprite.setPipeline('brighten');
+			// if (!this.hovered) this.sprite.resetPipeline();
+			// else this.sprite.setPipeline('brighten');
+			if (!this.hovered) this.sprite.setTint(0xffffff);
+			else this.sprite.setTint(0x999999);
 		}
 		else {
-			this.sprite.setPipeline('outline');
+			// this.sprite.setPipeline('outline');
+			this.sprite.setTint(0x000000);
 			// @ts-ignore
 			// this.sprite.pipeline.setFloat1('tex_size', this.sprite.texture.source[0].width);
 		}
-	}
-
-	setPosition(x?: number, y?: number, z?: number, w?: number): this {
-		Phaser.GameObjects.Container.prototype.setPosition.call(this, (x || 0) * 4, (y || 0) * 4, z, w);
-		return this;
-	}
-
-	getPosition(): Vec2 {
-		return new Vec2(this.x / 4, this.y / 4);
 	}
 
 	// Serialization Methods
@@ -121,8 +119,8 @@ export default class Token extends Phaser.GameObjects.Container {
 			uuid: this.uuid,
 			sprite: this.sprite ? this.sprite.texture.key : '',
 			frame: this.currentFrame,
-			x: this.x / 4,
-			y: this.y / 4
+			x: this.x,
+			y: this.y
 		} as SerializedToken));
 	}
 

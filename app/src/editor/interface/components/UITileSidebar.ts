@@ -1,14 +1,13 @@
 import UISidebar from './UISidebar';
 import type MapScene from '../../scene/MapScene';
 
-import Layer from '../../util/Layer';
 import { Asset } from '../../util/Asset';
 
 export default class UITileSidebar extends UISidebar {
 	
 	walls: string[] = [];
 	grounds: string[] = [];
-	overlays: string[] = [];
+	details: string[] = [];
 
 	constructor(scene: MapScene, x: number, y: number, assets: Asset[]) {
 		super(scene, x, y);
@@ -30,18 +29,18 @@ export default class UITileSidebar extends UISidebar {
 		this.list.push(add_ground);
 		this.sprites.push(add_ground);
 
-		for (let tileset of assets.filter((a) => a.type === 'ground'))
+		for (let tileset of assets.filter((a) => a.type === 'floor'))
 			this.addGround(tileset.identifier);
 
-		let add_overlay = new Phaser.GameObjects.Sprite(this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, 'ui_sidebar_browse');
-		add_overlay.setName('add_overlay');
-		add_overlay.setScale(3);
-		add_overlay.setOrigin(0, 0);
-		this.list.push(add_overlay);
-		this.sprites.push(add_overlay);
+		let add_detail = new Phaser.GameObjects.Sprite(this.scene, 9 + x * 21 * 3, 9 + 9 * 21 * 3, 'ui_sidebar_browse');
+		add_detail.setName('add_detail');
+		add_detail.setScale(3);
+		add_detail.setOrigin(0, 0);
+		this.list.push(add_detail);
+		this.sprites.push(add_detail);
 
-		for (let tileset of assets.filter((a) => a.type === 'ground'))
-			this.addOverlay(tileset.identifier);
+		for (let tileset of assets.filter((a) => a.type === 'detail'))
+			this.addDetail(tileset.identifier);
 
 		for (let i = 0; i < 12; i++) {
 			if (i % 4 !== 0) this.backgrounds[i].setFrame(0);
@@ -50,21 +49,21 @@ export default class UITileSidebar extends UISidebar {
 
 	elemClick(x: number, y: number): void {
 		if (y < 4) {
-			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.walls[x + y * 3]];
-			this.scene.architect.activeLayer = Layer.wall;
+			this.scene.architect.activeTileset = this.scene.map.tileStore.indices[this.walls[x + y * 3]];
+			this.scene.architect.activeLayer = 'wall';
 		}
 		else if (y < 8) {
-			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.grounds[x + (y - 4) * 3]];
-			this.scene.architect.activeLayer = Layer.floor;
+			this.scene.architect.activeTileset = this.scene.map.tileStore.indices[this.grounds[x + (y - 4) * 3]];
+			this.scene.architect.activeLayer = 'floor';
 		}
 		else {
-			this.scene.architect.activeTileset = this.scene.map.manager.indexes[this.overlays[x + (y - 8) * 3]];
-			this.scene.architect.activeLayer = Layer.overlay;
+			this.scene.architect.activeTileset = this.scene.map.tileStore.indices[this.details[x + (y - 8) * 3]];
+			this.scene.architect.activeLayer = 'detail';
 		}
 	}
 
 	private addWall(tileset: string): void {
-		this.addTilesetSprite(tileset, this.walls.length % 3, Math.floor(this.walls.length / 3) + 1, 17);
+		this.addTilesetSprite(tileset, this.walls.length % 3, Math.floor(this.walls.length / 3) + 1, 13);
 		(this.getByName('add_wall') as Phaser.GameObjects.Sprite).x = 9 + ((this.walls.length + 1) % 3 * 21 * 3);
 		(this.getByName('add_wall') as Phaser.GameObjects.Sprite).y = 9 + (Math.floor((this.walls.length + 1) / 3 + 1) * 21 * 3);
 		this.walls.push(tileset);
@@ -77,11 +76,11 @@ export default class UITileSidebar extends UISidebar {
 		this.grounds.push(tileset);
 	}
 
-	private addOverlay(tileset: string): void {
-		this.addTilesetSprite(tileset, this.overlays.length % 3, Math.floor(this.overlays.length / 3) + 9, 33);
-		(this.getByName('add_overlay') as Phaser.GameObjects.Sprite).x = 9 + ((this.overlays.length + 1) % 3 * 21 * 3);
-		(this.getByName('add_overlay') as Phaser.GameObjects.Sprite).y = 9 + (Math.floor((this.overlays.length + 1) / 3 + 9) * 21 * 3);
-		this.overlays.push(tileset);
+	private addDetail(tileset: string): void {
+		this.addTilesetSprite(tileset, this.details.length % 3, Math.floor(this.details.length / 3) + 9, 33);
+		(this.getByName('add_detail') as Phaser.GameObjects.Sprite).x = 9 + ((this.details.length + 1) % 3 * 21 * 3);
+		(this.getByName('add_detail') as Phaser.GameObjects.Sprite).y = 9 + (Math.floor((this.details.length + 1) / 3 + 9) * 21 * 3);
+		this.details.push(tileset);
 	}
 
 	private addTilesetSprite(key: string, x: number, y: number, frame: number) {

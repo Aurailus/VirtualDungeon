@@ -1,8 +1,8 @@
 import Token from '../Token';
 import type MapScene from '../scene/MapScene';
 
-import Layer from '../util/Layer';
 import { Vec2 } from '../util/Vec';
+import { Layer } from '../util/Layer';
 
 export default class HistoryElement {
 	scene: MapScene;
@@ -19,7 +19,7 @@ export default class HistoryElement {
 		console.log('Undo', this.type);
 		if (this.type === 'tile') {
 			for (let tile of this.data as {pos: Vec2; layer: Layer; lastTile: number; tile: number}[]) {
-				this.scene.map.setTile(tile.layer, tile.lastTile, tile.pos.x, tile.pos.y);
+				this.scene.map.activeLayer.setTile(tile.layer, tile.lastTile, tile.pos.x, tile.pos.y);
 				this.scene.lighting.tileUpdatedAt(tile.pos.x, tile.pos.y);
 			}
 		}
@@ -69,7 +69,7 @@ export default class HistoryElement {
 		console.log('Redo', this.type);
 		if (this.type === 'tile') {
 			for (let tile of this.data as {pos: Vec2; layer: Layer; lastTile: number; tile: number}[]) {
-				this.scene.map.setTile(tile.layer, tile.tile, tile.pos.x, tile.pos.y);
+				this.scene.map.activeLayer.setTile(tile.layer, tile.tile, tile.pos.x, tile.pos.y);
 				this.scene.lighting.tileUpdatedAt(tile.pos.x, tile.pos.y);
 			}
 		}

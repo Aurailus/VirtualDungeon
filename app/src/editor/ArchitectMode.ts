@@ -1,7 +1,7 @@
 import type MapScene from './scene/MapScene';
 
-import Layer from './util/Layer';
 import { Vec2 } from './util/Vec';
+import { Layer } from './util/Layer';
 
 export default class ArchitectMode {
 	scene: MapScene;
@@ -16,7 +16,7 @@ export default class ArchitectMode {
 	pointerPrimaryDown: boolean = false;
 
 	activeTileset: number = 0;
-	activeLayer: Layer = Layer.wall;
+	activeLayer: Layer = 'wall';
 
 	manipulated: {pos: Vec2; layer: Layer; lastTile: number; tile: number}[] = [];
 
@@ -25,19 +25,18 @@ export default class ArchitectMode {
 	}
 
 	init() {
-		// Create cursor hover sprite
 		this.cursor = this.scene.add.sprite(0, 0, 'cursor');
-		this.cursor.setScale(4, 4);
 		this.cursor.setDepth(1000);
 		this.cursor.setOrigin(0, 0);
+		this.cursor.setScale(1 / 16);
 	}
 
 	update() {
 		this.active = true;
 		this.cursor!.setVisible(true);
 
-		let selectedTilePos = new Vec2(Math.floor(this.scene.view.cursorWorld.x / 64), Math.floor(this.scene.view.cursorWorld.y / 64));
-		this.cursor!.setPosition(selectedTilePos.x * 64, selectedTilePos.y * 64);
+		let selectedTilePos = new Vec2(Math.floor(this.scene.view.cursorWorld.x), Math.floor(this.scene.view.cursorWorld.y));
+		this.cursor!.setPosition(selectedTilePos.x, selectedTilePos.y);
 
 		this.cursor!.setVisible((selectedTilePos.x >= 0 && selectedTilePos.y >= 0 &&
 			selectedTilePos.x < this.scene.map.size.x && selectedTilePos.y < this.scene.map.size.y));
@@ -91,7 +90,7 @@ export default class ArchitectMode {
 			if (Math.abs(b.x - a.x) > Math.abs(b.y - a.y)) b.y = a.y;
 			else b.x = a.x;
 
-			this.cursor!.setPosition(b.x * 64, b.y * 64);
+			this.cursor!.setPosition(b.x, b.y);
 
 			this.primitives.forEach((v) => v.destroy());
 			this.primitives = [];
@@ -100,21 +99,19 @@ export default class ArchitectMode {
 
 			this.primitives.forEach((v) => {
 				v.setOrigin(0, 0);
-				v.setScale(64, 64);
-				v.setLineWidth(0.03);
 				v.setDepth(300);
+				v.setLineWidth(0.03);
 			});
 
-			this.primitives.push(this.scene.add.sprite(this.startTilePos.x * 64, this.startTilePos.y * 64,
-				'cursor') as any as Phaser.GameObjects.Line);
+			this.primitives.push(this.scene.add.sprite(this.startTilePos.x, this.startTilePos.y, 'cursor') as any);
 			this.primitives[1].setOrigin(0, 0);
-			this.primitives[1].setScale(4, 4);
+			this.primitives[1].setScale(1 / 16);
 			this.primitives[1].setAlpha(0.5);
 		}
 
 		else if (!this.scene.i.mouseLeftDown() && !this.scene.i.mouseRightDown() && this.pointerDown) {
-			let a = new Vec2(this.startTilePos.x * 64, this.startTilePos.y * 64);
-			let b = new Vec2(selectedTilePos.x * 64, selectedTilePos.y * 64);
+			let a = new Vec2(this.startTilePos.x, this.startTilePos.y);
+			let b = new Vec2(selectedTilePos.x, selectedTilePos.y);
 			
 			if (Math.abs(b.x - a.x) > Math.abs(b.y - a.y)) b.y = a.y;
 			else b.x = a.x;
@@ -125,12 +122,12 @@ export default class ArchitectMode {
 			change.y /= normalizeFactor;
 
 			while (Math.abs(b.x - a.x) >= 1 || Math.abs(b.y - a.y) >= 1) {
-				this.placeTileAndPushManip(new Vec2(Math.floor(a.x / 64), Math.floor(a.y / 64)), this.pointerPrimaryDown);
+				this.placeTileAndPushManip(new Vec2(Math.floor(a.x), Math.floor(a.y)), this.pointerPrimaryDown);
 				a.x += change.x;
 				a.y += change.y;
 			}
 
-			this.placeTileAndPushManip(new Vec2(b.x / 64, b.y / 64), this.pointerPrimaryDown);
+			this.placeTileAndPushManip(new Vec2(b.x, b.y), this.pointerPrimaryDown);
 			this.primitives.forEach((v) => v.destroy());
 			this.primitives = [];
 		}
@@ -154,7 +151,6 @@ export default class ArchitectMode {
 
 			this.primitives.forEach((v) => {
 				v.setOrigin(0, 0);
-				v.setScale(64, 64);
 				v.setLineWidth(0.03);
 				v.setDepth(300);
 			});
@@ -180,14 +176,14 @@ export default class ArchitectMode {
 			let change = new Vec2(this.scene.view.cursorWorld.x - this.scene.view.lastCursorWorld.x,
 				this.scene.view.cursorWorld.y - this.scene.view.lastCursorWorld.y);
 
-			let normalizeFactor = Math.sqrt(change.x * change.x + change.y * change.y);
+			let normalizeFactor = Math.sqrt(change.x * change.x + change.y * change.y) * 10;
 			change.x /= normalizeFactor;
 			change.y /= normalizeFactor;
 
 			let place = new Vec2(this.scene.view.lastCursorWorld.x, this.scene.view.lastCursorWorld.y);
 
-			while (Math.abs(this.scene.view.cursorWorld.x - place.x) >= 1 || Math.abs(this.scene.view.cursorWorld.y - place.y) >= 1) {
-				this.placeTileAndPushManip(new Vec2(Math.floor(place.x / 64), Math.floor(place.y / 64)), this.scene.i.mouseLeftDown());
+			while (Math.abs(this.scene.view.cursorWorld.x - place.x) >= 0.1 || Math.abs(this.scene.view.cursorWorld.y - place.y) >= 0.1) {
+				this.placeTileAndPushManip(new Vec2(Math.floor(place.x), Math.floor(place.y)), this.scene.i.mouseLeftDown());
 				place.x += change.x;
 				place.y += change.y;
 			}
@@ -198,12 +194,12 @@ export default class ArchitectMode {
 
 	placeTileAndPushManip(manipPos: Vec2, solid: boolean) {
 		let tile = solid ? this.activeTileset : -1;
-		let layer = (tile === -1 && this.activeLayer === Layer.floor) ? Layer.wall : this.activeLayer;
+		let layer = (tile === -1 && this.activeLayer === 'floor') ? 'wall' : this.activeLayer;
 
-		let lastTile = this.scene.map.getTileset(layer, manipPos.x, manipPos.y);
+		let lastTile = this.scene.map.activeLayer.getTile(layer, manipPos.x, manipPos.y);
 		if (tile === lastTile) return;
 		
-		this.scene.map.setTile(layer, tile, manipPos.x, manipPos.y);
+		this.scene.map.activeLayer.setTile(layer, tile, manipPos.x, manipPos.y);
 
 		this.manipulated.push({
 			pos: manipPos,
@@ -211,7 +207,6 @@ export default class ArchitectMode {
 			lastTile: lastTile,
 			tile: tile
 		});
-
 	}
 
 	cleanup() {

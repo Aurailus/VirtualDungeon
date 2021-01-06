@@ -16,7 +16,7 @@ export default function NewAssetForm() {
 
 	const [ queryState, setQueryState ] = useState<'idle' | 'querying'>('idle');
 	
-	const [ type, setType ] = useState<'wall' | 'ground' | 'token'>('token');
+	const [ type, setType ] = useState<'wall' | 'floor' | 'detail' | 'token'>('token');
 	const [ tokenType, setTokenType ] = useState<1 | 4 | 8>(4);
 
 	const [ file, setFile ] = useState<File | null>(null);
@@ -25,7 +25,7 @@ export default function NewAssetForm() {
 	const [ name, setName ] = useState<string>('');
 	const [ identifier, setIdentifier ] = useState<string>('');
 
-	const handleSetType = (type: 'wall' | 'ground' | 'token') => {
+	const handleSetType = (type: 'wall' | 'floor' | 'detail' | 'token') => {
 		setType(type);
 	};
 
@@ -69,12 +69,9 @@ export default function NewAssetForm() {
 			body: data
 		});
 
-		if (res.status === 202) {
-			console.log('hellyea!');
-			history.push('/assets');
-		}
+		if (res.status === 200) history.push('/assets');
 		else {
-			console.log('hellnah', await res.text());
+			console.error(await res.text());
 			setQueryState('idle');
 		}
 	};
@@ -83,12 +80,13 @@ export default function NewAssetForm() {
 		<div class='NewAssetForm'>
 			<h2 class='NewAssetForm-Title'>New Asset</h2>
 
-			<div class='NewAssetForm-Col2'>
+			<div class='NewAssetForm-Col2-60'>
 				<div>
 					<Label label='Asset Type' />
 					<ButtonGroup>
 						<Button icon='token' label='Token' inactive={type !== 'token'} onClick={() => handleSetType('token')}/>
-						<Button icon='ground' label='Ground' inactive={type !== 'ground'} onClick={() => handleSetType('ground')}/>
+						<Button icon='detail' label='Detail' inactive={type !== 'detail'} onClick={() => handleSetType('detail')}/>
+						<Button icon='floor' label='Floor' inactive={type !== 'floor'} onClick={() => handleSetType('floor')}/>
 						<Button icon='wall' label='Wall' inactive={type !== 'wall'} onClick={() => handleSetType('wall')}/>
 					</ButtonGroup>
 				</div>

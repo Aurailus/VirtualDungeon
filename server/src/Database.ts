@@ -14,6 +14,7 @@ const sizeOf = promisify(sizeOfRaw);
 const logger = log4js.getLogger();
 
 const PERSONAL_IDENTIFIER = '_';
+const ASSET_PATH = path.join(path.dirname(path.dirname(__dirname)), 'assets');
 
 export const uploadLimit = 2 * 1024 * 1024;
 export const accountLimit = 5 * 1024 * 1024;
@@ -25,7 +26,7 @@ interface BaseAssetData {
 }
 
 interface TilesetData {
-	type: 'ground' | 'wall'
+	type: 'floor' | 'wall' | 'detail'
 }
 
 interface TokenData {
@@ -310,11 +311,43 @@ export default class Database {
 
 
 	/**
-	 * Get a users's uploaded assets.
+	 * Gets a users's uploaded assets.
 	 */
 
 	async getUserAssets(user: string): Promise<DB.Asset[]> {
-		return await this.db!.collection('assets').find({ user: user }).toArray();
+		return await this.db!.collection('assets').find({ user }).toArray();
+	}
+
+
+	/**
+	 * Gets a user's collections.
+	 */
+
+
+	async getUserCollections(user: string): Promise<DB.AssetCollection[]> {
+		return await this.db!.collection('collections').find({ user }).toArray();
+	}
+
+
+	/**
+	 * Adds an asset to a user's collection
+	 *
+	 * @param user - The user that owns the collection.
+	 * @param collection - The collection to insert an item into.
+	 * @param asset - An Asset string to add to the collection.
+	 */
+
+
+	async addCollectionAsset(user: string, collection: string, asset: string) {
+		const res = await this.db!.collection('assets').find({
+			user: asset.slice(0, asset.indexOf(':')),
+			identifier: asset.slice(asset.indexOf(':') + 1)
+		});
+		if (!res) throw 'Asset doesn\'t exist.';
+
+		const matched = await this.db!.collection('collections')
+			.updateOne({ user: user, identifier: collection }, { $addToSet: { items: asset }});
+		if (!matched.matchedCount) throw 'Collection doesn\'t exist.';
 	}
 
 
@@ -342,7 +375,7 @@ export default class Database {
 		let assetName = '', assetPath = '';
 		while (true) {
 			assetName = crypto.createHash('md5').update(data.identifier + await crypto.randomBytes(8)).digest('hex') + '.png';
-			assetPath = path.join(path.dirname(path.dirname(__dirname)), 'assets', assetName);
+			assetPath = path.join(ASSET_PATH, assetName);
 			try { await fs.access(assetPath, fsc.R_OK | fsc.W_OK); }
 			catch (e) { if (e.code === 'ENOENT') break; }
 		}
@@ -375,6 +408,26 @@ export default class Database {
 		// console.log((await this.db!.collection('collection.find({})).toArray());
 
 		return 200;
+	}
+
+
+	/**
+	 * Deletes a user's asset, removing it from the filesystem.
+	 *
+	 * @param {string} user - The user identifier.
+	 * @param {string} identifier - The asset identifier.
+	 */
+
+	async deleteAsset(user: string, identifier: string): Promise<void> {
+		const asset: DB.Asset | null = await this.db!.collection('assets').findOne({ user, identifier });
+		if (!asset) return;
+		
+		try { await fs.unlink(path.join(ASSET_PATH, asset.path)) } catch {}
+		await this.db!.collection('assets').remove({ user, identifier });
+		
+		const query = user + ':' + identifier;
+		await this.db!.collection('collections').updateMany(
+			{ items: { $all: [ query ] } }, { $pull: { items: query } });
 	}
 
 
