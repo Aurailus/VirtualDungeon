@@ -1,19 +1,19 @@
 import * as Phaser from 'phaser';
 
-export default class OutlinePipeline extends Phaser.Renderer.WebGL.Pipelines.GraphicsPipeline {
+export default class OutlinePipeline extends Phaser.Renderer.WebGL.Pipelines.SinglePipeline {
 	constructor(game: Phaser.Game) {
-		let config: Phaser.Types.Renderer.WebGL.WebGLPipelineConfig = {
+		super({
 			game: game,
 			fragShader: `
-			precision mediump float;
+ 			precision mediump float;
 
-			uniform sampler2D uMainSampler;
+ 			uniform sampler2D uMainSampler;
 			uniform float tex_size;
 
-			varying vec2 outTexCoord;
+ 			varying vec2 outTexCoord;
 			
-			void main(void) {
-				float factor = 1.0 / tex_size;
+ 			void main(void) {
+ 				float factor = 1.0 / tex_size;
 
 				vec4 color  = texture2D(uMainSampler, outTexCoord);
 				vec4 colorU = texture2D(uMainSampler, vec2(outTexCoord.x, outTexCoord.y + factor));
@@ -29,9 +29,7 @@ export default class OutlinePipeline extends Phaser.Renderer.WebGL.Pipelines.Gra
 					color += vec4(0.1, 0.1, 0.1, 0);
 					gl_FragColor = color;
 				}
-			}`
-		};
-		
-		super(config);
+ 			}`
+		});
 	}
 }

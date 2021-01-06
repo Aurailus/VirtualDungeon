@@ -1,27 +1,36 @@
 import * as Phaser from 'phaser';
 
-import TilesetPatcher from '../TilesetPatcher';
+import * as Patch from '../Patch';
 
 import { Asset } from '../util/Asset';
 import EditorData from '../EditorData';
 
 export default class LoadScene extends Phaser.Scene {
-	loaderOutline: Phaser.GameObjects.Sprite | null = null;
-	loaderFilled: Phaser.GameObjects.Sprite | null = null;
-
 	assets: Asset[] = [];
 	editorData: EditorData | undefined;
 
-	constructor() {
-		super({key: 'LoadScene'});
-	}
+	loaderOutline: Phaser.GameObjects.Sprite | null = null;
+	loaderFilled: Phaser.GameObjects.Sprite | null = null;
+
+	constructor() { super({ key: 'LoadScene' }); }
 
 	init(data: EditorData) {
 		this.editorData = data;
 	}
 
-	preload(): void {
-		this.setup();
+	preload() {
+		this.cameras.main.setBackgroundColor('#090d24');
+
+		this.loaderOutline = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2, 'loader_unfilled', 0);
+		this.loaderFilled = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2, 'loader_filled', 0);
+
+		this.loaderOutline.setScale(6);
+		this.loaderFilled.setScale(6);
+
+		this.load.on('progress', (val: number) => {
+	 		this.loaderFilled!.setCrop(0, this.loaderFilled!.height - this.loaderFilled!.height * val,
+				this.loaderFilled!.width, this.loaderFilled!.height * val);
+		});
 
 		this.load.image('cursor', '/app/static/cursor.png');
 		this.load.image('grid_tile', '/app/static/grid_tile.png');
@@ -49,31 +58,18 @@ export default class LoadScene extends Phaser.Scene {
 		}
 	}
 
-	create(): void {
-		const t = new TilesetPatcher(this);
+	create() {
+		this.loaderOutline!.destroy();
+		this.loaderFilled!.setTexture('loader_patching');
+
 		Promise.all(this.assets.filter(a => a.type === 'wall' || a.type === 'detail')
-			.map(async (a) => await t.patch(a.identifier, a.tileSize)))
+			.map(a => Patch.tileset(this, a.identifier, a.tileSize)))
 			.then(() => {
 				this.game.scene.start('MapScene', { ...this.editorData, data: JSON.parse(this.cache.text.get('data')), assets: this.assets });
 				this.cache.text.remove('assets');
 				this.game.scene.stop('LoadScene');
 				this.game.scene.swapPosition('MapScene', 'LoadScene');
 			});
-	}
-
-	private setup(): void {
-		this.loaderOutline = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, 'loader_unfilled', 0);
-		this.loaderFilled = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 100, 'loader_filled', 0);
-
-		this.loaderOutline.setScale(6);
-		this.loaderFilled.setScale(6);
-		
-		this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height - 140, 'logo');
-
-		this.load.on('progress', (val: number) => {
-	 		this.loaderFilled!.setCrop(0, this.loaderFilled!.height - this.loaderFilled!.height * val,
-				this.loaderFilled!.width, this.loaderFilled!.height * val);
-		});
 	}
 }
  

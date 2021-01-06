@@ -2,7 +2,7 @@ import { Vec2 } from '../util/Vec';
 import { Layer } from '../util/Layer';
 import { clamp } from '../util/Helpers';
 
-
+/** Index with a adjacent bit field to get the tile index to use for a wall. */
 const WALL_FIELD = [
 	 4,  4, 17, 17,  4,  4, 17, 17, 18, 18, 34, 13, 18, 18, 34, 13,  7,  7, 33, 33,  7,  7, 12, 12,  9,  9, 36, 35,  9,  9, 37, 10,
 	 4,  4, 17, 17,  4,  4, 17, 17, 18, 18, 34, 13, 18, 18, 34, 13,  7,  7, 33, 33,  7,  7, 12, 12,  9,  9, 36, 35,  9,  9, 37, 10,
@@ -14,6 +14,7 @@ const WALL_FIELD = [
 	 8,  8, 19, 19,  8,  8, 19, 19,  3,  3, 49, 11,  3,  3, 49, 11,  2,  2, 48, 48,  2,  2,  0,  0,  1,  1, 21, 15,  1,  1, 16, 14
 ];
 
+/** Index with a adjacent bit field to get the tile index to use for a floor. */
 const FLOOR_FIELD = [
 	54, 20, 19, 19, 18, 4,  19, 19, 11, 11, 3,  3,  51, 51, 3,  3,  9,  52, 5,  5,  9,  52, 5,  5,  39, 39, 30, 30, 39, 39, 30, 30,
 	2,  12, 32, 32, 34, 6,  32, 32, 11, 11, 3,  3,  51, 51, 3,  3,  43, 38, 29, 29, 43, 38, 29, 29, 39, 39, 30, 30, 39, 39, 30, 30,
@@ -26,6 +27,11 @@ const FLOOR_FIELD = [
 ];
 
 type LayerData = { tiles: number[][]; tilesets: number[][] };
+
+
+/**
+ * Represents a layer of a map, including the three 'sub-layers' wall, ground, & detail.
+ */
 
 export default class MapLayer {
 	private data: { [ key in Layer ]: LayerData } = {

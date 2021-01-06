@@ -25,16 +25,15 @@ export default class Token extends Phaser.GameObjects.Container {
 	constructor(scene: Phaser.Scene, x: number, y: number, tex: string) {
 		super(scene, x, y);
 
-		this.shadow = new Phaser.GameObjects.Sprite(this.scene, 0, 0, '');
+		this.shadow = new Phaser.GameObjects.Sprite(this.scene, -1 / 16, -1 / 16, '');
 		this.shadow.setOrigin(0, 0);
-		this.shadow.setScale(1 / this.shadow.width, 0.25 / this.shadow.height);
-		this.shadow.setTint(0x000000);
+		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
 		this.shadow.setAlpha(0.1, 0.1, 0.3, 0.3);
 		this.list.push(this.shadow);
 
-		this.sprite = new Phaser.GameObjects.Sprite(this.scene, 0, 0, '');
+		this.sprite = new Phaser.GameObjects.Sprite(this.scene, -1 / 16, -1 / 16, '');
 		this.sprite.setOrigin(0, 0);
-		this.sprite.setScale(1 / this.sprite.width, 1 / this.sprite.height);
+		this.sprite.setScale(18 / 16 / this.sprite.width, 18 / 16 / this.sprite.height);
 		this.setPosition(this.x, this.y);
 		this.list.push(this.sprite);
 
@@ -53,10 +52,10 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.shadow.setTexture(tex);
 		this.sprite.setTexture(tex);
 
-		this.shadow.setScale(1 / this.shadow.width, 0.25 / this.shadow.height);
-		this.sprite.setScale(1 / this.sprite.width, 1 / this.sprite.height);
+		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
+		this.sprite.setScale(18 / 16 / this.sprite.width, 18 / 16 / this.sprite.height);
 
-		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.025;
+		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.12;
 
 		this.width = this.sprite.displayWidth;
 		this.height = this.sprite.displayHeight;
@@ -84,14 +83,11 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.hovered = hovered;
 
 		if (!hovered && !this.selected) {
-			// this.sprite.resetPipeline();
-			this.sprite.setTint(0xffffff);
+			this.sprite.resetPipeline();
 			return;
 		}
 
-		if (!this.selected) this.sprite.setTint(0x999999);
-
-		// if (!this.selected) this.sprite.setPipeline('brighten');
+		if (!this.selected) this.sprite.setPipeline('brighten');
 	}
 
 	setSelected(selected: boolean) {
@@ -100,16 +96,12 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.selected = selected;
 
 		if (!selected) {
-			// if (!this.hovered) this.sprite.resetPipeline();
-			// else this.sprite.setPipeline('brighten');
-			if (!this.hovered) this.sprite.setTint(0xffffff);
-			else this.sprite.setTint(0x999999);
+			if (!this.hovered) this.sprite.resetPipeline();
+			else this.sprite.setPipeline('brighten');
 		}
 		else {
-			// this.sprite.setPipeline('outline');
-			this.sprite.setTint(0x000000);
-			// @ts-ignore
-			// this.sprite.pipeline.setFloat1('tex_size', this.sprite.texture.source[0].width);
+			this.sprite.setPipeline('outline');
+			this.sprite.pipeline.set1f('tex_size', this.sprite.texture.source[0].width);
 		}
 	}
 

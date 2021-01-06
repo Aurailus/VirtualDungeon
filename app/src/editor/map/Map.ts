@@ -8,8 +8,11 @@ import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
 
 
+/**
+ * Main map controller that manages the map data and chunks.
+ */
 
-export default class MapData {
+export default class Map {
 	tileStore: TileStore = new TileStore();
 	size: Vec2 = new Vec2(0, 0);
 	
@@ -33,19 +36,33 @@ export default class MapData {
 		}
 	}
 
+
+	/**
+	 * Rerenders dirty MapChunks.
+	 */
+
 	update(): void {
 		let start = Date.now();
-	
+
 		for (let arr of this.chunks) {
 			for (let chunk of arr) {
+				if (Date.now() - start > 4) return;
 				chunk.redraw();
-				if (Date.now() - start > 10) break;
 			}
 		}
 
 		// if (this.scene.i.keyPressed('S')) this.saveMap();
 		// if (this.scene.i.keyPressed('L')) this.loadMap(this.savedMapData);
 	}
+
+
+	/**
+	 * Marks a position as dirty in the relevant map chunk.
+	 * Passed down to MapLayer instances.
+	 *
+	 * @param {number} x - The x position of the dirty tile.
+	 * @param {number} y - The y position of the dirty tile.
+	 */
 
 	private handleDirty = (x: number, y: number) => {
 		this.chunks[Math.floor(y / CHUNK_SIZE)][Math.floor(x / CHUNK_SIZE)].setDirty(new Vec2(x % CHUNK_SIZE, y % CHUNK_SIZE));

@@ -13,8 +13,8 @@ import Map from '../map/Map';
 import Token from '../Token';
 import Lighting from '../lighting/Lighting';
 
-// import OutlinePipeline from '../shader/OutlinePipeline';
-// import BrightenPipeline from '../shader/BrightenPipeline';
+import OutlinePipeline from '../shader/OutlinePipeline';
+import BrightenPipeline from '../shader/BrightenPipeline';
 
 import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
@@ -43,9 +43,10 @@ export default class MapScene extends Phaser.Scene {
 
 	create(data: EditorData): void {
 		this.assets = data.assets;
-		// const webRenderer = this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
-		// webRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
-		// webRenderer.pipelines.add('brighten', new BrightenPipeline(this.game));
+
+		const glRenderer = this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
+		glRenderer.pipelines.add('brighten', new BrightenPipeline(this.game));
+		glRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
 
 		this.i.init();
 		this.view.init();
