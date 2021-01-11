@@ -1,4 +1,5 @@
 export class Vec2 {
+
 	x: number = 0;
 	y: number = 0;
 
@@ -18,6 +19,10 @@ export class Vec2 {
 
 	equals(o: Vec2) {
 		return this.x === o.x && this.y === o.y;
+	}
+
+	floor() {
+		return new Vec2(Math.floor(this.x), Math.floor(this.y));
 	}
 }
 
@@ -49,6 +54,10 @@ export class Vec3 {
 
 	equals(o: Vec3) {
 		return this.x === o.x && this.y === o.y && this.z === o.z;
+	}
+
+	floor() {
+		return new Vec3(Math.floor(this.x), Math.floor(this.y), Math.floor(this.z));
 	}
 }
 
@@ -84,5 +93,9 @@ export class Vec4 {
 
 	equals(o: Vec4) {
 		return this.x === o.x && this.y === o.y && this.z === o.z && this.w === o.w;
+	}
+
+	floor() {
+		return new Vec4(Math.floor(this.x), Math.floor(this.y), Math.floor(this.z), Math.floor(this.w));
 	}
 }

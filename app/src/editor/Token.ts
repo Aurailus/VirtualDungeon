@@ -29,6 +29,7 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.shadow.setOrigin(0, 0);
 		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
 		this.shadow.setAlpha(0.1, 0.1, 0.3, 0.3);
+		this.shadow.setTint(0x000000);
 		this.list.push(this.shadow);
 
 		this.sprite = new Phaser.GameObjects.Sprite(this.scene, -1 / 16, -1 / 16, '');
@@ -55,7 +56,7 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
 		this.sprite.setScale(18 / 16 / this.sprite.width, 18 / 16 / this.sprite.height);
 
-		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.12;
+		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.125;
 
 		this.width = this.sprite.displayWidth;
 		this.height = this.sprite.displayHeight;

@@ -1,0 +1,19 @@
+.LayerManager
+	display: grid
+	grid-gap: 6px
+	grid-template-columns: 1fr
+	position: absolute
+	bottom: 6px
+	right: 6px
+	width: 200px
+	height: auto
+
+	.LayerManager-Layer
+		outline: 0
+		border: none
+		font: inherit
+		text-align: left
+		background-color: transparentize(#000, 0.8)
+
+		&.Active
+			background-color: transparentize(#fff, 0.8)

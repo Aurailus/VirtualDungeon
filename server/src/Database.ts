@@ -99,22 +99,10 @@ export default class Database {
 			// 	user: 'me@auri.xyz',
 			// 	identifier: '16x_fantasy',
 			// 	name: 'Fantasy (16x)',
-
-			// 	items: [
-			// 		'me@auri.xyz:fantasy_cadin_1',
-			// 		'me@auri.xyz:fantasy_wall_dungeon',
-			// 		'me@auri.xyz:fantasy_floor_rock'
-			// 	]
 			// }, {
 			// 	user: 'me@auri.xyz',
 			// 	identifier: PERSONAL_IDENTIFIER,
 			// 	name: 'Personal Assets',
-
-			// 	items: [
-			// 		'me@auri.xyz:fantasy_cadin_1',
-			// 		'me@auri.xyz:fantasy_wall_dungeon',
-			// 		'me@auri.xyz:fantasy_floor_rock'
-			// 	]
 			// }] as DB.AssetCollection[]);
 		}
 		catch (e) {
@@ -255,7 +243,7 @@ export default class Database {
 		if (mapExists) throw 'A map of this name already exists.';
 
 		await collection.updateOne({user: user, identifier: campIdentifier}, {
-			$push: { maps: { name: map, identifier: mapIdentifier, size: { x: 200, y: 200 }, tiles: '' }}});
+			$push: { maps: { name: map, identifier: mapIdentifier, size: { x: 32, y: 32 }, tiles: '' }}});
 		return mapIdentifier;
 	}
 
@@ -423,7 +411,7 @@ export default class Database {
 		if (!asset) return;
 		
 		try { await fs.unlink(path.join(ASSET_PATH, asset.path)) } catch {}
-		await this.db!.collection('assets').remove({ user, identifier });
+		await this.db!.collection('assets').deleteOne({ user, identifier });
 		
 		const query = user + ':' + identifier;
 		await this.db!.collection('collections').updateMany(

@@ -1,6 +1,9 @@
 import { Vec2 } from '../util/Vec';
 import { Layer } from '../util/Layer';
 import { clamp } from '../util/Helpers';
+import * as Buffer from '../util/Buffer';
+
+export const LAYER_SERIALIZATION_ORDER: Layer[] = [ 'floor', 'detail', 'wall' ];
 
 /** Index with a adjacent bit field to get the tile index to use for a wall. */
 const WALL_FIELD = [
@@ -34,10 +37,12 @@ type LayerData = { tiles: number[][]; tilesets: number[][] };
  */
 
 export default class MapLayer {
+	private onDirty?: (x: number, y: number) => void;
+	
 	private data: { [ key in Layer ]: LayerData } = {
 		wall: { tiles: [], tilesets: [] }, floor: { tiles: [], tilesets: [] }, detail: { tiles: [], tilesets: [] } };
 
-	constructor(public size: Vec2, private onDirty: (x: number, y: number) => void) {
+	constructor(readonly index: number, public size: Vec2) {
 		const createLayerData = (startTile: number | (() => number), startTileset: number): LayerData => {
 			let layer: LayerData = { tiles: [], tilesets: [] };
 
@@ -54,11 +59,10 @@ export default class MapLayer {
 			return layer;
 		};
 
-		this.data.wall = createLayerData(0, -1);
-		this.data.floor = createLayerData(() => Math.floor(Math.random() * 6) + 54, 0);
-		this.data.detail = createLayerData(0, -1);
+		this.data.wall = createLayerData(0, 0);
+		this.data.floor = createLayerData(() => Math.floor(Math.random() * 6) + 54, 1);
+		this.data.detail = createLayerData(0, 0);
 	}
-
 
 	/**
 	 * Convert a 3x3 array of wall states into a numeric value between 0 and 255.
@@ -125,6 +129,14 @@ export default class MapLayer {
 
 
 	/**
+	 * Assigns an on-dirty function for the layer to update chunks.
+	 */
+
+	init(onDirty: (x: number, y: number) => void) {
+		this.onDirty = onDirty;
+	}
+
+	/**
 	 * Sets a tile to the tileset provided, automatically smart-tiling as needed.
 	 *
 	 * @param {Layer} layer - The internal layer to set the tile at.
@@ -140,7 +152,6 @@ export default class MapLayer {
 		if (x < 0 || y! < 0 || x >= this.size.x || y! >= this.size.y) return false;
 
 		if (this.setTileset(layer, x, y!, tileset)) {
-			// this.setTileIndex(layer, x, y!, 3);
 			this.autoTile(x, y!);
 			return true;
 		}
@@ -179,6 +190,36 @@ export default class MapLayer {
 	}
 
 
+	load(layerData: string) {
+		for (const layer of LAYER_SERIALIZATION_ORDER) {
+			let numEnd = layerData.indexOf('|');
+			let num = Number.parseInt(layerData.substr(0, numEnd), 10);
+			
+			const tileStr = layerData.slice(numEnd + 1, numEnd + 1 + num);
+			const tileBuff = Buffer.deserialize(tileStr);
+			const tileArr = new Uint16Array(tileBuff);
+
+			layerData = layerData.substr(numEnd + num + 1);
+
+			numEnd = layerData.indexOf('|');
+			num = Number.parseInt(layerData.substr(0, numEnd), 10);
+
+			const tileIndStr = layerData.slice(numEnd + 1, numEnd + 1 + num);
+			const tileIndBuff = Buffer.deserialize(tileIndStr);
+			const tileIndArr = new Uint8Array(tileIndBuff);
+
+			layerData = layerData.substr(numEnd + num + 1);
+
+			for (let i = 0; i < tileArr.length; i++) {
+				const x = i % this.size.x;
+				const y = Math.floor(i / this.size.x);
+				this.setTileset(layer, x, y, tileArr[i]);
+				this.setTileIndex(layer, x, y, tileIndArr[i]);
+			}
+		}
+	}
+
+
 	/**
 	 * Sets a tile to the one provided.
 	 *
@@ -207,7 +248,7 @@ export default class MapLayer {
 
 	private setTileIndex(layer: Layer, x: number, y: number, index: number): void {
 		this.data[layer].tiles[y][x] = index;
-		this.onDirty(x, y);
+		if (this.onDirty) this.onDirty(x, y);
 	}
 
 
@@ -221,7 +262,7 @@ export default class MapLayer {
 	private autoTile(x: number, y: number): void {
 		for (let i = clamp(x - 1, this.size.x - 1, 0); i <= clamp(x + 1, this.size.x - 1, 0); i++) {
 			for (let j = clamp(y - 1, this.size.y - 1, 0); j <= clamp(y + 1, this.size.y - 1, 0); j++) {
-				const solids = this.getTilesAround('wall', i, j).map(i => i !== -1);
+				const solids = this.getTilesAround('wall', i, j).map(i => i !== 0);
 
 				const wall = MapLayer.wall(solids, this.getTileIndex('wall', i, j));
 				if (wall !== -1) this.setTileIndex('wall', i, j, wall);
@@ -229,7 +270,7 @@ export default class MapLayer {
 				const floor = MapLayer.floor(solids, this.getTileIndex('floor', i, j));
 				if (floor !== -1) this.setTileIndex('floor', i, j, floor);
 
-				const detail = MapLayer.detail(this.getTilesAround('detail', i, j).map(i => i !== -1), -1);
+				const detail = MapLayer.detail(this.getTilesAround('detail', i, j).map(i => i !== 0), 0);
 				if (detail !== -1) this.setTileIndex('detail', i, j, detail);
 			}
 		}

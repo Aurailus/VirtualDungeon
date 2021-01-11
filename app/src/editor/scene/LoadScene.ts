@@ -2,6 +2,9 @@ import * as Phaser from 'phaser';
 
 import * as Patch from '../Patch';
 
+import OutlinePipeline from '../shader/OutlinePipeline';
+import BrightenPipeline from '../shader/BrightenPipeline';
+
 import { Asset } from '../util/Asset';
 import EditorData from '../EditorData';
 
@@ -34,6 +37,7 @@ export default class LoadScene extends Phaser.Scene {
 
 		this.load.image('cursor', '/app/static/cursor.png');
 		this.load.image('grid_tile', '/app/static/grid_tile.png');
+		this.load.image('erase_tile', '/app/static/erase_tile.png');
 
 		this.load.image('ui_button_grid', '/app/static/ui/button_grid.png');
 		this.load.spritesheet('ui_button_side_menu', '/app/static/ui/button_side_menu.png', {frameWidth: 21, frameHeight: 18});
@@ -51,10 +55,13 @@ export default class LoadScene extends Phaser.Scene {
 		this.load.image('shader_light_mask', '/app/static/shader/light_mask.png');
 
 		this.assets = JSON.parse(this.cache.text.get('assets'));
-		for (let asset of this.assets) {
-			if (asset.tileSize && asset.type !== 'wall' && asset.type !== 'detail')
-				this.load.spritesheet(asset.identifier, '/app/asset/' + asset.path, { frameWidth: asset.tileSize, frameHeight: asset.tileSize });
-			else this.load.image(asset.identifier, '/app/asset/' + asset.path);
+
+		for (let a of this.assets) {
+			if (a.type === 'token' || a.type === 'floor') {
+				this.load.spritesheet(a.identifier, '/app/asset/' + a.path, { frameWidth: a.tileSize, frameHeight: a.tileSize });
+			}
+			else if (a.type === 'wall' || a.type === 'detail')
+				this.load.image(a.identifier, '/app/asset/' + a.path);
 		}
 	}
 
@@ -62,14 +69,25 @@ export default class LoadScene extends Phaser.Scene {
 		this.loaderOutline!.destroy();
 		this.loaderFilled!.setTexture('loader_patching');
 
-		Promise.all(this.assets.filter(a => a.type === 'wall' || a.type === 'detail')
-			.map(a => Patch.tileset(this, a.identifier, a.tileSize)))
-			.then(() => {
-				this.game.scene.start('MapScene', { ...this.editorData, data: JSON.parse(this.cache.text.get('data')), assets: this.assets });
-				this.cache.text.remove('assets');
-				this.game.scene.stop('LoadScene');
-				this.game.scene.swapPosition('MapScene', 'LoadScene');
-			});
+		const glRenderer = this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
+		glRenderer.pipelines.add('brighten', new BrightenPipeline(this.game));
+		glRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
+
+		Promise.all(this.assets.map(a => {
+			if (a.type === 'token')
+				return Patch.sprite(this, a.identifier, Math.floor(a.dimensions!.x / a.tileSize));
+
+			else if (a.type === 'wall' || a.type === 'detail')
+				return Patch.tileset(this, a.identifier, a.tileSize);
+
+			else return new Promise<void>(resolve => resolve());
+		})).then(() => {
+			this.game.scene.start('MapScene', { ...this.editorData,
+				data: JSON.parse(this.cache.text.get('data')), assets: this.assets });
+			this.cache.text.remove('assets');
+			this.game.scene.stop('LoadScene');
+			this.game.scene.swapPosition('MapScene', 'LoadScene');
+		});
 	}
 }
  

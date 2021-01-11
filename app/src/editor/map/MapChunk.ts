@@ -54,6 +54,8 @@ export default class MapChunk extends Phaser.GameObjects.RenderTexture {
 	 */
 
 	redraw(): boolean {
+		// if (!this.willRender()) return false;
+
 		if (this.fullyDirty) {
 			for (let i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++) {
 				let x = i % CHUNK_SIZE;
@@ -99,13 +101,17 @@ export default class MapChunk extends Phaser.GameObjects.RenderTexture {
 		let detailTile = this.layer.getTile('detail', mX, mY);
 		let detailTileIndex = this.layer.getTileIndex('detail', mX, mY);
 
-		if (floorTile !== -1)
+		if (floorTile > 0)
 			this.drawFrame(this.tileStore.floorTiles[floorTile].identifier, floorTileIndex, x * TILE_SIZE + 2, y * TILE_SIZE + 2);
+		else {
+			this.erase('erase_tile', x * TILE_SIZE + 2, y * TILE_SIZE + 2);
+			if (wallTile === 0 && detailTile === 0) return;
+		}
 
-		if (detailTile !== -1)
+		if (detailTile > 0)
 			this.drawFrame(this.tileStore.detailTiles[detailTile].identifier, detailTileIndex, x * TILE_SIZE + 2, y * TILE_SIZE + 2);
 
-		if (wallTile !== -1)
+		if (wallTile > 0)
 			this.drawFrame(this.tileStore.wallTiles[wallTile].identifier, wallTileIndex, x * TILE_SIZE + 2, y * TILE_SIZE + 2);
 		
 		if ((x % 2 === 0 && y % 2 === 0) || (x % 2 !== 0 && y % 2 !== 0))

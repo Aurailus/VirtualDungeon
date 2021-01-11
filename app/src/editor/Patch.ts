@@ -2,6 +2,22 @@ import * as Phaser from 'phaser';
 
 import { Vec2, Vec4 } from './util/Vec';
 
+// const SPRITE_PADDING = 2;
+
+
+/**
+ * Patches a partial tileset into a full tileset by combining parts of other textures.
+ * Replaces the existing texture in the Phaser cache. Run this operation before using
+ * the texture on GameObjects, as Phaser will not update them after this operation is
+ * complete.
+ *
+ * @param {Phaser.Scene} scene - The scene containing the texture cache.
+ * @param {string} tileset_key - The key of the tileset texture within the cache.
+ * @param {number} tile_size - The size of the tiles within the tileset texture.
+ *
+ * @returns a promise that resolves when the texture has been updated.
+ */
+
 export async function tileset(scene: Phaser.Scene, tileset_key: string, tile_size: number): Promise<void> {
 	return new Promise<void>(resolve => {
 		const s = Date.now();
@@ -152,7 +168,57 @@ export async function tileset(scene: Phaser.Scene, tileset_key: string, tile_siz
 			scene.textures.removeKey(tileset_key);
 			scene.textures.addSpriteSheet(tileset_key, img, { frameWidth: tile_size, frameHeight: tile_size });
 
-			console.log(`Patched '${tileset_key}' in ${Date.now() - s} ms.`);
+			console.log(`Patched Tileset '${tileset_key}' in ${Date.now() - s} ms.`);
+
+			resolve();
+		});
+	});
+}
+
+
+/**
+ * Patches a sprite texture, adding a 2 pixel gap around each frame, which is needed for OutlinePipeline.
+ * Replaces the existing texture in the Phaser cache. Run this operation before using the
+ * texture on GameObjects, as Phaser will not update them after this operation is complete.
+ *
+ * @param {Phaser.Scene} scene - The scene containing the texture cache.
+ * @param {string} sprite_key - The key of the sprite texture within the cache.
+ * @param {number} sprite_segments - The amount of frames across an axis of the sprite (e.g 2 for a 2*2 grid of frames).
+ *
+ * @returns a promise that resolves when the texture has been updated.
+ */
+
+export async function sprite(scene: Phaser.Scene, sprite_key: string, sprite_segments: number): Promise<void> {
+	return new Promise<void>(resolve => {
+		const s = Date.now();
+
+		let part: Phaser.GameObjects.Sprite = new Phaser.GameObjects.Sprite(scene, 0, 0, sprite_key);
+		part.setOrigin(0, 0);
+
+		const raw_width = part.width;
+		const frame_width = raw_width + 2;
+		const res_width = (frame_width + 2) * sprite_segments;
+
+		const canvas = new Phaser.GameObjects.RenderTexture(scene, 0, 0, res_width, res_width);
+
+		function draw(frame: Vec2) {
+			part.setFrame(frame.x + frame.y * sprite_segments);
+			part.setPosition(1 + frame.x * (frame_width + 2), 1 + frame.y * (frame_width + 2));
+			canvas.draw(part);
+		}
+
+		for (let x = 0; x < sprite_segments; x++) {
+			for (let y = 0; y < sprite_segments; y++) {
+				draw(new Vec2(x, y));
+			}
+		}
+
+		canvas.snapshot((img: any) => {
+			scene.textures.removeKey(sprite_key);
+			scene.textures.addSpriteSheet(sprite_key, img,
+				{ frameWidth: frame_width, frameHeight: frame_width, spacing: 2 });
+
+			console.log(`Patched Sprite '${sprite_key}' in ${Date.now() - s} ms.`);
 
 			resolve();
 		});

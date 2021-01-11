@@ -1,55 +1,170 @@
-import type MapScene from '../scene/MapScene';
-import HistoryElement from './HistoryElement';
+import * as Phaser from 'phaser';
+
+import Map from '../map/Map';
+import Token from '../Token';
+import InputManager from '../InputManager';
+import type { HistoryType } from './HistoryType';
 
 export default class HistoryManager {
-	scene: MapScene;
+	private map: Map = null as any;
+	private scene: Phaser.Scene = null as any;
 
-	history: HistoryElement[] = [];
-	historyHead: number = -1;
+	private history: HistoryType[] = [];
+	private head: number = -1;
 
-	timeHoldingHistoryKey: number = 0;
+	private historyHeldTime: number = 0;
 
-	constructor(scene: MapScene) {
+	init(scene: Phaser.Scene, map: Map) {
+		this.map = map;
 		this.scene = scene;
 	}
 
-	update() {
-		if (this.scene.i.keyPressed('Z')) {
-			this.timeHoldingHistoryKey = 0;
-			if (!this.scene.i.keyDown('SHIFT')) this.undo();
+	update(input: InputManager) {
+		if (input.keyPressed('Z')) {
+			this.historyHeldTime = 0;
+			if (!input.keyDown('SHIFT')) this.undo();
 			else this.redo();
 		}
-		if (this.scene.i.keyPressed('Y')) {
-			this.timeHoldingHistoryKey = 0;
+		if (input.keyPressed('Y')) {
+			this.historyHeldTime = 0;
 			this.redo();
 		}
 
-		if (this.scene.i.keyDown('Z') || this.scene.i.keyDown('Y')) {
-			if (this.timeHoldingHistoryKey > 12 && this.timeHoldingHistoryKey % 3 === 0) {
-				if (this.scene.i.keyDown('Y') || (this.scene.i.keyDown('Z') && this.scene.i.keyDown('SHIFT'))) this.redo();
+		if (input.keyDown('Z') || input.keyDown('Y')) {
+			if (this.historyHeldTime > 12 && this.historyHeldTime % 3 === 0) {
+				if (input.keyDown('Y') || (input.keyDown('Z') && input.keyDown('SHIFT'))) this.redo();
 				else this.undo();
 			}
-			this.timeHoldingHistoryKey++;
+			this.historyHeldTime++;
 		}
-		else this.timeHoldingHistoryKey = 0;
+		else this.historyHeldTime = 0;
 	}
 
-	push(type: string, data: any): void {
-		this.history.splice(this.historyHead + 1, this.history.length - this.historyHead, new HistoryElement(this.scene, type, data));
-		this.historyHead = this.history.length - 1;
+	push(item: HistoryType): void {
+		this.history.splice(this.head + 1, this.history.length - this.head, item);
+		this.head = this.history.length - 1;
 	}
 
 	undo() {
-		if (this.historyHead >= 0) {
-			this.history[this.historyHead].undo();
-			this.historyHead--;
+		if (!this.hasPrev() || !this.map) return;
+		const item = this.history[this.head--];
+
+		switch (item.type) {
+		default:
+			console.warn('Unhandled undo ', item);
+			break;
+
+		case 'tile':
+			for (const tile of item.items)
+				this.map.getLayer(tile.mapLayer)?.setTile(tile.layer, tile.tile.pre, tile.pos);
+			break;
+
+		case 'place_token':
+			item.tokens.forEach(t => {
+				const { uuid } = JSON.parse(t);
+				for (let i = 0; i < this.map.tokens.length; i++) {
+					if (this.map.tokens[i].uuid === uuid) {
+						this.map.tokens[i].destroy();
+						this.map.tokens.splice(i, 1);
+						break;
+					}
+				}
+			});
+			break;
+
+		case 'delete_token':
+			item.tokens.forEach(t => {
+				const token = new Token(this.scene, 0, 0, '');
+				token.loadSerializedData(t);
+				this.scene.add.existing(token);
+				this.map.tokens.push(token);
+			});
+			break;
+		
+		case 'modify_token':
+			for (let i = 0; i < item.tokens.pre.length; i++) {
+				const { uuid } = JSON.parse(item.tokens.pre[i]);
+				let found = false;
+				for (const token of this.map.tokens) {
+					if (token.uuid === uuid) {
+						token.loadSerializedData(item.tokens.pre[i]);
+						found = true;
+						break;
+					}
+				}
+				if (found) continue;
+				const token = new Token(this.scene, 0, 0, '');
+				token.loadSerializedData(item.tokens.pre[i]);
+				this.scene.add.existing(token);
+				this.map.tokens.push(token);
+			}
+			break;
 		}
 	}
 
 	redo() {
-		if (this.historyHead < this.history.length - 1) {
-			this.historyHead++;
-			this.history[this.historyHead].redo();
+		if (!this.hasNext() || !this.map) return;
+		const item = this.history[++this.head];
+
+		switch (item.type) {
+		default:
+			console.warn('Unhandled redo ', item);
+			break;
+		
+		case 'tile':
+			for (let tile of item.items)
+				this.map.getLayer(tile.mapLayer)?.setTile(tile.layer, tile.tile.post, tile.pos);
+			break;
+
+		case 'place_token':
+			item.tokens.forEach(t => {
+				const token = new Token(this.scene, 0, 0, '');
+				token.loadSerializedData(t);
+				this.scene.add.existing(token);
+				this.map.tokens.push(token);
+			});
+			break;
+		
+		case 'delete_token':
+			item.tokens.forEach(t => {
+				const { uuid } = JSON.parse(t);
+
+				for (let i = 0; i < this.map.tokens.length; i++) {
+					if (this.map.tokens[i].uuid === uuid) {
+						this.map.tokens[i].destroy();
+						this.map.tokens.splice(i, 1);
+						break;
+					}
+				}
+			});
+			break;
+		
+		case 'modify_token':
+			for (let i = 0; i < item.tokens.post.length; i++) {
+				const { uuid } = JSON.parse(item.tokens.post[i]);
+				let found = false;
+				for (const token of this.map.tokens) {
+					if (token.uuid === uuid) {
+						token.loadSerializedData(item.tokens.post[i]);
+						found = true;
+						break;
+					}
+				}
+				if (found) continue;
+				const token = new Token(this.scene, 0, 0, '');
+				token.loadSerializedData(item.tokens.post[i]);
+				this.scene.add.existing(token);
+				this.map.tokens.push(token);
+			}
+			break;
 		}
+	}
+
+	hasPrev(): boolean {
+		return this.head >= 0;
+	}
+
+	hasNext(): boolean {
+		return this.head < this.history.length - 1;
 	}
 }

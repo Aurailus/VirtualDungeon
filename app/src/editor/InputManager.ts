@@ -1,9 +1,12 @@
+export type Context = 'map' | 'interface';
+
 type ScrollEvent = ((delta: number) => void);
 
 export default class InputManager {
 	scene: Phaser.Scene;
 
 	private hasFocus: boolean = true;
+	private context: Context = 'map';
 
 	private leftMouseState: boolean = false;
 	private rightMouseState: boolean = false;
@@ -61,6 +64,14 @@ export default class InputManager {
 
 		for (let key of Object.keys(this.keys)) this.keysDownLast[key] = this.keysDown[key];
 		for (let key of Object.keys(this.keys)) this.keysDown[key] = this.keys[key].isDown;
+	}
+
+	getContext(): Context {
+		return this.context;
+	}
+
+	setContext(context: Context) {
+		this.context = context;
 	}
 
 	setFocus(focus: boolean) {

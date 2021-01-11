@@ -1,7 +1,9 @@
 import * as Phaser from 'phaser';
 
+import Token from '../Token';
 import MapLayer from './MapLayer';
 import TileStore from './TileStore';
+import * as MapSaver from './MapSaver';
 import MapChunk, { CHUNK_SIZE } from './MapChunk';
 
 import { Vec2 } from '../util/Vec';
@@ -13,27 +15,21 @@ import { Asset } from '../util/Asset';
  */
 
 export default class Map {
-	tileStore: TileStore = new TileStore();
 	size: Vec2 = new Vec2(0, 0);
-	
-	activeLayer: MapLayer = {} as MapLayer;
-	private layers: MapLayer[] = [];
+	tileStore: TileStore = new TileStore();
+	activeLayer?: MapLayer = {} as MapLayer;
 
-	private chunks: MapChunk[][] = [];
+	tokens: Token[] = [];
+	
+	private layers: MapLayer[] = [];
+	private chunks: MapChunk[][][] = [];
+
+	private scene: Phaser.Scene = undefined as any;
 
 	init(scene: Phaser.Scene, size: Vec2, assets: Asset[]) {
+		this.scene = scene;
 		this.size = size;
 		this.tileStore.init(scene.textures, assets);
-
-		this.layers.push(new MapLayer(size, this.handleDirty));
-		this.activeLayer = this.layers[0];
-
-		for (let i = 0; i < Math.ceil(size.y / CHUNK_SIZE); i++) {
-			this.chunks[i] = [];
-			for (let j = 0; j < Math.ceil(size.x / CHUNK_SIZE); j++) {
-				this.chunks[i][j] = new MapChunk(scene, new Vec2(j, i), this.activeLayer, this.tileStore);
-			}
-		}
 	}
 
 
@@ -44,15 +40,102 @@ export default class Map {
 	update(): void {
 		let start = Date.now();
 
-		for (let arr of this.chunks) {
-			for (let chunk of arr) {
-				if (Date.now() - start > 4) return;
-				chunk.redraw();
+		for (let layer of this.chunks) {
+			for (let chunkRow of layer) {
+				for (let chunk of chunkRow) {
+					if (Date.now() - start > 4) return;
+					chunk.redraw();
+				}
 			}
 		}
+	}
 
-		// if (this.scene.i.keyPressed('S')) this.saveMap();
-		// if (this.scene.i.keyPressed('L')) this.loadMap(this.savedMapData);
+
+	/**
+	 * Gets the array of map layers.
+	 */
+
+	getLayers(): MapLayer[] {
+		return this.layers;
+	}
+
+
+	/**
+	 * Gets a map layer based on its index.
+	 */
+
+	getLayer(layer: number): MapLayer | undefined {
+		return this.layers[layer];
+	}
+
+
+	/**
+	 * Creates a new map layer at the specified index.
+	 * If no index is specified, the layer will be added at the top of the stack.
+	 *
+	 * @param {number} index - the index that the layer should be added at.
+	 */
+
+ 	addLayer(): MapLayer {
+		const layer = new MapLayer(this.layers.length, this.size);
+		layer.init(this.handleDirty.bind(this, layer.index));
+
+		this.layers.push(layer);
+		this.activeLayer = layer;
+		this.createMapChunks(this.scene);
+
+		return layer;
+ 	}
+
+
+	/**
+	 * Returns a serialized map string representing the map.
+	 *
+	 * @returns {string} - a serialized map string.
+	 */
+
+	save(): string {
+		return MapSaver.save(this.size, this.layers);
+	}
+
+
+	/**
+	 * Loads a serialized map string into this map.
+	 *
+	 * @param {string} mapData - the serialized map.
+	 */
+
+	load(mapData: string) {
+		const data = MapSaver.load(mapData);
+		this.size = data.size;
+
+		this.layers = data.layers;
+		this.layers.forEach(l => l.init(this.handleDirty.bind(this, l.index)));
+		this.activeLayer = this.layers[0];
+
+		this.createMapChunks(this.scene);
+	}
+
+
+	/**
+	 * Creates a visual representation of the map.
+	 *
+	 * @param {Phaser.Scene} scene - The scene to add the chunks to.
+	 */
+
+	private createMapChunks(scene: Phaser.Scene) {
+		this.chunks.forEach(cA => cA.forEach(cS => cS.forEach(c => c.destroy())));
+		this.chunks = [];
+
+		for (const layer of this.layers) {
+			this.chunks[layer.index] = [];
+			for (let i = 0; i < Math.ceil(this.size.y / CHUNK_SIZE); i++) {
+				this.chunks[layer.index][i] = [];
+				for (let j = 0; j < Math.ceil(this.size.x / CHUNK_SIZE); j++) {
+					this.chunks[layer.index][i][j] = new MapChunk(scene, new Vec2(j, i), layer, this.tileStore);
+				}
+			}
+		}
 	}
 
 
@@ -64,53 +147,7 @@ export default class Map {
 	 * @param {number} y - The y position of the dirty tile.
 	 */
 
-	private handleDirty = (x: number, y: number) => {
-		this.chunks[Math.floor(y / CHUNK_SIZE)][Math.floor(x / CHUNK_SIZE)].setDirty(new Vec2(x % CHUNK_SIZE, y % CHUNK_SIZE));
+	private handleDirty = (layerIndex: number, x: number, y: number) => {
+		this.chunks[layerIndex][Math.floor(y / CHUNK_SIZE)][Math.floor(x / CHUNK_SIZE)].setDirty(new Vec2(x % CHUNK_SIZE, y % CHUNK_SIZE));
 	};
-
-	// private saveMap() {
-
-	// 	let mapData: number[][] = [];
-
-	// 	for (let k = 0; k < 3; k++) {
-	// 		let tile = 0;
-	// 		let count = 0;
-	// 		mapData[k] = [];
-
-	// 		for (let i = 0; i < this.size.x * this.size.y; i++) {
-	// 			let x = i % this.size.x;
-	// 			let y = Math.floor(i / this.size.x);
-
-	// 			if (this.getTileset(k, x, y) === tile) count++;
-	// 			else {
-	// 				if (i !== 0) {
-	// 					mapData[k].push(tile);
-	// 					mapData[k].push(count);
-	// 				}
-	// 				tile = this.getTileset(k, x, y);
-	// 				count = 1;
-	// 			}
-	// 		}
-	// 	}
-
-	// 	this.savedMapData = mapData;
-	// }
-
-	// private loadMap(dat: number[][]) {
-	// 	for (let k = 0; k < 3; k++) {
-	// 		let offset = 0;
-	// 		for (let i = 0; i < dat[k].length / 2; i++) {
-	// 			let tile = dat[k][i * 2];
-	// 			let count = dat[k][i * 2 + 1];
-
-	// 			for (let t = 0; t < count; t++) {
-	// 				let x = (offset + t) % this.size.x;
-	// 				let y = Math.floor((offset + t) / this.size.x);
-
-	// 				this.setTile(k, tile, x, y);
-	// 			}
-	// 			offset += count;
-	// 		}
-	// 	}
-	// }
 }

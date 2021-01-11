@@ -19,7 +19,7 @@ export default class TileStore {
 	floorTiles: { [index: number]: TileInfo } = {};
 	detailTiles: { [index: number]: TileInfo } = {};
 
-	private currentInd: { [layer in Layer]: number } = { wall: 0, floor: 0, detail: 0 };
+	private currentInd: { [layer in Layer]: number } = { wall: 1, floor: 1, detail: 1 };
 
 
 	/**

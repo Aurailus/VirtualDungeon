@@ -1,79 +1,64 @@
 import * as Phaser from 'phaser';
 
-import UIView from '../interface/UIView';
 import InputManager from '../InputManager';
-import AssetUploader from '../interface/AssetUploader';
+import InterfaceRoot from '../interface/InterfaceRoot';
 import HistoryManager from '../history/HistoryManager';
 
-import WorldView from '../WorldView';
-import TokenMode from '../TokenMode';
-import ArchitectMode from '../ArchitectMode';
-
 import Map from '../map/Map';
-import Token from '../Token';
-import Lighting from '../lighting/Lighting';
-
-import OutlinePipeline from '../shader/OutlinePipeline';
-import BrightenPipeline from '../shader/BrightenPipeline';
+import CameraControl from '../CameraControl';
+import ModeManager from '../mode/ModeManager';
 
 import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
 import EditorData from '../EditorData';
 
 export default class MapScene extends Phaser.Scene {
-	assets: Asset[] | null = null;
+	assets: Asset[] = [];
 
-	i: InputManager = new InputManager(this);
-	history: HistoryManager = new HistoryManager(this);
-	view: WorldView = new WorldView(this);
+	view: CameraControl = new CameraControl();
+	history: HistoryManager = new HistoryManager();
+	inputManager: InputManager = new InputManager(this);
 
-	ui: UIView = new UIView(this);
-	architect: ArchitectMode = new ArchitectMode(this);
-	token: TokenMode = new TokenMode(this);
-
+	mode: ModeManager	= new ModeManager();
+	interface: InterfaceRoot = new InterfaceRoot();
+	
 	size: Vec2 = new Vec2();
 
 	map: Map = new Map();
-	lighting: Lighting = new Lighting(this);
 
-	mode: number = 0;
-	tokens: Token[] = [];
+	saved: string = '';
 
 	constructor() { super({key: 'MapScene'}); }
 
 	create(data: EditorData): void {
 		this.assets = data.assets;
 
-		const glRenderer = this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
-		glRenderer.pipelines.add('brighten', new BrightenPipeline(this.game));
-		glRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
-
-		this.i.init();
-		this.view.init();
+		this.inputManager.init();
+		this.view.init(this.cameras.main, this.inputManager);
 
 		this.size = new Vec2(data.data.size);
-		this.map.init(this, this.size, this.assets!);
+		this.map.init(this, this.size, this.assets);
 
-		this.ui.init(this.assets!);
-		this.architect.init();
-		this.token.init();
+		const s = JSON.stringify({ size: new Vec2(32, 32) });
+		this.map.load(s.length + '|' + s);
 
-		this.lighting.init(this.size);
+		this.history.init(this, this.map);
+		this.mode.init(this, this.map, this.history);
+		this.interface.init(this, this.inputManager, this.mode, this.history, this.map, this.assets);
 	}
 
 	update(): void {
-		this.i.update();
-		this.history.update();
 		this.view.update();
+		this.inputManager.update();
 
-		this.ui.update();
+		this.interface.update();
+		this.history.update(this.inputManager);
+		this.mode.update(this.view.cursorWorld, this.inputManager);
 
 		this.map.update();
-		this.lighting.update();
 
-		if (this.i.keyPressed('U')) {
-			new AssetUploader(this);
-		}
+		if (this.inputManager.keyPressed('S')) this.saved = this.map.save();
+		if (this.inputManager.keyPressed('L')) this.map.load(this.saved);
 	}
 }
  
