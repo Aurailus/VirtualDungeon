@@ -1,0 +1,27 @@
+@use '../../../style/def' as *
+
+.Toolbar
+	display: flex
+	align-items: center
+	position: fixed
+	top: 3px * 2
+	left: 3px * 3
+	// left: 3 * 13px
+	// left: 3 * 81px
+
+	.Toolbar-ModeSelector
+		display: flex
+		width: 3px * 60
+		align-items: stretch
+		margin-right: 3px
+
+		button
+			flex-grow: 1
+
+	.Toolbar-Separator
+		height: 3px * 12
+		margin: 0 3px * 3
+		border-left: 3px solid transparentize(white, 0.35)
+
+	.Toolbar-Spacer
+		margin: 0 3px * 1

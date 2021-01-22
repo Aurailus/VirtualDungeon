@@ -1,11 +1,23 @@
 @use '../../style/ext'
+@use '../../style/text'
 @use '../../style/slice'
 @use '../../style/def' as *
 
 .PlayerList
 	@extend %card
 	max-width: 1000px
-	margin: 48px auto
+	margin: 0 auto
+
+	.PlayerList-Title
+		@include text.line_clamp
+
+		margin-top: 0
+		margin-bottom: 8px
+		padding-right: 6px
+
+		font-weight: 500
+		font-size: 34px
+		font-family: $font-header
 
 	.PlayerList-List
 		list-style-type: none
@@ -34,8 +46,12 @@
 
 						background-size: #{18px * 5 * 2} #{18px * 5 * 2}
 						background-position: top left
+						image-rendering: crisp-edges
 						image-rendering: pixelated
 
 				.PlayerList-PlayerName
 					font-size: 30px
 					margin: 8px 0
+	
+	.PlayerInviteForm:not(:first-child)
+		margin-top: 32px

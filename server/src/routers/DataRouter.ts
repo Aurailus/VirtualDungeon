@@ -102,6 +102,16 @@ export default class DataRouter extends Router {
 
 
 		/**
+		 * Gets campaign info for a campaign token.
+		 */
+ 
+		this.router.get('/campaign/invite/:token', this.authRoute(async (_, req, res) => {
+			if (typeof req.params.token !== 'string') throw 'Invalid parameters.';
+			res.send(await this.db.getCampaignFromInvite(req.params.token));
+		}));
+
+
+		/**
 		 * Creates a new map within a campaign.
 		 */
 		 
@@ -122,6 +132,11 @@ export default class DataRouter extends Router {
 			res.send(assets);
 		}));
 
+
+		/**
+		 * Uploads an asset to the asset database.
+		 */
+
 		this.router.post('/asset/upload/', this.authRoute(async (user, req, res) => {
 			const type: 'floor' | 'token' | 'detail' | 'wall' = req.body.type;
 			const tokenType: '1' | '4' | '8' = req.body.tokenType;
@@ -137,13 +152,14 @@ export default class DataRouter extends Router {
 			const file = req.files?.file;
 			if (!file || Array.isArray(file)) return res.sendStatus(400);
 
-			res.sendStatus((await this.db.uploadAsset(user, {
-				type,
-				identifier,
-				name,
-				file,
+			const status = await this.db.uploadAsset(user, {
+				type, file,
+				identifier, name,
 				tokenType: Number.parseInt(tokenType, 10) as 1 | 4 | 8
-			})));
+			});
+
+			if (status !== 200) res.sendStatus(status);
+			else res.send(await getAppData(user, 'assets'));
 
 			return 0;
 		}));
@@ -174,6 +190,39 @@ export default class DataRouter extends Router {
 			await this.db.addCollectionAsset(user, req.body.collection, req.body.asset);
 			res.send(await getAppData(user, 'collections'));
 		}));
+
+
+		/**
+		 * Enables or disabled the invite link for a campaign.
+		 */
+		 
+	 	this.router.post('/invite/refresh', this.authRoute(async (user, req, res) => {
+			if (typeof req.body.campaign !== 'string' || typeof req.body.enabled !== 'boolean') throw 'Invalid parameters.';
+
+			await this.db.toggleInvite(user, req.body.campaign, req.body.enabled);
+			res.send(await this.db.getInvite(user, req.body.campaign));
+		}));
+
+
+		/**
+		 * Gets the current invite link for a campaign, returns empty string if there is none.
+		 */
+
+	 	this.router.post('/invite/get', this.authRoute(async (user, req, res) => {
+			if (typeof req.body.campaign !== 'string') throw 'Invalid parameters.';
+			res.send(await this.db.getInvite(user, req.body.campaign));
+	 	}));
+
+
+		/**
+		 * Gets the current invite link for a campaign, returns empty string if there is none.
+		 */
+
+	 	this.router.post('/invite/accept', this.authRoute(async (user, req, res) => {
+			if (typeof req.body.token !== 'string') throw 'Invalid parameters.';
+			await this.db.acceptInvite(user, req.body.token);
+			res.send(await getAppData(user, 'campaigns'));
+	 	}));
 
 
 		this.app.use('/data', this.router);

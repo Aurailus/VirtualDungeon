@@ -5,11 +5,12 @@ $slice-cell-size: 6px
 	min-height: $scale * $slice-cell-size * 2
 	min-width: $scale * $slice-cell-size * 2
 
+	image-rendering: crisp-edges
 	image-rendering: pixelated
 	background-color: transparent
 	border: #{$slice-cell-size * $scale} solid
 	border-radius: $slice-cell-size * $scale
-	border-image: url('/app/static/ui/slice/#{$texture}.png') 33% fill
+	border-image: url('/app/static/slice/#{$texture}.png') 33% fill
 
 	& > *
 		image-rendering: initial
@@ -37,6 +38,9 @@ $slice-cell-size: 6px
 
 .slice_outline
 	@include slice('outline')
+
+.slice_outline_white
+	@include slice('outline_white')
 
 .slice_outline_neutral
 	@include slice('outline_neutral')

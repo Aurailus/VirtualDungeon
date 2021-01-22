@@ -12,7 +12,7 @@ export default class SidebarToggler extends Component {
 		private inputManager: InputManager, private interfaceRoot: InterfaceRoot) {
 		super(scene, x, y);
 		
-		this.button = this.scene.add.sprite(0, 0, 'ui_button_sidebar_toggle');
+		this.button = this.scene.add.sprite(0, 0, 'ui_sidebar_toggle');
 		this.button.setOrigin(0);
 		this.add(this.button);
 	}
@@ -23,10 +23,10 @@ export default class SidebarToggler extends Component {
 
 		if (collides && cursorPos.x >= 20) {
 			this.button.setFrame(2 + (this.interfaceRoot.sidebarOpen ? 0 : 1));
-			if (this.inputManager.mouseLeftPressed()) this.interfaceRoot.toggleSidebarOpen();
+			if (this.inputManager.mouseLeftPressed()) this.interfaceRoot.setSidebarOpen(false);
 		}
 		else this.button.setFrame(0 + (this.interfaceRoot.sidebarOpen ? 0 : 1));
 
-		if (this.inputManager.keyPressed('F')) this.interfaceRoot.toggleSidebarOpen();
+		if (this.inputManager.keyPressed('F')) this.interfaceRoot.setSidebarOpen(false);
 	}
 }

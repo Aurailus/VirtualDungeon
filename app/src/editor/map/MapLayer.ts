@@ -37,6 +37,8 @@ type LayerData = { tiles: number[][]; tilesets: number[][] };
  */
 
 export default class MapLayer {
+	name: string = '';
+
 	private onDirty?: (x: number, y: number) => void;
 	
 	private data: { [ key in Layer ]: LayerData } = {
@@ -58,6 +60,8 @@ export default class MapLayer {
 
 			return layer;
 		};
+
+		this.name = 'Layer ' + (index + 1);
 
 		this.data.wall = createLayerData(0, 0);
 		this.data.floor = createLayerData(() => Math.floor(Math.random() * 6) + 54, 1);
@@ -141,18 +145,16 @@ export default class MapLayer {
 	 *
 	 * @param {Layer} layer - The internal layer to set the tile at.
 	 * @param {number} tileset - The tileset to set the tile to.
-	 * @param {number | Vec2} x - Either the x value of the position to set the tile at, or a vector for the full position.
-	 * @param {number} y - The y value of the position if the x value is a number.
+	 * @param {Vec2} pos - The position to set the tile at.
 	 *
 	 * @returns {boolean} - True if the tileset was changed, false otherwise.
 	 */
 
-	setTile(layer: Layer, tileset: number, x: number | Vec2, y?: number): boolean {
-		if (x instanceof Vec2) { y = x.y; x = x.x; }
-		if (x < 0 || y! < 0 || x >= this.size.x || y! >= this.size.y) return false;
+	setTile(layer: Layer, tileset: number, pos: Vec2): boolean {
+		if (pos.x < 0 || pos.y! < 0 || pos.x >= this.size.x || pos.y >= this.size.y) return false;
 
-		if (this.setTileset(layer, x, y!, tileset)) {
-			this.autoTile(x, y!);
+		if (this.setTileset(layer, pos, tileset)) {
+			this.autoTile(pos);
 			return true;
 		}
 
@@ -164,29 +166,25 @@ export default class MapLayer {
 	 * Gets the tileset at the specified position.
 	 *
 	 * @param layer - The internal layer to get the tileset at.
-	 * @param {number} x - Either the x value of the position to get the tile set at, or a vector for the full position.
-	 * @param {number} y - The y value of the position if the x value is a number.
+	 * @param {number} pos - The position to get the tile at.
 	 */
 
-	getTile(layer: Layer, x: number | Vec2, y?: number): number {
-		if (x instanceof Vec2) { y = x.y; x = x.x; }
-		return this.data[layer].tilesets[clamp(y!, 0, this.size.y - 1)][clamp(x, 0, this.size.x - 1)];
+	getTile(layer: Layer, pos: Vec2): number {
+		return this.data[layer].tilesets[clamp(pos.y, 0, this.size.y - 1)][clamp(pos.x, 0, this.size.x - 1)];
 	}
 
 
 	/**
 	 * Gets the current tile index at a position.
 	 *
-	 * @param {Layer} layer - The internal layer to get the tile at.
-	 * @param {number | Vec2} x - Either the x value of the position to get the tile at, or a vector for the full position.
-	 * @param {number} y - The y value of the position if the x value is a number.
+	 * @param {Layer} layer - The internal layer to get the tile index at.
+	 * @param {Vec2} pos - The position to get the tile index at.
 	 *
 	 * @returns {number} - The tile index at the position specified.
 	 */
 
-	getTileIndex(layer: Layer, x: number | Vec2, y?: number): number {
-		if (x instanceof Vec2) { y = x.y; x = x.x; }
-		return this.data[layer].tiles[clamp(y!, 0, this.size.y - 1)][clamp(x, 0, this.size.x - 1)];
+	getTileIndex(layer: Layer, pos: Vec2): number {
+		return this.data[layer].tiles[clamp(pos.y, 0, this.size.y - 1)][clamp(pos.x, 0, this.size.x - 1)];
 	}
 
 
@@ -213,8 +211,8 @@ export default class MapLayer {
 			for (let i = 0; i < tileArr.length; i++) {
 				const x = i % this.size.x;
 				const y = Math.floor(i / this.size.x);
-				this.setTileset(layer, x, y, tileArr[i]);
-				this.setTileIndex(layer, x, y, tileIndArr[i]);
+				this.setTileset(layer, new Vec2(x, y), tileArr[i]);
+				this.setTileIndex(layer, new Vec2(x, y), tileIndArr[i]);
 			}
 		}
 	}
@@ -224,20 +222,17 @@ export default class MapLayer {
 	 * Sets a tile to the one provided.
 	 *
 	 * @param {Layer} layer - The layer to set the tileset at.
-	 * @param {number | Vec2} x - Either the x value of the position to set the tileset at, or a vector for the full position.
-	 * @param {number} y - Either the y value of the position if x is a number, or the tileset to set.
-	 * @param {number} tile - The tileset to set if the x value is a number.
+	 * @param {Vec2} x - The position to set the tileset at.
+	 * @param {number} tile - The tileset to set.
 	 *
 	 * @returns {boolean} - True if the tileset was changed, false otherwise.
 	 */
 
-	private setTileset(layer: Layer, x: number | Vec2, y: number, tile?: number): boolean {
-		if (x instanceof Vec2) { tile = y; y = x.y; x = x.x; };
-
-		const oldTileset = this.getTile(layer, x, y);
+	private setTileset(layer: Layer, pos: Vec2, tile: number): boolean {
+		const oldTileset = this.getTile(layer, pos);
 		if (oldTileset === tile!) return false;
 
-		this.data[layer].tilesets[y][x] = tile!;
+		this.data[layer].tilesets[pos.y][pos.x] = tile!;
 		return true;
 	}
 
@@ -246,32 +241,32 @@ export default class MapLayer {
 	 * Sets the tile at the specified position to the index provided.
 	 */
 
-	private setTileIndex(layer: Layer, x: number, y: number, index: number): void {
-		this.data[layer].tiles[y][x] = index;
-		if (this.onDirty) this.onDirty(x, y);
+	private setTileIndex(layer: Layer, pos: Vec2, index: number): void {
+		this.data[layer].tiles[pos.y][pos.x] = index;
+		if (this.onDirty) this.onDirty(pos.x, pos.y);
 	}
 
 
 	/**
 	 * Automatically updates the tile indexes surrounding a position.
 	 *
-	 * @param {number} x - The x value of the position to center around.
-	 * @param {number} y - The y value of the position to center around.
+	 * @param {number} pos - The position to update around.
 	 */
 
-	private autoTile(x: number, y: number): void {
-		for (let i = clamp(x - 1, this.size.x - 1, 0); i <= clamp(x + 1, this.size.x - 1, 0); i++) {
-			for (let j = clamp(y - 1, this.size.y - 1, 0); j <= clamp(y + 1, this.size.y - 1, 0); j++) {
-				const solids = this.getTilesAround('wall', i, j).map(i => i !== 0);
+	private autoTile(pos: Vec2): void {
+		for (let i = clamp(pos.x - 1, this.size.x - 1, 0); i <= clamp(pos.x + 1, this.size.x - 1, 0); i++) {
+			for (let j = clamp(pos.y - 1, this.size.y - 1, 0); j <= clamp(pos.y + 1, this.size.y - 1, 0); j++) {
+				const pos = new Vec2(i, j);
+				const solids = this.getTilesAround('wall', pos).map(i => i !== 0);
 
-				const wall = MapLayer.wall(solids, this.getTileIndex('wall', i, j));
-				if (wall !== -1) this.setTileIndex('wall', i, j, wall);
+				const wall = MapLayer.wall(solids, this.getTileIndex('wall', pos));
+				if (wall !== -1) this.setTileIndex('wall', pos, wall);
 
-				const floor = MapLayer.floor(solids, this.getTileIndex('floor', i, j));
-				if (floor !== -1) this.setTileIndex('floor', i, j, floor);
+				const floor = MapLayer.floor(solids, this.getTileIndex('floor', pos));
+				if (floor !== -1) this.setTileIndex('floor', pos, floor);
 
-				const detail = MapLayer.detail(this.getTilesAround('detail', i, j).map(i => i !== 0), 0);
-				if (detail !== -1) this.setTileIndex('detail', i, j, detail);
+				const detail = MapLayer.detail(this.getTilesAround('detail', pos).map(i => i !== 0), 0);
+				if (detail !== -1) this.setTileIndex('detail', pos, detail);
 			}
 		}
 	}
@@ -281,17 +276,17 @@ export default class MapLayer {
 	 * Gets the 9 tiles in a 3x3 grid around the position specified.
 	 *
 	 * @param {Layer} layer - The internal layer to get the tileset at.
-	 * @param {number} x - The x value of the position to center around.
-	 * @param {number} y - The y value of the position to center around.
+	 * @param {Vec2} pos - The position to get the tiles around.
 	 *
 	 * @returns {number[]} a nine-element long array of the tiles around.
 	 */
 
-	private getTilesAround(layer: Layer, x: number, y: number): number[] {
+	private getTilesAround(layer: Layer, pos: Vec2): number[] {
 		let tilesets: number[] = [];
 		for (let i = -1; i <= 1; i++)
 			for (let j = -1; j <= 1; j++)
-				tilesets.push(this.getTile(layer, clamp(x + j, 0, this.size.x - 1), clamp(y + i, 0, this.size.y - 1)));
+				tilesets.push(this.getTile(layer, new Vec2(clamp(pos.x + j, 0, this.size.x - 1),
+					clamp(pos.y + i, 0, this.size.y - 1))));
 		return tilesets;
 	}
 }

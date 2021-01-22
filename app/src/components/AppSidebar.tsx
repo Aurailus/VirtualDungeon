@@ -13,17 +13,17 @@ export default function AppHeader() {
 				<hr class='AppSidebar-Rule' />
 
 				<Link className='AppSidebar-Link Pixel' activeClassName='Active' exact to='/'>
-					<img src='/app/static/ui/icon/home.png' alt='Home' /></Link>
+					<img src='/app/static/icon/home.png' alt='Home' /></Link>
 
-				<Link className='AppSidebar-Link Pixel' activeClassName='Active' to='/campaigns'>
-					<img src='/app/static/ui/icon/campaign.png' alt='Campaigns' /></Link>
+				<Link className='AppSidebar-Link Pixel' activeClassName='Active' to='/c'>
+					<img src='/app/static/icon/campaign.png' alt='Campaigns' /></Link>
 
-				<Link className='AppSidebar-Link Pixel' activeClassName='Active' to='/assets'>
-					<img src='/app/static/ui/icon/assets.png' alt='Assets' /></Link>
+				<Link className='AppSidebar-Link Pixel' activeClassName='Active' to='/a'>
+					<img src='/app/static/icon/assets.png' alt='Assets' /></Link>
 			</nav>
 
 			<Link className='AppSidebar-Link Pixel' activeClassName='Active' to='/settings'>
-				<img src='/app/static/ui/icon/settings_large.png' alt='Settings' /></Link>
+				<img src='/app/static/icon/settings_large.png' alt='Settings' /></Link>
 		</div>
 	);
 }

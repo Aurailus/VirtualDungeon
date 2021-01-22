@@ -1,34 +1,24 @@
 import * as Preact from 'preact';
 import type Phaser from 'phaser';
-import { useParams } from 'react-router-dom';
-import { useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 
 import './Editor.sass';
 
-import { ExternalData } from '../editor/EditorData';
+interface Props {
+	user: string;
+	identifier: string;
+}
 
-// // Prevent scrolling hotkeys as the app implements its own scrolling.
-// document.addEventListener('keydown', (e: KeyboardEvent) => {
-// 	if (e.ctrlKey
-// 		&&(e.which == 61  // +/= key
-// 		|| e.which == 107 // Numpad +
-// 		|| e.which == 173 // -/_ key
-// 		|| e.which == 109 // Numpad -
-// 		|| e.which == 187 // Numpad =
-// 		|| e.which == 189 // Numpad -
-// 	)) e.preventDefault();
-// });
+function pad(n: number) {
+	if (n < 10) return '0' + n;
+	return '' + n;
+}
 
-// window.addEventListener('wheel', (e) => {
-// 	if (e.ctrlKey) e.preventDefault();
-// }, { passive: false });
-
-export default function Editor() {
+export default function Editor({ user, identifier }: Props) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<Phaser.Game | null>(null);
+	const [ loadPercent, setLoadPercent ] = useState<number | undefined>(0);
 
-	const { campaign, map } = useParams<{ campaign: string; map: string }>();
-	
 	/**
 	 * Lazy-load the editor, display it when ready,
 	 * and destroy it when complete.
@@ -37,14 +27,10 @@ export default function Editor() {
 	useEffect(() => {
 		let ignore = false;
 		import('../editor/Main').then(({ default: create }) => {
+			setLoadPercent(0.25);
 			if (ignore || !rootRef.current) return;
-			
-			const data: ExternalData = {
-				campaign,
-				map
-			};
 
-			editorRef.current = create(rootRef.current, data);
+			editorRef.current = create(rootRef.current, setLoadPercent, user, identifier);
 
 			const resizeCallback = () => {
 				const { width, height } = rootRef.current.getBoundingClientRect();
@@ -64,22 +50,39 @@ export default function Editor() {
 	}, []);
 
 	/**
-	 * Block context menu on right-click within the root editor node.
+	 * Cancel Zoom buttons zooming the browser window.
+	 * Browser zoom can still be applied through the browser's context menu.
 	 */
 
 	useEffect(() => {
-		const blockContextMenu = (evt: Event) => {
-			evt.preventDefault();
-			evt.stopPropagation();
-			return false;
+		const cancelZoom = (e: KeyboardEvent) => {
+			if (e.ctrlKey
+				&&(e.which === 61  // +/= key
+				|| e.which === 107 // Numpad +
+				|| e.which === 173 // -/_ key
+				|| e.which === 109 // Numpad -
+				|| e.which === 187 // Numpad =
+				|| e.which === 189 // Numpad -
+				)) e.preventDefault();
 		};
 
-		const root = rootRef.current;
-		root.addEventListener('contextmenu', blockContextMenu);
-		return () => root.removeEventListener('contextmenu', blockContextMenu);
+		document.addEventListener('keydown', cancelZoom);
+		return () => document.removeEventListener('keydown', cancelZoom);
 	}, []);
 
 	return (
-		<div ref={rootRef} class='Editor' />
+		<div ref={rootRef} class='Editor'>
+			{loadPercent !== undefined &&
+				<div class='Editor-Loader'>
+					<div class='Editor-LoaderContainer'>
+					 	<img class='Editor-LoaderBar' src='/app/static/load/loader_filled.png'
+					 		alt={Math.round(loadPercent * 100) + '%'}
+					 		style={{ clipPath: `inset(${Math.round((1 - loadPercent) * 100)}% 0 0 0)`}}
+					 		aria-role='progressbar' aria-valuemin='0' aria-valuemax='1' aria-valuenow={loadPercent} />
+			 		</div>
+					<p class='Editor-LoaderText'><small>Loading… </small>{pad(Math.round(loadPercent * 100))}%</p>
+				</div>
+			}
+		</div>
 	);
 }

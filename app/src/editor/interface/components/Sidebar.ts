@@ -3,8 +3,8 @@ import * as Phaser from 'phaser';
 import Component from './Component';
 import InputManager from '../../InputManager';
 
+import { clamp } from '../../util/Helpers';
 import { Vec2, Vec4 } from '../../util/Vec';
-// import { clamp } from '../../util/Helpers';
 
 export default abstract class Sidebar extends Component {
 	backgrounds: Phaser.GameObjects.Sprite[] = [];
@@ -45,8 +45,7 @@ export default abstract class Sidebar extends Component {
 		this.add(this.hoverSpriteCursor);
 
 		// Bind the scroll wheel event
-		// this.onWheel = this.onWheel.bind(this);
-		// this.inputManager.bindScrollEvent(this.onWheel);
+		this.inputManager.bindScrollEvent(this.onWheel);
 	}
 
 	update() {
@@ -104,21 +103,24 @@ export default abstract class Sidebar extends Component {
 		else this.hoverSpriteCursor.setVisible(false);
 	}
 
-	abstract elemHover(_x: number, _y: number): void;
-	abstract elemUnhover(_x: number, _y: number): void;
-	abstract elemClick(_x: number, _y: number): void;
+	private onWheel = (delta: number) => {
+		if (this.mouseCollides()) {
+			this.scrollY = clamp(this.scrollY + delta * 21, 0, -1000);
 
-	// private onWheel(delta: number) {
-	// 	if (this.uiActive) {
-	// 		this.scrollY = clamp(this.scrollY + delta * 63, 0, -1000);
+			this.scene.tweens.add({
+				targets: this,
+				y: this.scrollY,
+				ease: 'Cubic',
+				duration: 120,
+				repeat: 0
+			});
 
-	// 		this.scene.tweens.add({
-	// 			targets: this,
-	// 			y: this.scrollY,
-	// 			ease: 'Cubic',
-	// 			duration: 160,
-	// 			repeat: 0
-	// 		});
-	// 	}
-	// }
+			return true;
+		}
+		return false;
+	};
+
+	abstract elemHover(x: number, y: number): void;
+	abstract elemUnhover(x: number, y: number): void;
+	abstract elemClick(x: number, y: number): void;
 }

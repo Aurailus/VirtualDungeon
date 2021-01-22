@@ -1,8 +1,8 @@
 import * as Phaser from 'phaser';
 
 import InputManager from '../InputManager';
+import ActionManager from '../action/ActionManager';
 import InterfaceRoot from '../interface/InterfaceRoot';
-import HistoryManager from '../history/HistoryManager';
 
 import Map from '../map/Map';
 import CameraControl from '../CameraControl';
@@ -16,7 +16,7 @@ export default class MapScene extends Phaser.Scene {
 	assets: Asset[] = [];
 
 	view: CameraControl = new CameraControl();
-	history: HistoryManager = new HistoryManager();
+	actions: ActionManager = new ActionManager();
 	inputManager: InputManager = new InputManager(this);
 
 	mode: ModeManager	= new ModeManager();
@@ -36,15 +36,17 @@ export default class MapScene extends Phaser.Scene {
 		this.inputManager.init();
 		this.view.init(this.cameras.main, this.inputManager);
 
-		this.size = new Vec2(data.data.size);
+		this.size = new Vec2(data.campaign.maps[0].size);
 		this.map.init(this, this.size, this.assets);
 
 		const s = JSON.stringify({ size: new Vec2(32, 32) });
 		this.map.load(s.length + '|' + s);
 
-		this.history.init(this, this.map);
-		this.mode.init(this, this.map, this.history);
-		this.interface.init(this, this.inputManager, this.mode, this.history, this.map, this.assets);
+		this.mode.init(this, data.display, this.map, this.actions, this.assets);
+		this.actions.init(this, this.map, data.socket);
+		this.interface.init(this, data.display, this.inputManager, this.mode, this.actions, this.map, this.assets);
+
+		// this.sound.play('mystify', { loop: true, volume: .2 });
 	}
 
 	update(): void {
@@ -52,7 +54,7 @@ export default class MapScene extends Phaser.Scene {
 		this.inputManager.update();
 
 		this.interface.update();
-		this.history.update(this.inputManager);
+		this.actions.update(this.inputManager);
 		this.mode.update(this.view.cursorWorld, this.inputManager);
 
 		this.map.update();

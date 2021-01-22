@@ -12,7 +12,7 @@ import { Asset } from '../../util/Asset';
 export default class TileSidebar extends Sidebar {
 	
 	walls: string[] = [];
-	grounds: string[] = [];
+	floors: string[] = [];
 	details: string[] = [];
 
 	constructor(scene: Phaser.Scene, x: number, y: number, assets: Asset[],
@@ -28,14 +28,14 @@ export default class TileSidebar extends Sidebar {
 		for (let tileset of assets.filter((a) => a.type === 'wall'))
 			this.addWall(tileset.identifier);
 		
-		let add_ground = new Phaser.GameObjects.Sprite(this.scene, 3 + x * 21, 3 + y * 21, 'ui_sidebar_browse');
-		add_ground.setName('add_ground');
-		add_ground.setOrigin(0);
-		this.add(add_ground);
-		this.sprites.push(add_ground);
+		let add_floor = new Phaser.GameObjects.Sprite(this.scene, 3 + x * 21, 3 + y * 21, 'ui_sidebar_browse');
+		add_floor.setName('add_floor');
+		add_floor.setOrigin(0);
+		this.add(add_floor);
+		this.sprites.push(add_floor);
 
 		for (let tileset of assets.filter((a) => a.type === 'floor'))
-			this.addGround(tileset.identifier);
+			this.addFloor(tileset.identifier);
 
 		let add_detail = new Phaser.GameObjects.Sprite(this.scene, 3 + x * 21, 3 + y * 21, 'ui_sidebar_browse');
 		add_detail.setName('add_detail');
@@ -57,11 +57,11 @@ export default class TileSidebar extends Sidebar {
 			(this.mode.active as ArchitectMode).activeLayer = 'wall';
 		}
 		else if (y < 8) {
-			(this.mode.active as ArchitectMode).activeTileset = this.map.tileStore.indices[this.walls[x + (y - 5) * 3]];
+			(this.mode.active as ArchitectMode).activeTileset = this.map.tileStore.indices[this.floors[x + (y - 5) * 3]];
 			(this.mode.active as ArchitectMode).activeLayer = 'floor';
 		}
 		else {
-			(this.mode.active as ArchitectMode).activeTileset = this.map.tileStore.indices[this.walls[x + (y - 9) * 3]];
+			(this.mode.active as ArchitectMode).activeTileset = this.map.tileStore.indices[this.details[x + (y - 9) * 3]];
 			(this.mode.active as ArchitectMode).activeLayer = 'detail';
 		}
 	}
@@ -77,12 +77,12 @@ export default class TileSidebar extends Sidebar {
 			3 + ((this.walls.length) % 3 * 21),	3 + (Math.floor((this.walls.length) / 3 + 1) * 21));
 	}
 
-	private addGround(tileset: string): void {
-		this.addTilesetSprite(tileset, this.grounds.length % 3, Math.floor(this.grounds.length / 3) + 5, 13);
-		this.grounds.push(tileset);
+	private addFloor(tileset: string): void {
+		this.addTilesetSprite(tileset, this.floors.length % 3, Math.floor(this.floors.length / 3) + 5, 13);
+		this.floors.push(tileset);
 		
-		(this.getByName('add_ground') as Phaser.GameObjects.Sprite).setPosition(
-			3 + ((this.grounds.length) % 3 * 21),	3 + (Math.floor((this.grounds.length) / 3 + 5) * 21));
+		(this.getByName('add_floor') as Phaser.GameObjects.Sprite).setPosition(
+			3 + ((this.floors.length) % 3 * 21),	3 + (Math.floor((this.floors.length) / 3 + 5) * 21));
 	}
 
 	private addDetail(tileset: string): void {

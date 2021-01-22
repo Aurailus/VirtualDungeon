@@ -1,29 +1,38 @@
 import * as Phaser from 'phaser';
+import * as IO from 'socket.io-client';
 
-import EditorData from '../EditorData';
+import { Asset, Campaign } from '../../../../common/DBStructs';
+
+async function emit<R = any>(socket: IO.Socket, event: string, data?: any): Promise<R> {
+	return new Promise<R>((resolve) => {
+		socket.emit(event, data, resolve);
+	});
+}
 
 export default class InitScene extends Phaser.Scene {
-	private editorData: EditorData | undefined;
-
 	constructor() { super({key: 'InitScene'}); }
 
-	init(data: EditorData) {
-		this.editorData = data;
-	}
+	async create({ user, onProgress, identifier, socket }: {
+		user: string; onProgress: (progress: number) => void; identifier: string; socket: IO.Socket; }) {
 
-	preload() {
-		this.cameras.main.setBackgroundColor('#090d24');
+		let res: { state: true; campaign: Campaign; assets: Asset[] } | { state: false; error?: string }
+			= await emit(socket, 'room_init', identifier);
+		let display = res.state ? 'edit' : 'view';
 
-		this.load.spritesheet('loader_filled',   '/app/static/loader/loader_filled.png',   { frameWidth: 18, frameHeight: 18 });
-		this.load.spritesheet('loader_unfilled', '/app/static/loader/loader_unfilled.png', { frameWidth: 18, frameHeight: 18 });
-		this.load.spritesheet('loader_patching', '/app/static/loader/loader_patching.png', { frameWidth: 18, frameHeight: 18 });
+		if (!res.state) res =
+			await emit(socket, 'room_join', { user, identifier }) as { state: true; campaign: Campaign; assets: Asset[] };
 
-		this.load.text('data', `/data/map/${this.editorData!.campaign}/${this.editorData!.map}`);
-		this.load.text('assets', `/data/assets/${this.editorData!.campaign}`);
-	}
+		socket.on('disconnect', () => console.log('Disconnected!!!'));
+		
+		this.scene.start('LoadScene', {
+			user,
+			identifier,
+			onProgress,
+			socket,
+			display,
+			assets: res.assets,
+			campaign: res.campaign });
 
-	create(): void {
-		this.game.scene.start('LoadScene', this.editorData);
 		this.game.scene.stop('InitScene');
 		this.game.scene.swapPosition('LoadScene', 'InitScene');
 	}

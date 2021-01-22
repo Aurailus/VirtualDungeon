@@ -1,19 +1,16 @@
 export type Context = 'map' | 'interface';
 
-type ScrollEvent = ((delta: number) => void);
+type ScrollEvent = ((delta: number) => boolean | void);
 
 export default class InputManager {
-	scene: Phaser.Scene;
-
-	private hasFocus: boolean = true;
 	private context: Context = 'map';
 
 	private leftMouseState: boolean = false;
 	private rightMouseState: boolean = false;
-	// private middleMouseState: boolean = false;
+	private middleMouseState: boolean = false;
 	private leftMouseStateLast: boolean = false;
 	private rightMouseStateLast: boolean = false;
-	// private middleMouseStateLast: boolean = false;
+	private middleMouseStateLast: boolean = false;
 	
 	private keys: {[key: string]: Phaser.Input.Keyboard.Key} = {};
 	private keysDown: {[key: string]: boolean } = {};
@@ -21,33 +18,65 @@ export default class InputManager {
 
 	private scrollEvents: ScrollEvent[] = [];
 
-	constructor(scene: Phaser.Scene) {
-		this.scene = scene;
-	}
+	private focus: boolean = true;
+
+	constructor(private scene: Phaser.Scene) {}
 
 	init() {
-		this.keys.TAB    = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
-		this.keys.SHIFT  = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-		this.keys.CTRL   = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
-		this.keys.UP     = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
-		this.keys.DOWN   = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
-		this.keys.LEFT   = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
-		this.keys.RIGHT  = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
-		this.keys.DELETE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DELETE);
+		this.keys.TAB    = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB, false);
+		this.keys.SPACE  = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE, false);
+
+		this.keys.ALT    = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ALT, false);
+		this.keys.CTRL   = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL, false);
+		this.keys.SHIFT  = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT, false);
+		
+		this.keys.UP     = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP, false);
+		this.keys.DOWN   = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN, false);
+		this.keys.LEFT   = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT, false);
+		this.keys.RIGHT  = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT, false);
+		
+		this.keys.DELETE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DELETE, false);
 
 		for (let i = 0; i < 26; i++) {
 			let letter = (i + 10).toString(36).toUpperCase();
-			this.keys[letter] = this.scene.input.keyboard.addKey(letter);
+			this.keys[letter] = this.scene.input.keyboard.addKey(letter, false);
 		}
 
 		for (let i = 0; i <= 9; i++) {
-			this.keys[i + ''] = this.scene.input.keyboard.addKey(i + '');
+			this.keys[i + ''] = this.scene.input.keyboard.addKey(i + '', false);
+		}
+
+		for (let i = 0; i <= 9; i++) {
+			this.keys['F' + i] = this.scene.input.keyboard.addKey('F' + i);
 		}
 
 		for (let key of Object.keys(this.keys)) {
 			this.keysDown[key] = false;
 			this.keysDownLast[key] = false;
 		}
+
+		window.addEventListener('keydown', (evt: KeyboardEvent) => {
+			if (evt.key !== 'Tab' || evt.target !== document.body) return;
+			evt.preventDefault();
+			evt.stopPropagation();
+		});
+		
+		const updateKeys = () => {
+			Object.values(this.keys).forEach(k => k.enabled = this.focus);
+		};
+
+		// window.addEventListener('focusin', (evt: FocusEvent) => {
+		// 	console.log('focus', evt.target);
+		// 	this.focus = evt.target === document.body;
+		// 	updateKeys();
+		// });
+
+		window.addEventListener('mousedown', e => {
+			const target = e.target as any;
+			this.focus = target === this.scene.game.canvas;
+			if (this.focus) (document.activeElement as any)?.blur();
+			updateKeys();
+		});
 
 		this.onScroll = this.onScroll.bind(this);
 		document.documentElement.addEventListener('wheel', this.onScroll);
@@ -56,11 +85,11 @@ export default class InputManager {
 
 	update() {
 		this.leftMouseStateLast   = this.leftMouseState;
-		this.leftMouseState 		  = this.scene.input.activePointer.leftButtonDown();
+		this.leftMouseState 		  = this.focus && this.scene.input.activePointer.leftButtonDown();
 		this.rightMouseStateLast  = this.rightMouseState;
-		this.rightMouseState 		  = this.scene.input.activePointer.rightButtonDown();
-		// this.middleMouseStateLast = this.middleMouseState;
-		// this.middleMouseState 		= this.scene.input.activePointer.middleButtonDown();
+		this.rightMouseState 		  = this.focus && this.scene.input.activePointer.rightButtonDown();
+		this.middleMouseStateLast = this.middleMouseState;
+		this.middleMouseState 		= this.focus && this.scene.input.activePointer.middleButtonDown();
 
 		for (let key of Object.keys(this.keys)) this.keysDownLast[key] = this.keysDown[key];
 		for (let key of Object.keys(this.keys)) this.keysDown[key] = this.keys[key].isDown;
@@ -74,81 +103,74 @@ export default class InputManager {
 		this.context = context;
 	}
 
-	setFocus(focus: boolean) {
-		if (this.hasFocus !== focus) {
-			if (focus) this.scene.input.keyboard.enableGlobalCapture();
-			else this.scene.input.keyboard.disableGlobalCapture();
-		}
-		this.hasFocus = focus;
-	}
-
 	mouseDown(): boolean {
-		if (!this.hasFocus) return false;
 		return this.leftMouseState || this.rightMouseState;
 	}
 
 	mousePressed(): boolean {
-		if (!this.hasFocus) return false;
 		return (this.leftMouseState && !this.leftMouseStateLast) || (this.rightMouseState && !this.rightMouseStateLast);
 	}
 
 	mouseReleased(): boolean {
-		if (!this.hasFocus) return false;
 		return (!this.leftMouseState && this.leftMouseStateLast) || (!this.rightMouseState && this.rightMouseStateLast);
 	}
 
 	mouseLeftDown(): boolean {
-		if (!this.hasFocus) return false;
 		return this.leftMouseState;
 	}
 
 	mouseLeftPressed(): boolean {
-		if (!this.hasFocus) return false;
 		return this.leftMouseState && !this.leftMouseStateLast;
 	}
 
 	mouseLeftReleased(): boolean {
-		if (!this.hasFocus) return false;
 		return !this.leftMouseState && this.leftMouseStateLast;
 	}
 
+	mouseMiddleDown(): boolean {
+		return this.middleMouseState;
+	}
+
+	mouseMiddlePressed(): boolean {
+		return this.middleMouseState && !this.middleMouseStateLast;
+	}
+
+	mouseMiddleReleased(): boolean {
+		return !this.middleMouseState && this.middleMouseStateLast;
+	}
+
 	mouseRightDown(): boolean {
-		if (!this.hasFocus) return false;
 		return this.rightMouseState;
 	}
 
 	mouseRightPressed(): boolean {
-		if (!this.hasFocus) return false;
 		return this.rightMouseState && !this.rightMouseStateLast;
 	}
 
 	mouseRightReleased(): boolean {
-		if (!this.hasFocus) return false;
 		return !this.rightMouseState && this.rightMouseStateLast;
 	}
 
 	keyDown(key: string): boolean {
-		if (!this.hasFocus) return false;
 		return this.keysDown[key.toUpperCase()];
 	}
 
 	keyPressed(key: string): boolean {
-		if (!this.hasFocus) return false;
 		return this.keysDown[key.toUpperCase()] && !this.keysDownLast[key.toUpperCase()];
 	}
 
 	keyReleased(key: string): boolean {
-		if (!this.hasFocus) return false;
 		return !this.keysDown[key.toUpperCase()] && this.keysDownLast[key.toUpperCase()];
 	}
 
 	bindScrollEvent(evt: ScrollEvent): void {
-		this.scrollEvents.push(evt);
+		this.scrollEvents.unshift(evt);
 	}
 
 	private onScroll(e: WheelEvent) {
-		if (!this.hasFocus) return;
 		let delta = e.deltaY < 0 ? 1 : -1;
-		for (let evt of this.scrollEvents) evt(delta);
+		for (let evt of this.scrollEvents) {
+			if (evt(delta)) return;
+		}
 	}
 }

@@ -2,8 +2,7 @@ import * as Phaser from 'phaser';
 
 import { Vec2, Vec4 } from './util/Vec';
 
-// const SPRITE_PADDING = 2;
-
+const PATCH_TIMING = false;
 
 /**
  * Patches a partial tileset into a full tileset by combining parts of other textures.
@@ -20,7 +19,7 @@ import { Vec2, Vec4 } from './util/Vec';
 
 export async function tileset(scene: Phaser.Scene, tileset_key: string, tile_size: number): Promise<void> {
 	return new Promise<void>(resolve => {
-		const s = Date.now();
+		const s = PATCH_TIMING ? Date.now() : 0;
 
 		const canvas = new Phaser.GameObjects.RenderTexture(scene, 0, 0, 10 * tile_size, 5 * tile_size);
 		canvas.draw(tileset_key);
@@ -168,7 +167,7 @@ export async function tileset(scene: Phaser.Scene, tileset_key: string, tile_siz
 			scene.textures.removeKey(tileset_key);
 			scene.textures.addSpriteSheet(tileset_key, img, { frameWidth: tile_size, frameHeight: tile_size });
 
-			console.log(`Patched Tileset '${tileset_key}' in ${Date.now() - s} ms.`);
+			if (PATCH_TIMING) console.log(`Patched Tileset '${tileset_key}' in ${Date.now() - s} ms.`);
 
 			resolve();
 		});
@@ -190,7 +189,7 @@ export async function tileset(scene: Phaser.Scene, tileset_key: string, tile_siz
 
 export async function sprite(scene: Phaser.Scene, sprite_key: string, sprite_segments: number): Promise<void> {
 	return new Promise<void>(resolve => {
-		const s = Date.now();
+		const s = PATCH_TIMING ? Date.now() : 0;
 
 		let part: Phaser.GameObjects.Sprite = new Phaser.GameObjects.Sprite(scene, 0, 0, sprite_key);
 		part.setOrigin(0, 0);
@@ -218,7 +217,7 @@ export async function sprite(scene: Phaser.Scene, sprite_key: string, sprite_seg
 			scene.textures.addSpriteSheet(sprite_key, img,
 				{ frameWidth: frame_width, frameHeight: frame_width, spacing: 2 });
 
-			console.log(`Patched Sprite '${sprite_key}' in ${Date.now() - s} ms.`);
+			if (PATCH_TIMING) console.log(`Patched Sprite '${sprite_key}' in ${Date.now() - s} ms.`);
 
 			resolve();
 		});

@@ -1,32 +1,25 @@
 import Phaser from 'phaser';
+import { io } from 'socket.io-client';
 
-import { ExternalData } from './EditorData';
 import * as Scene from './scene/Scenes';
 
-export default function create(root: HTMLElement, data: ExternalData) {
+export default function create(root: HTMLElement, onProgress: (progress: number) => void, user: string, identifier: string) {
 	const bounds = root.getBoundingClientRect();
 
+	const socket = io();
+
 	const game = new Phaser.Game({
-		title: 'Editor',
+		disableContextMenu: true,
+		render: { antialias: false },
+		banner: { hidePhaser: true },
 
 		parent: root,
 		width: bounds.width,
 		height: bounds.height,
 
-		scene: Scene.list,
-
-		render: {
-			antialias: false
-		},
-		fps: { target: 60 },
-		physics: {
-			default: 'arcade',
-			arcade: {
-				debug: false
-			}
-		}
+		scene: Scene.list
 	});
 
-	game.scene.start('InitScene', data);
+	game.scene.start('InitScene', { user, onProgress, identifier, socket });
 	return game;
 }

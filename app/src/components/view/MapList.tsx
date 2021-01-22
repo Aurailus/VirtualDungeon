@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function MapList({ maps }: Props) {
-	const { id: campaign } = useParams<{ id: string }>();
+	const { user, campaign } = useParams<{ user: string; campaign: string }>();
 
 	return (
 		<div class='MapList'>
@@ -19,7 +19,7 @@ export default function MapList({ maps }: Props) {
 				<Preact.Fragment>
 					<ul class='MapList-Grid'>
 						{maps.map(m => <li class='MapList-MapWrap'>
-							<Link className='MapList-Map' to={`/edit/${campaign}/${m.identifier}`}>
+							<Link className='MapList-Map' to={`/u/${user}/c/${campaign}/play?map=${m.identifier}`}>
 								<div class='MapList-MapInner'>
 									<div class='MapList-MapPreview'>
 										<img src='https://placekitten.com/400/300' alt='' />
@@ -29,8 +29,8 @@ export default function MapList({ maps }: Props) {
 							</Link>
 						</li>)}
 						<li class='MapList-MapWrap'>
-							<Link className='MapList-NewMap' to={`/campaign/${campaign}/maps/new`}>
-								<img src='/app/static/ui/icon/map_new.png' alt=''/>
+							<Link className='MapList-NewMap' to={`/u/${user}/c/${campaign}/maps/new`}>
+								<img src='/app/static/icon/map_new.png' alt=''/>
 								<p>Create Map</p>
 							</Link>
 						</li>

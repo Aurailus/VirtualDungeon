@@ -1,0 +1,49 @@
+@use '../../style/ext'
+@use '../../style/text'
+@use '../../style/slice'
+@use '../../style/def' as *
+
+.Page
+	width: 100%
+	height: 100%
+	display: grid
+	grid-template-columns: 280px 1fr
+
+	.Page-Sidebar
+		background: $neutral-200
+		padding: 0 16px
+
+		.Page-SidebarTitle
+			@include text.line_clamp
+
+			padding: 16px 0 20px 0
+			margin: 0
+
+			font-size: 34px
+
+		.Page-SidebarCategory
+			display: block
+			padding: 12px
+			margin-bottom: 8px
+
+			font-size: 18px
+			border-radius: 4px
+			text-decoration: none
+			background: $neutral-250
+
+			&:hover, &:focus-visible
+				background: $neutral-300
+
+			&.Active
+				background: linear-gradient(130deg, $accent-600, $accent-800)
+
+	.Page-Main
+		padding: 16px
+		padding-top: 72px
+
+		.Page-Card
+			@extend %card
+			width: 100%
+			max-width: 1000px
+			display: block
+			margin: 0 auto

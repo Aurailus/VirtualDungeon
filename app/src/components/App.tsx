@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-d
 import './App.sass';
 
 import AppSidebar from './AppSidebar';
+import * as Page from './page/Pages';
 import * as Routes from './route/Routes';
 
 import { AppData } from '../../../common/AppData';
@@ -36,29 +37,33 @@ export default function App() {
 				<div class='App'>
 					<div/>
 					<div class='App-Main'>
-						<Routes.Login onLogin={() => setState('AUTH')} />
+						<Page.Login onLogin={() => setState('AUTH')} />
 					</div>
 				</div>
 			}
 			{state === 'AUTH' &&
 				<div class='App'>
 					<Router basename='/app'>
+						{/* Enforce trailing slashes in all URLs to make relative links work properly. */}
+						<Route path="/:url*" exact strict render={props => <Redirect to={`${props.location.pathname}/${props.location.search}`}/>}/>
+						
 						<Switch>
-							<Route path='/edit/:campaign/:map' component={Routes.Editor} />
+							<Route path='/u/:user/c/:campaign/play' component={Page.Editor} />
 							<Route>
 								<div class='App-Main'>
 									<AppSidebar />
 									<Switch>
-										<Redirect exact path='/' to='/campaigns' />
+										<Route path='/c/new/' component={Page.NewCampaign} />
+										<Route path='/c/join/:token/' component={Page.JoinCampaign as any} />
+										<Route exact path='/c/' component={Page.CampaignsList} />
+										<Redirect path='/c/' to='/c/' />
+										<Route path='/u/:user/c/:campaign/' component={Page.Campaign} />
 
-										<Route path='/assets/collection/:user/:id' component={Routes.Collection} />
-										<Route path='/asset/:user/:id' component={Routes.Asset} />
-										<Route path='/assets' component={Routes.Assets} />
+										<Route path='/a/' component={Routes.Assets} />
+										<Route path='/u/:user/a/:id' component={Routes.Asset} />
+										<Route path='/u/:user/collection/:id' component={Routes.Collection} />
 										
-										<Route path='/campaign/:id?' component={Routes.Campaign} />
-										<Route path='/campaigns' component={Routes.Campaigns} />
-										
-										<Redirect to='/' />
+										<Redirect to='/c/' />
 									</Switch>
 								</div>
 							</Route>

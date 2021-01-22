@@ -37,6 +37,10 @@ interface TokenData {
 export type UploadError = 'req_invalid' | 'server_error';
 export type AssetData = BaseAssetData & (TilesetData | TokenData);
 
+async function getIdentifier(base: string, len: number = 32) {
+	return crypto.createHash('md5').update(base + await crypto.randomBytes(8)).digest('hex').substr(0, len);
+}
+
 export default class Database {
 	client: MongoClient | null = null;
 	db: Db | null = null;
@@ -51,13 +55,15 @@ export default class Database {
 			this.db = this.client.db(db);
 
 			// Temp: Delete all users.
-			// await this.db.collection('users').deleteMany({});
+			await this.db.collection('users').deleteMany({});
+			// await this.db.collection('invites').deleteMany({});
 			// await this.db.collection('tokens').deleteMany({});
 			// await this.db.collection('campaigns').deleteMany({});
 			// await this.db.collection('assets').deleteMany({});
 			// await this.db.collection('collections').deleteMany({});
 
-			// await this.createUser('me@auri.xyz', 'Auri', 'password');
+			await this.createUser('me@auri.xyz', 'Auri', 'password');
+			await this.createUser('zythia.woof@gmail.com', 'Zythia', 'password');
 
 			// await this.db.collection('assets').insertMany([{
 			// 	type: 'ground',
@@ -147,14 +153,19 @@ export default class Database {
 
 
 	/**
-	 * Get a list of a user's campaigns.
+	 * Get a list of campaigns that the user owns, or has joined.
 	 *
 	 * @param {string} user - The user identifier.
 	 */
 
-	async getCampaigns(user: string): Promise<DB.Campaign[]> {
-		return (await this.db!.collection('campaigns').find({user: user}).toArray())
-			.sort((a: DB.Campaign, b: DB.Campaign) => a.title.charCodeAt(0) < b.title.charCodeAt(0) ? -1 : 1);
+	async getCampaigns(user: string): Promise<DB.UserCampaign[]> {
+		return (await this.db!.collection('campaigns').find({ $or: [{ user: user }, { players: { $all: [ user ]}}]}).toArray())
+			.map((c: Partial<DB.Campaign>): DB.UserCampaign => {
+				if (c.user !== user) delete c.maps;
+				delete c.assets;
+				return c as any;
+			})
+			.sort((a, b) => a.title.charCodeAt(0) < b.title.charCodeAt(0) ? -1 : 1);
 	}
 
 
@@ -184,6 +195,7 @@ export default class Database {
 			description: description ?? '',
 			
 			maps: [],
+			players: [],
 			assets: [ '#' + user + ':' + PERSONAL_IDENTIFIER ]
 		}
 
@@ -201,9 +213,29 @@ export default class Database {
 	 */
 
 	async getCampaign(user: string, identifier: string): Promise<DB.Campaign> {
-		const collection = this.db!.collection('campaigns');
-		let camp = await collection.findOne({user: user, identifier: identifier});
+		let camp = await this.db!.collection('campaigns').findOne({user: user, identifier: identifier});
 		if (!camp) throw 'This campaign no longer exists.';
+		return camp;
+	}
+
+
+	/**
+	 * Get a campaign from a valid invite token.
+	 * Throws if the invite has expired or the campaign doesn't exist.
+	 *
+	 * @param {string} token - An invite token generated using toggleInvite().
+	 */
+
+	async getCampaignFromInvite(token: string): Promise<Partial<DB.Campaign>> {
+		const info = await this.db!.collection('invites').findOne({ token });
+		if (!info) throw 'Token is no longer valid.';
+		const camp = await this.db!.collection('campaigns').findOne({ user: info.user, identifier: info.identifier });
+		if (!camp) throw 'Campaign no longer exists.';
+			
+		delete camp._id;
+		delete camp.maps;
+		delete camp.assets;
+
 		return camp;
 	}
 
@@ -243,7 +275,7 @@ export default class Database {
 		if (mapExists) throw 'A map of this name already exists.';
 
 		await collection.updateOne({user: user, identifier: campIdentifier}, {
-			$push: { maps: { name: map, identifier: mapIdentifier, size: { x: 32, y: 32 }, tiles: '' }}});
+			$push: { maps: { name: map, identifier: mapIdentifier, size: { x: 64, y: 64 }, layers: '' }}});
 		return mapIdentifier;
 	}
 
@@ -287,7 +319,7 @@ export default class Database {
 		await Promise.all(collections.map(async (colString) => {
 			const user = colString.substring(1, colString.indexOf(':'));
 			const iden = colString.substring(colString.indexOf(':') + 1);
-			assetIdentifiers.push(...(await this.db!.collection('collections').findOne({ user: user, identifier: iden })).items);
+			assetIdentifiers.push(...(await this.db!.collection('collections').findOne({ user: user, identifier: iden }))?.items || []);
 		}));
 
 		return await Promise.all(assetIdentifiers.map(async (idenString) => {
@@ -362,7 +394,7 @@ export default class Database {
 
 		let assetName = '', assetPath = '';
 		while (true) {
-			assetName = crypto.createHash('md5').update(data.identifier + await crypto.randomBytes(8)).digest('hex') + '.png';
+			assetName = await getIdentifier(data.identifier) + '.png';
 			assetPath = path.join(ASSET_PATH, assetName);
 			try { await fs.access(assetPath, fsc.R_OK | fsc.W_OK); }
 			catch (e) { if (e.code === 'ENOENT') break; }
@@ -416,6 +448,58 @@ export default class Database {
 		const query = user + ':' + identifier;
 		await this.db!.collection('collections').updateMany(
 			{ items: { $all: [ query ] } }, { $pull: { items: query } });
+	}
+
+
+	/**
+	 * Enables or disables an invite link for a campaign.
+	 * If a campaign already has an invite link and this function is called,
+	 * it generates a new link and replaces the old one.
+	 *
+	 * @param {string} user - The identifier of the user performing the operation.
+	 * @param {string} identifier - The identifier of the campaign to modify.
+	 * @param {boolean} enabled - Whether or not the campaign is open to invitations.
+	 */
+
+	async toggleInvite(user: string, identifier: string, enabled: boolean) {
+		if (!await this.db!.collection('campaigns').findOne({ user, identifier })) return;
+
+		if (!enabled) await this.db!.collection('invites').deleteOne({ user, identifier });
+		else await this.db!.collection('invites').updateOne({ user, identifier}, {
+			$set: { user, identifier, token: await getIdentifier(identifier, 8) } }, { upsert: true });
+	}
+
+
+	/**
+	 * Gets an invite token for a campaign.
+	 * Returns an empty string if the campaign doesn't exist or doesn't have an active invite link.
+	 *
+	 * @param {string} user - The identifier of the campaign's owner.
+	 * @param {string} identifier - The identifier of the campaign.
+	 */
+
+	async getInvite(user: string, identifier: string) {
+		return (await this.db!.collection('invites').findOne({ user: user, identifier: identifier }))?.token ?? '';
+	}
+
+
+	/**
+	 * Accepts an invite for a player, adds a player to the campaign.
+	 * Throws if the invite is invalid, or the user is already in the campaign.
+	 *
+	 * @param {string} user - The user to add to the campaign.
+	 * @param {string} token - The invite token for the campaign.
+	 */
+
+	async acceptInvite(user: string, token: string) {
+		const invite: DB.Invite | null = await this.db!.collection('invites').findOne({ token: token });
+		if (!invite) throw 'Invite is no longer valid.';
+		if (invite.user === user) throw 'Invite was created by accepting user.';
+
+		const accepted = (await this.db!.collection('campaigns').updateOne({ user: invite.user,
+			identifier: invite.identifier, players: { $not: { $all: [ user ]}}}, { $addToSet: { players: user }})).matchedCount !== 0;
+
+		if (!accepted) throw 'Player is already in campaign or campaign doesn\'t exist.';
 	}
 
 

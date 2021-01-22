@@ -1,4 +1,5 @@
 @use '../../../style/ext'
+@use '../../../style/def' as *
 
 .InputText
 	@extend %material_input
@@ -11,3 +12,6 @@
 
 	&.Code
 		font-family: monospace
+
+	&[disabled]
+		color: $neutral-400

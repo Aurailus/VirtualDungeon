@@ -2,10 +2,10 @@
 	display: grid
 	grid-gap: 6px
 	grid-template-columns: 1fr
-	position: absolute
-	bottom: 6px
+	position: fixed
+	top: 6px
 	right: 6px
-	width: 200px
+	width: 230px
 	height: auto
 
 	.LayerManager-Layer
@@ -17,3 +17,14 @@
 
 		&.Active
 			background-color: transparentize(#fff, 0.8)
+
+	.ButtonGroup
+		width: 100%
+		display: flex
+
+		.Button
+			flex-grow: 1
+			flex-shrink: 1
+
+			img
+				margin: -15px -24px

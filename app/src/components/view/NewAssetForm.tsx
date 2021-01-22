@@ -1,4 +1,5 @@
 import * as Preact from 'preact';
+import { useAppData } from '../../Hooks';
 import { useHistory } from 'react-router-dom';
 import { useState, useEffect } from 'preact/hooks';
 
@@ -13,6 +14,7 @@ import * as Format from '../../../../common/Format';
 
 export default function NewAssetForm() {
 	const history = useHistory();
+	const [ ,, mergeData ] = useAppData();
 
 	const [ queryState, setQueryState ] = useState<'idle' | 'querying'>('idle');
 	
@@ -51,7 +53,7 @@ export default function NewAssetForm() {
 		return () => set = false;
 	}, [ file ]);
 
-	const createCampaign = async () => {
+	const uploadAsset = async () => {
 		if (queryState !== 'idle' || !file) return;
 		setQueryState('querying');
 
@@ -69,7 +71,10 @@ export default function NewAssetForm() {
 			body: data
 		});
 
-		if (res.status === 200) history.push('/assets');
+		if (res.status === 200) {
+			mergeData(await res.json());
+			history.push('/a/');
+		}
 		else {
 			console.error(await res.text());
 			setQueryState('idle');
@@ -138,7 +143,7 @@ export default function NewAssetForm() {
 					</Label>
 				</div>
 
-				<Button class='NewAssetForm-Submit' onClick={createCampaign} icon='add' label={`Create ${Format.name(type)} Asset`}
+				<Button class='NewAssetForm-Submit' onClick={uploadAsset} icon='add' label={`Create ${Format.name(type)} Asset`}
 					disabled={!(name.length > 3 && identifier.length > 3)} />
 			</Preact.Fragment>}
 		</div>

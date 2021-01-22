@@ -31,10 +31,13 @@ function useAutoTextArea(maxHeight?: number, dependents?: any[]): Preact.RefObje
 interface Props extends WidgetProps {
 	long?: boolean;
 	code?: boolean;
+	minRows?: number;
 	maxHeight?: number;
 
 	min?: number;
 	max?: number;
+
+	readonly?: boolean;
 }
 
 /**
@@ -44,7 +47,7 @@ interface Props extends WidgetProps {
 
 const InputText = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>((props, fRef) => {
 	const ref = useAutoTextArea(props.maxHeight ?? 420, [ props.value ]);
-	
+
 	const cb = (evt: any) => props.setValue(evt.target.value);
 	const sharedProps = {
 		value: props.value,
@@ -56,6 +59,7 @@ const InputText = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>((pro
 		maxLength: props.max,
 		disabled: props.disabled,
 		placeholder: props.placeholder,
+		readonly: props.readonly,
 		style: props.style
 	};
 
@@ -65,7 +69,7 @@ const InputText = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>((pro
 				{...sharedProps}
 				class={('InputText Long ' + (props.class ?? '') + (props.code ? ' Code' : '')).trim()}
 
-				rows={1}
+				rows={props.minRows ?? 1}
 				ref={(newRef) => {
 					ref.current = newRef;
 					if (fRef) fRef.current = newRef as any;

@@ -1,10 +1,10 @@
 import * as Phaser from 'phaser';
 
-import Token from '../Token';
 import MapLayer from './MapLayer';
 import TileStore from './TileStore';
 import * as MapSaver from './MapSaver';
 import MapChunk, { CHUNK_SIZE } from './MapChunk';
+import TokenManager from './token/TokenManager';
 
 import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
@@ -17,18 +17,20 @@ import { Asset } from '../util/Asset';
 export default class Map {
 	size: Vec2 = new Vec2(0, 0);
 	tileStore: TileStore = new TileStore();
-	activeLayer?: MapLayer = {} as MapLayer;
 
-	tokens: Token[] = [];
+	tokens: TokenManager = new TokenManager();
 	
 	private layers: MapLayer[] = [];
-	private chunks: MapChunk[][][] = [];
+	private activeLayer?: MapLayer = undefined;
 
 	private scene: Phaser.Scene = undefined as any;
+	private chunks: MapChunk[][][] = [];
 
 	init(scene: Phaser.Scene, size: Vec2, assets: Asset[]) {
 		this.scene = scene;
 		this.size = size;
+		
+		this.tokens.init(scene);
 		this.tileStore.init(scene.textures, assets);
 	}
 
@@ -70,22 +72,45 @@ export default class Map {
 
 
 	/**
+	 * Gets the active layer.
+	 */
+
+	getActiveLayer(): MapLayer | undefined {
+		return this.activeLayer;
+	}
+
+
+	/**
+	 * Sets the active layer to the layer or index specified.
+	 */
+
+	setActiveLayer(l: MapLayer | number) {
+		if (l instanceof MapLayer) l = l.index;
+		this.activeLayer = this.layers[l];
+		this.chunks.forEach((a, i) => a.forEach(cA => cA.forEach(c => {
+			c.setTint(i <= l ? 0xffffff : 0x000000);
+			c.setAlpha(i <= l ? 1 : 0.2);
+		})));
+	}
+
+
+	/**
 	 * Creates a new map layer at the specified index.
 	 * If no index is specified, the layer will be added at the top of the stack.
 	 *
 	 * @param {number} index - the index that the layer should be added at.
 	 */
 
- 	addLayer(): MapLayer {
+	addLayer(): MapLayer {
 		const layer = new MapLayer(this.layers.length, this.size);
 		layer.init(this.handleDirty.bind(this, layer.index));
 
 		this.layers.push(layer);
 		this.activeLayer = layer;
-		this.createMapChunks(this.scene);
+		this.createMapChunks(layer);
 
 		return layer;
- 	}
+	}
 
 
 	/**
@@ -109,13 +134,16 @@ export default class Map {
 		const data = MapSaver.load(mapData);
 		this.size = data.size;
 
+		// this.chunks.forEach(cI => cI.forEach(cA => cA.forEach(c => c.destroy())));
+
 		this.layers = data.layers;
-		this.layers.forEach(l => l.init(this.handleDirty.bind(this, l.index)));
+		if (this.layers.length === 0) this.layers.push(new MapLayer(0, this.size));
+		this.layers.forEach(l => {
+			l.init(this.handleDirty.bind(this, l.index));
+			this.createMapChunks(l);
+		});
 		this.activeLayer = this.layers[0];
-
-		this.createMapChunks(this.scene);
 	}
-
 
 	/**
 	 * Creates a visual representation of the map.
@@ -123,17 +151,14 @@ export default class Map {
 	 * @param {Phaser.Scene} scene - The scene to add the chunks to.
 	 */
 
-	private createMapChunks(scene: Phaser.Scene) {
-		this.chunks.forEach(cA => cA.forEach(cS => cS.forEach(c => c.destroy())));
-		this.chunks = [];
+	private createMapChunks(layer: MapLayer) {
+		if (this.chunks[layer.index]) this.chunks[layer.index].forEach(cA => cA.forEach(c => c.destroy()));
 
-		for (const layer of this.layers) {
-			this.chunks[layer.index] = [];
-			for (let i = 0; i < Math.ceil(this.size.y / CHUNK_SIZE); i++) {
-				this.chunks[layer.index][i] = [];
-				for (let j = 0; j < Math.ceil(this.size.x / CHUNK_SIZE); j++) {
-					this.chunks[layer.index][i][j] = new MapChunk(scene, new Vec2(j, i), layer, this.tileStore);
-				}
+		this.chunks[layer.index] = [];
+		for (let i = 0; i < Math.ceil(this.size.y / CHUNK_SIZE); i++) {
+			this.chunks[layer.index][i] = [];
+			for (let j = 0; j < Math.ceil(this.size.x / CHUNK_SIZE); j++) {
+				this.chunks[layer.index][i][j] = new MapChunk(this.scene, new Vec2(j, i), layer, this.tileStore);
 			}
 		}
 	}

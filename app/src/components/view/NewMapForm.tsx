@@ -10,9 +10,9 @@ import { Label, Text } from '../input/Input';
 import Button from '../Button';
 
 export default function NewMapForm() {
-	const [ ,, mergeData ] = useAppData();
 	const history = useHistory();
-	const { id: campaign } = useParams<{ id: string }>();
+	const [ ,, mergeData ] = useAppData();
+	const { campaign } = useParams<{ campaign: string }>();
 
 	const [ queryState, setQueryState ] = useState<'idle' | 'querying'>('idle');
 	

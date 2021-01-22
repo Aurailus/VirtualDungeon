@@ -1,0 +1,35 @@
+@use '../../style/ext'
+@use '../../style/text'
+@use '../../style/def' as *
+
+.PlayerInviteForm
+	.PlayerInviteForm-Title
+		@include text.line_clamp
+
+		margin-top: 0
+		margin-bottom: 8px
+		padding-right: 6px
+
+		font-weight: 500
+		font-size: 34px
+		font-family: $font-header
+
+	.InputCheckbox
+		margin-top: 6px
+
+	.PlayerInviteForm-Description
+		min-height: 100px
+
+	.PlayerInviteForm-Submit
+		margin-top: 20px
+
+	.PlayerInviteForm-LinkWrap
+		gap: 12px
+		display: flex
+		margin-top: 3px
+		order: -1
+
+		.Button
+			flex-grow: 1
+			width: 260px
+

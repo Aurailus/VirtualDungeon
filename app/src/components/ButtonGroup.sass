@@ -23,15 +23,15 @@
 	%button_group_right
 		@include button_group('right')
 
-	.Button
+	.Button:not(:first-child)
 		@extend %button_group_middle
-		
 		display: inline-block
+
+	.Button:not(:last-child)
 		margin-right: -3px
 
-	.Button:first-child
+	.Button:first-child:not(:last-child)
 		@extend %button_group_left
 
-	.Button:last-child
+	.Button:last-child:not(:first-child)
 		@extend %button_group_right
-		margin-right: 0

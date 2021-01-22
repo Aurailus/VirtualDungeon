@@ -42,8 +42,8 @@ export function save(size: Vec2, layers: MapLayer[]): string {
 			for (let i = 0; i < size.x * size.y; i++) {
 				const x = i % size.x;
 				const y = Math.floor(i / size.x);
-				tileArr[i] = layer.getTile(mapLayer, x, y);
-				tileIndArr[i] = layer.getTileIndex(mapLayer, x, y);
+				tileArr[i] = layer.getTile(mapLayer, new Vec2(x, y));
+				tileIndArr[i] = layer.getTileIndex(mapLayer, new Vec2(x, y));
 			}
 
 			const tileStr = Buffer.serialize(tileBuff);
@@ -76,13 +76,12 @@ export function load(mapData: string): DeserializedMap {
 
 	const data: DeserializedMap = { ...mapMeta, layers: [] };
 
-	const layerInd = 0;
-
+	let layerInd = 0;
 	while (mapData.length) {
 		const numEnd = mapData.indexOf('|');
 		const num = Number.parseInt(mapData.substr(0, numEnd), 10);
 
-		const layer = new MapLayer(layerInd, data.size);
+		const layer = new MapLayer(layerInd++, data.size);
 		layer.load(mapData.slice(numEnd + 1, numEnd + 1 + num));
 		data.layers.push(layer);
 

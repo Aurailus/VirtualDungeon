@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import Sidebar from './Sidebar';
 
-import Token from '../../Token';
+import Token from '../../map/token/Token';
 import TokenMode from '../../mode/TokenMode';
 import ModeManager from '../../mode/ModeManager';
 import type InputManager from '../../InputManager';
@@ -13,15 +13,10 @@ export default class TokenSidebar extends Sidebar {
 	spinTimer: number = 0;
 
 	lastSelectedToken: number = 0;
-	cursorMode: Phaser.GameObjects.Sprite;
 
 	constructor(scene: Phaser.Scene, x: number, y: number, assets: Asset[],
 		inputManager: InputManager, private mode: ModeManager) {
 		super(scene, x, y, inputManager);
-
-		this.cursorMode = this.scene.add.sprite(44, 1, 'ui_button_select_cursor');
-		this.cursorMode.setOrigin(0);
-		this.add(this.cursorMode);
 
 		for (let token of assets.filter((a) => a.type === 'token'))
 			this.addToken(token.identifier);
@@ -29,15 +24,7 @@ export default class TokenSidebar extends Sidebar {
 
 	update() {
 		super.update();
-
-		// if (this.scene.token.selectedTokenType === '') this.cursorMode.setFrame(0);
-		// else this.cursorMode.setFrame(2);
 		
-		// if (this.cursorMode.mouseIntersects()) {
-		// 	this.cursorMode.setFrame(1);
-		// 	if (this.scene.inputManager.mouseLeftPressed()) this.toggleSelectMode();
-		// }
-
 		if (this.inputManager.keyPressed('S')) this.toggleSelectMode();
 	}
 
@@ -58,15 +45,15 @@ export default class TokenSidebar extends Sidebar {
 		
 		this.spinTimer++;
 		if (this.spinTimer > 20) {
-			let frame = hoveredToken.getFrame() + 1;
-			frame %= hoveredToken.frameCount();
-			hoveredToken.setFrame(frame);
+			let index = hoveredToken.getFrame() + 1;
+			index %= hoveredToken.getFrameCount();
+			hoveredToken.setToken({ appearance: { sprite: hoveredToken.getToken().appearance.sprite, index }});
 			this.spinTimer = 0;
 		}
 	}
 
 	elemUnhover(): void {
-		this.sprites.forEach(t => t.setFrame(0));
+		this.sprites.forEach(t => t.setToken({ appearance: { sprite: t.getToken().appearance.sprite, index: 0 }}));
 	}
 
 	elemClick(x: number, y: number): void {
@@ -83,7 +70,7 @@ export default class TokenSidebar extends Sidebar {
 
 		if (x === 0) this.backgrounds[y].setFrame(0);
 
-		let token = new Token(this.scene, 0, 0, sprite);
+		let token = new Token(this.scene, { appearance: { sprite, index: 0 }});
 		token.setPosition(4 + x * 21, 4 + y * 21);
 		token.setScale(16);
 

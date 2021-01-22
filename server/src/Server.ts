@@ -1,6 +1,6 @@
 import HTTP from 'http';
 import HTTPS from 'https';
-// import IO from 'socket.io';
+import IO from 'socket.io';
 import Express from 'express';
 
 import bodyParser from 'body-parser';
@@ -16,6 +16,7 @@ import { Config } from './Config';
 import resolvePath from './ResolvePath';
 
 import Database from './Database';
+import MapController from './MapController';
 import AppRouter from './routers/AppRouter';
 import DataRouter from './routers/DataRouter';
 
@@ -27,13 +28,15 @@ const logger = log4js.getLogger();
  */
 
 export default class Server {
-	// private io: IO.Server;
+	private io?: IO.Server;
 	private app: Express.Application = Express();
 
 	private db: Database = new Database();
 
 	private siteRouter = new AppRouter(this.db, this.app);
 	private dataRouter = new DataRouter(this.db, this.app);
+
+	private mapController = new MapController(this.db);
 
 	constructor(private conf: Config) {
 		this.app.use(compression());
@@ -48,12 +51,7 @@ export default class Server {
 			await this.siteRouter.init();
 			await this.dataRouter.init();
 
-			// Open Socket Listener.
-			// this.io = IO(server);
-			// io.on('connection', (socket: IO.Socket) => {
-			// 	console.log('User connected.')
-			// 	socket.on('disconnect', () => console.log('User disconnected.'));
-			// });
+			await this.mapController.init(this.io!);
 		});
 	}
 
@@ -85,6 +83,8 @@ export default class Server {
 					const http = HTTP.createServer(this.forwardHttps.bind(this) as any);
 					const https = HTTPS.createServer({ cert: cert, key: key }, this.app);
 
+					this.io = (IO as any)(https);
+
 					http.listen(this.conf.port || 80, () => {
 						logger.debug('Redirect server listening on port %s.', this.conf.port || 80);
 						https.listen(this.conf.https!.port || 443, () => {
@@ -95,6 +95,9 @@ export default class Server {
 				}
 				else {
 					const http = HTTP.createServer(this.app);
+
+					this.io = (IO as any)(http);
+
 					http.listen(this.conf.port || 80, () => {
 						logger.debug('HTTP Server listening on port %s.', this.conf.port || 80);
 						resolve();

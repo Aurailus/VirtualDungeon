@@ -4,9 +4,8 @@
 @use '../../style/def' as *
 
 .MapList
-	// @extend %card
+	margin: 0 auto
 	max-width: 1000px
-	margin: 56px auto
 
 	.MapList-Grid
 		@include grid.auto_width(160px, 16px)
@@ -22,7 +21,7 @@
 				overflow: hidden
 				border-radius: 4px
 				text-decoration: none
-				background-color: $neutral-250
+				background-color: $neutral-200
 				box-shadow: 0px 2px 12px 0px transparentize($neutral-000, 0.9)
 
 				.MapList-MapInner
@@ -64,7 +63,7 @@
 				background-color: $neutral-100
 				box-shadow: 0px 2px 12px 0px transparentize($neutral-000, 0.9)
 
-				border: 3px dotted $neutral-300
+				border: 3px solid $neutral-250
 
 				min-height: 180px
 				height: 100%
@@ -72,6 +71,8 @@
 				img
 					width: 80px
 					height: 80px
+					
+					image-rendering: crisp-edges
 					image-rendering: pixelated
 
 				p

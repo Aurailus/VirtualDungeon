@@ -1,8 +1,10 @@
 import type { ObjectID } from 'mongodb';
 
+export interface HasID {
+	_id: ObjectID;
+}
+
 export interface User {
-	_id?: ObjectID;
-	
 	name: string;
 	user: string;
 	pass: string;
@@ -11,16 +13,12 @@ export interface User {
 }
 
 export interface AuthToken {
-	_id?: ObjectID;
-
 	user: string;
 	token: string;
 	expires: number;
 }
 
 export interface Campaign {
-	_id?: ObjectID;
-
 	user: string;
 	identifier: string;
 	
@@ -30,22 +28,38 @@ export interface Campaign {
 	
 	maps: Map[];
 	assets: string[];
+	players: string[];
+}
+
+/**
+ * A campaign item returned from Database.getCampaigns().
+ * Maps are optional because players should not get access to that information.
+ * Assets are omitted as they are not useful to the client in their raw form.
+ */
+
+export interface UserCampaign {
+	user: string;
+	identifier: string;
+	
+	title: string;
+	thumbnail?: string;
+	description: string;
+	
+	maps?: Map[];
+	players: string[];
 }
 
 export interface Map {
-	_id?: ObjectID;
-
-	identifier: string;
 	name: string;
+	identifier: string;
+	
 	size: {x: number, y: number};
-	tiles: string;
+	layers: string;
 }
 
 export type AssetType =	'wall' | 'detail' | 'ground' | 'token';
 
 export interface AssetCollection {
-	_id?: ObjectID;
-
 	user: string;
 	identifier: string;
 	name: string;
@@ -54,8 +68,6 @@ export interface AssetCollection {
 }
 
 export interface Asset {
-	_id?: ObjectID;
-	
 	type: AssetType;
 	user: string;
 	identifier: string;
@@ -66,4 +78,11 @@ export interface Asset {
 
 	tileSize?: number; // Amount of tiles a token takes (on both axis)
 	dimensions: {x: number, y: number} // Image dimensions;
+}
+
+export interface Invite {
+	user: string;
+	identifier: string;
+
+	token: string;
 }

@@ -5,6 +5,6 @@ export type AppDataSpecifier = 'user' | 'campaigns' | 'collections' | 'assets';
 export interface AppData {
 	user: { user: string, name: string };
 	collections: DB.AssetCollection[];
-	campaigns: DB.Campaign[];
+	campaigns: DB.UserCampaign[];
 	assets: DB.Asset[];
 }

@@ -31,7 +31,7 @@ export default function AssetList({ assets, newText, onNew, onClick }: Props) {
 						</li>)}
 						<li class='AssetList-AssetWrap'>
 							{onNew && <button onClick={onNew} className='AssetList-NewAsset'>
-								<img src='/app/static/ui/icon/asset_new.png' alt=''/>
+								<img src='/app/static/icon/asset_new.png' alt=''/>
 								<p>{newText ?? 'Upload Asset'}</p>
 							</button>}
 						</li>

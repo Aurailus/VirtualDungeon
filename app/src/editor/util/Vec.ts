@@ -17,12 +17,21 @@ export class Vec2 {
 		}
 	}
 
-	equals(o: Vec2) {
+	normalize(): Vec2 {
+		const l = this.length();
+		return new Vec2(this.x / l, this.y / l);
+	}
+
+	equals(o: Vec2): boolean {
 		return this.x === o.x && this.y === o.y;
 	}
 
-	floor() {
+	floor(): Vec2 {
 		return new Vec2(Math.floor(this.x), Math.floor(this.y));
+	}
+
+	length(): number {
+		return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
 	}
 }
 
