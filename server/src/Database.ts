@@ -257,26 +257,46 @@ export default class Database {
 		let mapIdentifier = this.sanitizeName(map);
 		if (mapIdentifier.length < 3) 'Map name must contain at least 3 alphanumeric characters.';
 
-		let campIdentifier = this.sanitizeName(campaign);
+		let identifier = this.sanitizeName(campaign);
 
 		const collection = this.db!.collection('campaigns');
 		
-		let exists = await collection.findOne({user: user, identifier: campIdentifier});
+		let exists = await collection.findOne({ user, identifier });
 		if (!exists) throw 'This campaign no longer exists.';
 		let mapExists = await collection.findOne({
-			user: user,
-			identifier: campIdentifier,
-			maps: {
-				$elemMatch: {
-					identifier: mapIdentifier
-				}
-			}
-		});
+			user, identifier, maps: { $elemMatch: { identifier: mapIdentifier }}});
 		if (mapExists) throw 'A map of this name already exists.';
 
-		await collection.updateOne({user: user, identifier: campIdentifier}, {
-			$push: { maps: { name: map, identifier: mapIdentifier, size: { x: 64, y: 64 }, layers: '' }}});
+		console.log(mapIdentifier);
+
+		const stub = JSON.stringify({ format: '1.0.0', identifier: mapIdentifier, size: { x: 32, y: 32 }, tokens: [] });
+		const data = stub.length + '|' + stub;
+
+		await collection.updateOne({ user, identifier }, { $push: { maps: { name: map, identifier: mapIdentifier, data }}});
 		return mapIdentifier;
+	}
+
+
+	/**
+	 * Updates a map data to the serialized string provided.
+	 * Throws if the campaign or map doesn't exist.
+	 *
+	 * @param {string} user - The user identifier.
+	 * @param {string} campaign - The campaign identifier.
+	 * @param {string} map - The map identifier.
+	 * @param {string} data - The new map data string.
+	 * ...wow, all strings :p
+	 */
+
+	async setMap(user: string, identifier: string, map: string, data: string) {
+		const maps: DB.Map[] | null = (await this.db!.collection('campaigns').findOne({ user, identifier })).maps;
+		if (!maps) throw 'Campaign doesn\'t exist';
+
+		const mapObj: DB.Map | undefined = maps.filter(m => m.identifier === map)[0];
+		if (!mapObj) throw 'Map doesn\'t exist.';
+		mapObj.data = data;
+
+		await this.db!.collection('campaigns').updateOne({ user, identifier }, { $set: { maps } });
 	}
 
 
@@ -291,7 +311,7 @@ export default class Database {
 
 	async getMap(user: string, campaign: string, map: string) {
 		const collection = this.db!.collection('campaigns');
-		let exists = await collection.findOne({user: user, identifier: campaign, maps: { $elemMatch: {identifier: map}}});
+		let exists = await collection.findOne({ user: user, identifier: campaign, maps: { $elemMatch: { identifier: map }}});
 		if (!exists) throw 'This map no longer exists.';
 		let mapObj = null;
 		for (let i of exists.maps) {

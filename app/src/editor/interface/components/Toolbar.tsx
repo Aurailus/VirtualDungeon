@@ -29,8 +29,8 @@ export default bind<Props>(function LayerManager(props: Props) {
 			setHasNext(props.actions.hasNext());
 		};
 		
-		props.actions.bind(actionCb);
-		return () => props.actions.unbind(actionCb);
+		props.actions.event.bind(actionCb);
+		return () => props.actions.event.unbind(actionCb);
 	}, [ props.actions ]);
 
 	const [ mode, setMode ] = useState<string>(ArchitectModeKey);

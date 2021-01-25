@@ -7,8 +7,9 @@ import InterfaceRoot from '../interface/InterfaceRoot';
 import Map from '../map/Map';
 import CameraControl from '../CameraControl';
 import ModeManager from '../mode/ModeManager';
+// import { SerializedMap } from '../map/MapSaver';
 
-import { Vec2 } from '../util/Vec';
+// import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
 import EditorData from '../EditorData';
 
@@ -22,13 +23,9 @@ export default class MapScene extends Phaser.Scene {
 	mode: ModeManager	= new ModeManager();
 	interface: InterfaceRoot = new InterfaceRoot();
 	
-	size: Vec2 = new Vec2();
-
 	map: Map = new Map();
 
-	saved: string = '';
-
-	constructor() { super({key: 'MapScene'}); }
+	constructor() { super({ key: 'MapScene' }); }
 
 	create(data: EditorData): void {
 		this.assets = data.assets;
@@ -36,17 +33,12 @@ export default class MapScene extends Phaser.Scene {
 		this.inputManager.init();
 		this.view.init(this.cameras.main, this.inputManager);
 
-		this.size = new Vec2(data.campaign.maps[0].size);
-		this.map.init(this, this.size, this.assets);
+		this.map.init(this, this.assets);
+		if (data.map) this.map.load(data.map);
 
-		const s = JSON.stringify({ size: new Vec2(32, 32) });
-		this.map.load(s.length + '|' + s);
-
-		this.mode.init(this, data.display, this.map, this.actions, this.assets);
 		this.actions.init(this, this.map, data.socket);
-		this.interface.init(this, data.display, this.inputManager, this.mode, this.actions, this.map, this.assets);
-
-		// this.sound.play('mystify', { loop: true, volume: .2 });
+		this.mode.init(this, this.map, this.actions, this.assets);
+		this.interface.init(this, this.inputManager, this.mode, this.actions, this.map, this.assets);
 	}
 
 	update(): void {
@@ -58,9 +50,6 @@ export default class MapScene extends Phaser.Scene {
 		this.mode.update(this.view.cursorWorld, this.inputManager);
 
 		this.map.update();
-
-		if (this.inputManager.keyPressed('S')) this.saved = this.map.save();
-		if (this.inputManager.keyPressed('L')) this.map.load(this.saved);
 	}
 }
  

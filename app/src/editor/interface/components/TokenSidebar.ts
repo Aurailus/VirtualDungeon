@@ -7,6 +7,7 @@ import TokenMode from '../../mode/TokenMode';
 import ModeManager from '../../mode/ModeManager';
 import type InputManager from '../../InputManager';
 
+import { Vec2 } from '../../util/Vec';
 import { Asset } from '../../util/Asset';
 
 export default class TokenSidebar extends Sidebar {
@@ -45,15 +46,15 @@ export default class TokenSidebar extends Sidebar {
 		
 		this.spinTimer++;
 		if (this.spinTimer > 20) {
-			let index = hoveredToken.getFrame() + 1;
+			let index = hoveredToken.getFrameIndex() + 1;
 			index %= hoveredToken.getFrameCount();
-			hoveredToken.setToken({ appearance: { sprite: hoveredToken.getToken().appearance.sprite, index }});
+			hoveredToken.setFrame(index);
 			this.spinTimer = 0;
 		}
 	}
 
 	elemUnhover(): void {
-		this.sprites.forEach(t => t.setToken({ appearance: { sprite: t.getToken().appearance.sprite, index: 0 }}));
+		this.sprites.forEach(t => t.setFrame(0));
 	}
 
 	elemClick(x: number, y: number): void {
@@ -70,12 +71,11 @@ export default class TokenSidebar extends Sidebar {
 
 		if (x === 0) this.backgrounds[y].setFrame(0);
 
-		let token = new Token(this.scene, { appearance: { sprite, index: 0 }});
-		token.setPosition(4 + x * 21, 4 + y * 21);
-		token.setScale(16);
+		let token = new Token(this.scene, {}, new Vec2(4 + x * 21, 4 + y * 21), sprite);
+		token.setScale(1);
 
 		this.sprites.push(token);
-		this.list.push(token);
+		this.add(token);
 
 		this.bringToTop(this.activeSpriteCursor);
 		this.bringToTop(this.hoverSpriteCursor);

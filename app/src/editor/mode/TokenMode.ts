@@ -4,7 +4,7 @@ import Mode from './Mode';
 import Map from '../map/Map';
 import InputManager from '../InputManager';
 import ActionManager from '../action/ActionManager';
-import Token, { TokenData } from '../map/token/Token';
+import Token, { TokenData, TokenRenderData } from '../map/token/Token';
 
 import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
@@ -24,7 +24,7 @@ export default class TokenMode extends Mode {
 	private selected: Set<Token> = new Set();
 
 	private startTilePos: Vec2 = new Vec2();
-	private preMove: TokenData[] | null = null;
+	private preMove: TokenRenderData[] | null = null;
 	private clickTestState: null | false | true = null;
 
 	private cursor: Phaser.GameObjects.Sprite;
@@ -50,10 +50,10 @@ export default class TokenMode extends Mode {
 			input.bindScrollEvent((delta: number) => {
 				if (this.editMode !== 'move') return false;
 				this.selected.forEach(token => {
-					let index = token.getFrame() + delta;
+					let index = token.getFrameIndex() + delta;
 					if (index < 0) index += token.getFrameCount();
 					index %= token.getFrameCount();
-					token.setToken({ appearance: { sprite: token.getToken().appearance.sprite, index }});
+					token.setFrame(index);
 				});
 				return true;
 			});
@@ -64,8 +64,7 @@ export default class TokenMode extends Mode {
 
 		cursorPos = cursorPos.floor();
 
-		if (this.preview.getToken().appearance.sprite !== this.placeTokenType)
-			this.preview.setToken({ appearance: { sprite: this.placeTokenType, index: 0 }});
+		if (this.preview.texture.key !== this.placeTokenType) this.preview.setTexture(this.placeTokenType, 0);
 
 		switch (this.editMode) {
 		default: break;
@@ -112,8 +111,8 @@ export default class TokenMode extends Mode {
 			this.hovered?.setHovered(false);
 			this.hovered = null;
 
-			for (let i = this.map.tokens.getTokens().length - 1; i >= 0; i--) {
-				let token = this.map.tokens.getTokens()[i];
+			for (let i = this.map.tokens.getAllTokens().length - 1; i >= 0; i--) {
+				let token = this.map.tokens.getAllTokens()[i];
 				if (cursorPos.x === token.x && cursorPos.y === token.y) {
 					this.hovered = token;
 					this.hovered.setHovered(true);
@@ -179,7 +178,7 @@ export default class TokenMode extends Mode {
 				this.selected = new Set();
 			}
 
-			for (const token of this.map.tokens.getTokens()) {
+			for (const token of this.map.tokens.getAllTokens()) {
 				if (token.x >= a.x && token.y >= a.y && token.x <= b.x && token.y <= b.y) {
 
 					if (input.keyDown('CTRL')) {
@@ -215,7 +214,7 @@ export default class TokenMode extends Mode {
 	private handleMove(cursorPos: Vec2, input: InputManager) {
 		this.cursor.setVisible(false);
 
-		if (!this.preMove) this.preMove = Array.from(this.selected).map(t => t.getToken());
+		if (!this.preMove) this.preMove = Array.from(this.selected).map(t => t.getRender());
 
 		if (!this.selected.size) {
 			this.editMode = 'place';
@@ -226,8 +225,8 @@ export default class TokenMode extends Mode {
 			this.editMode = 'place';
 
 			if (this.clickTestState) {
-				const post: TokenData[] = [];
-				for (let t of this.selected) post.push(t.getToken());
+				const post: TokenRenderData[] = [];
+				for (let t of this.selected) post.push(t.getRender());
 				this.actions.push({ type: 'modify_token', tokens: { pre: this.preMove!, post } });
 				this.preMove = null;
 			}
@@ -252,9 +251,8 @@ export default class TokenMode extends Mode {
 
 	private placeToken(cursorPos: Vec2): Token {
 		const asset = this.assets.filter(a => a.identifier === this.placeTokenType)[0];
-		const token = this.map.tokens.createToken({ name: asset.name, pos: cursorPos,
-			appearance: { sprite: this.placeTokenType, index: 0 }});
-		this.actions.push({ type: 'place_token', tokens: [ token.getToken() ] });
+		const token = this.map.tokens.createToken(cursorPos, { name: asset.name }, this.placeTokenType);
+		this.actions.push({ type: 'place_token', tokens: [ token.serialize() ] });
 		return token;
 	}
 
@@ -272,17 +270,15 @@ export default class TokenMode extends Mode {
 	}
 
 	private moveToken(x: number, y: number, index: number): void {
-		let pre: TokenData[] = [];
-		let post: TokenData[] = [];
+		let pre: TokenRenderData[] = [];
+		let post: TokenRenderData[] = [];
 
 		this.selected.forEach((token) => {
-			const old = token.getToken();
+			const old = token.getRender();
 			pre.push(old);
-			token.setToken({
-				pos: { x: old.pos.x + x, y: old.pos.y + y },
-				appearance: { sprite: old.appearance.sprite, index }
-			});
-			post.push(token.getToken());
+			token.setPosition(old.pos.x + x, old.pos.y + y);
+			token.setTexture(old.appearance.sprite, index);
+			post.push(token.getRender());
 		});
 		
 		this.actions.push({ type: 'modify_token', tokens: { pre, post } });

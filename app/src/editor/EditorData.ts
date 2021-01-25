@@ -2,15 +2,12 @@ import { Asset } from './util/Asset';
 import { Socket } from 'socket.io-client';
 import * as DB from '../../../common/DBStructs';
 
-export interface ExternalData {
-	identifier: string;
+export default interface EditorData {
 	socket: Socket;
-}
 
-export default interface EditorData extends ExternalData {
 	campaign: DB.Campaign;
 	assets: Asset[];
-	map: DB.Map;
+	map?: string;
 
 	display: 'edit' | 'view';
 	onProgress: (progress: number | undefined) => void;

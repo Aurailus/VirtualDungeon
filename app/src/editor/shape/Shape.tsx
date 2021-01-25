@@ -69,7 +69,7 @@ export default abstract class Shape extends Phaser.GameObjects.Container {
 
 		this.attachedToken = token;
 		this.attachedChangeEvent = () => this.setOrigin(new Vec2(token.x + offset.x, token.y + offset.y));
-		token.change.bind(this.attachedChangeEvent);
+		token.on_render.bind(this.attachedChangeEvent);
 
 		this.attachedDestroyEvent = () => this.detachFromToken();
 		token.on('destroy', this.attachedDestroyEvent);
@@ -78,7 +78,7 @@ export default abstract class Shape extends Phaser.GameObjects.Container {
 	detachFromToken() {
 		if (!this.attachedToken) return;
 		this.attachedToken.setSelected(false);
-		this.attachedToken.change.unbind(this.attachedChangeEvent!);
+		this.attachedToken.on_render.unbind(this.attachedChangeEvent!);
 		this.attachedChangeEvent = undefined;
 		this.attachedToken.off('destroy', this.attachedDestroyEvent!);
 		this.attachedDestroyEvent = undefined;

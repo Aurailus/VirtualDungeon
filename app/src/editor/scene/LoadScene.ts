@@ -60,12 +60,12 @@ export default class LoadScene extends Phaser.Scene {
 		}
 	}
 
-	create() {
+	async create() {
 		const glRenderer = this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
 		glRenderer.pipelines.add('brighten', new BrightenPipeline(this.game));
 		glRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
 
-		Promise.all(this.editorData!.assets.map(a => {
+		await Promise.all(this.editorData!.assets.map(a => {
 			if (a.type === 'token') {
 				const { width, height } = (this.textures.get(a.identifier).frames as any).__BASE;
 				a.dimensions = new Vec2(width, height);
@@ -76,13 +76,13 @@ export default class LoadScene extends Phaser.Scene {
 				return Patch.tileset(this, a.identifier, a.tileSize);
 
 			else return new Promise<void>(resolve => resolve());
-		})).then(() => {
-			this.editorData.onProgress(undefined);
+		}));
 
-			this.game.scene.start('MapScene', this.editorData);
-			this.game.scene.stop('LoadScene');
-			this.game.scene.swapPosition('MapScene', 'LoadScene');
-		});
+		this.editorData.onProgress(undefined);
+
+		this.game.scene.start('MapScene', this.editorData);
+		this.game.scene.stop('LoadScene');
+		this.game.scene.swapPosition('MapScene', 'LoadScene');
 	}
 }
  

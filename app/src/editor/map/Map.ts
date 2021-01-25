@@ -15,7 +15,8 @@ import { Asset } from '../util/Asset';
  */
 
 export default class Map {
-	size: Vec2 = new Vec2(0, 0);
+	identifier: string = '';
+	size: Vec2 = new Vec2(2, 2);
 	tileStore: TileStore = new TileStore();
 
 	tokens: TokenManager = new TokenManager();
@@ -26,9 +27,8 @@ export default class Map {
 	private scene: Phaser.Scene = undefined as any;
 	private chunks: MapChunk[][][] = [];
 
-	init(scene: Phaser.Scene, size: Vec2, assets: Asset[]) {
+	init(scene: Phaser.Scene, assets: Asset[]) {
 		this.scene = scene;
-		this.size = size;
 		
 		this.tokens.init(scene);
 		this.tileStore.init(scene.textures, assets);
@@ -120,7 +120,7 @@ export default class Map {
 	 */
 
 	save(): string {
-		return MapSaver.save(this.size, this.layers);
+		return MapSaver.save(this.size, this.identifier, this.layers, this.tokens);
 	}
 
 
@@ -132,9 +132,10 @@ export default class Map {
 
 	load(mapData: string) {
 		const data = MapSaver.load(mapData);
-		this.size = data.size;
+		this.size = new Vec2(data.size);
+		this.identifier = data.identifier;
 
-		// this.chunks.forEach(cI => cI.forEach(cA => cA.forEach(c => c.destroy())));
+		this.tokens.resetTokens(data.tokens);
 
 		this.layers = data.layers;
 		if (this.layers.length === 0) this.layers.push(new MapLayer(0, this.size));

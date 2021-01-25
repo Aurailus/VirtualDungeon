@@ -1,12 +1,11 @@
 import Phaser from 'phaser';
-import { io } from 'socket.io-client';
 
 import * as Scene from './scene/Scenes';
 
-export default function create(root: HTMLElement, onProgress: (progress: number) => void, user: string, identifier: string) {
+export default function create(root: HTMLElement, onProgress: (progress: number) => void,
+	user: string, identifier: string, mapIdentifier?: string) {
+	
 	const bounds = root.getBoundingClientRect();
-
-	const socket = io();
 
 	const game = new Phaser.Game({
 		disableContextMenu: true,
@@ -20,6 +19,6 @@ export default function create(root: HTMLElement, onProgress: (progress: number)
 		scene: Scene.list
 	});
 
-	game.scene.start('InitScene', { user, onProgress, identifier, socket });
+	game.scene.start('InitScene', { user, onProgress, identifier, mapIdentifier });
 	return game;
 }

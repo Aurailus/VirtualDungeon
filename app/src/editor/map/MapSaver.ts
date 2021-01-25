@@ -1,11 +1,19 @@
+import TokenManager from './token/TokenManager';
 import MapLayer, { LAYER_SERIALIZATION_ORDER } from './MapLayer';
 
 import { Vec2 } from '../util/Vec';
 import * as Buffer from '../util/Buffer';
 
-/** Data pretaining to a deserialized map. */
-export interface DeserializedMap {
-	size: Vec2;
+/** JSON-serializable map data */
+export interface SerializedMap {
+	format: string;
+	identifier: string;
+	size: { x: number; y: number };
+	tokens: any[];
+}
+
+/** Deserialized map data, including layer array. */
+export interface DeserializedMap extends SerializedMap {
 	layers: MapLayer[];
 }
 
@@ -18,16 +26,19 @@ export interface DeserializedMap {
  * @returns {string} - a serialized map string.
  */
 
-export function save(size: Vec2, layers: MapLayer[]): string {
+export function save(size: Vec2, identifier: string, layers: MapLayer[], tokens: TokenManager): string {
 	let mapData = '';
 
-	const mapMeta = {
+	const mapJson: SerializedMap = {
 		format: '1.0.0',
-		size: size
+		
+		size,
+		identifier,
+		tokens: tokens.serializeAllTokens()
 	};
 
-	const mapMetaStr = JSON.stringify(mapMeta);
-	mapData += mapMetaStr.length + '|' + mapMetaStr;
+	const mapJsonStr = JSON.stringify(mapJson);
+	mapData += mapJsonStr.length + '|' + mapJsonStr;
 
 	for (const layer of layers) {
 		let layerStr = '';
@@ -71,17 +82,16 @@ export function load(mapData: string): DeserializedMap {
 	const numEnd = mapData.indexOf('|');
 	const num = Number.parseInt(mapData.substr(0, numEnd), 10);
 
-	const mapMeta = JSON.parse(mapData.slice(numEnd + 1, numEnd + 1 + num));
+	const mapJson = JSON.parse(mapData.slice(numEnd + 1, numEnd + 1 + num));
+	const data: DeserializedMap = { ...mapJson, layers: [] };
 	mapData = mapData.substr(numEnd + num + 1);
-
-	const data: DeserializedMap = { ...mapMeta, layers: [] };
 
 	let layerInd = 0;
 	while (mapData.length) {
 		const numEnd = mapData.indexOf('|');
 		const num = Number.parseInt(mapData.substr(0, numEnd), 10);
 
-		const layer = new MapLayer(layerInd++, data.size);
+		const layer = new MapLayer(layerInd++, new Vec2(data.size));
 		layer.load(mapData.slice(numEnd + 1, numEnd + 1 + num));
 		data.layers.push(layer);
 

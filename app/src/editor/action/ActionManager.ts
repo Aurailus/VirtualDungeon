@@ -2,23 +2,24 @@ import * as Phaser from 'phaser';
 import IO from 'socket.io-client';
 
 import Map from '../map/Map';
-// import Token from '../map/token/Token';
 import type { Action } from './Action';
 import ActionEvent from './ActionEvent';
 import EventHandler from '../EventHandler';
 import InputManager from '../InputManager';
 
+const SAVE_INTERVAL = 5 * 1000;
+
 export default class ActionManager {
+	readonly event = new EventHandler<ActionEvent>();
+
 	private map: Map = null as any;
 	private socket: IO.Socket = null as any;
-	// private scene: Phaser.Scene = null as any;
 
-	private history: Action[] = [];
 	private head: number = -1;
-
-	private evtHandler = new EventHandler<ActionEvent>();
+	private history: Action[] = [];
 
 	private historyHeldTime: number = 0;
+	private editTime: number | false = false;
 
 	init(_scene: Phaser.Scene, map: Map, socket: IO.Socket) {
 		this.map = map;
@@ -47,14 +48,20 @@ export default class ActionManager {
 			this.historyHeldTime++;
 		}
 		else this.historyHeldTime = 0;
+
+		if (this.editTime && Date.now() - SAVE_INTERVAL > this.editTime) {
+			this.socket.emit('serialize', this.map.identifier, this.map.save());
+			this.editTime = 0;
+		}
 	}
 
 	push(item: Action): void {
 		this.history.splice(this.head + 1, this.history.length - this.head, item);
 		this.head = this.history.length - 1;
+		if (!this.editTime) this.editTime = Date.now();
 
 		this.socket.emit('action', item);
-		this.evtHandler.dispatch({ event: 'push', head: this.head, length: this.history.length });
+		this.event.dispatch({ event: 'push', head: this.head, length: this.history.length });
 	}
 
 	apply(item: Action): void {
@@ -81,19 +88,17 @@ export default class ActionManager {
 			break;
 
 		case 'delete_token':
-			item.tokens.forEach(t => this.map.tokens.createToken(t));
+			item.tokens.forEach(t => this.map.tokens.createToken(t.render.pos as any,
+				{ uuid: t.uuid, ...t.meta }, t.render.appearance.sprite, t.render.appearance.index));
 			break;
 		
 		case 'modify_token':
-			for (let i = 0; i < item.tokens.pre.length; i++) {
-				const token = this.map.tokens.getToken(item.tokens.pre[i].uuid);
-				if (token) token.setToken(item.tokens.pre[i]);
-				else this.map.tokens.createToken(item.tokens.pre[i]);
-			}
+			for (let i = 0; i < item.tokens.pre.length; i++)
+				this.map.tokens.setRender(item.tokens.pre[i].uuid, item.tokens.pre[i]);
 			break;
 		}
 
-		this.evtHandler.dispatch({ event: 'prev', head: this.head, length: this.history.length });
+		this.event.dispatch({ event: 'prev', head: this.head, length: this.history.length });
 	}
 
 	next() {
@@ -111,7 +116,8 @@ export default class ActionManager {
 			break;
 
 		case 'place_token':
-			item.tokens.forEach(t => this.map.tokens.createToken(t));
+			item.tokens.forEach(t => this.map.tokens.createToken(t.render.pos as any,
+				{ uuid: t.uuid, ...t.meta }, t.render.appearance.sprite, t.render.appearance.index));
 			break;
 		
 		case 'delete_token':
@@ -119,15 +125,12 @@ export default class ActionManager {
 			break;
 		
 		case 'modify_token':
-			for (let i = 0; i < item.tokens.post.length; i++) {
-				const token = this.map.tokens.getToken(item.tokens.post[i].uuid);
-				if (token) token.setToken(item.tokens.post[i]);
-				else this.map.tokens.createToken(item.tokens.post[i]);
-			}
+			for (let i = 0; i < item.tokens.post.length; i++)
+				this.map.tokens.setRender(item.tokens.post[i].uuid, item.tokens.post[i]);
 			break;
 		}
 
-		this.evtHandler.dispatch({ event: 'next', head: this.head, length: this.history.length });
+		this.event.dispatch({ event: 'next', head: this.head, length: this.history.length });
 	}
 
 	hasPrev(): boolean {
@@ -136,13 +139,5 @@ export default class ActionManager {
 
 	hasNext(): boolean {
 		return this.head < this.history.length - 1;
-	}
-
-	bind(cb: (evt: ActionEvent) => boolean | void) {
-		this.evtHandler.bind(cb);
-	}
-
-	unbind(cb: (evt: ActionEvent) => boolean | void) {
-		this.evtHandler.unbind(cb);
 	}
 }

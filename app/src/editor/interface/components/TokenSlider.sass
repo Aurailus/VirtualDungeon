@@ -1,0 +1,79 @@
+@use '../../../style/slice'
+@use '../../../style/def' as *
+
+.TokenSlider
+	display: flex
+	gap: 6px
+
+	.TokenSlider-IconWrap
+		@extend .slice_highlight
+
+		.TokenSlider-Icon
+			@include slice.slice_invert
+			width: 36px
+			height: 36px
+
+			border-radius: 0
+			background-size: 900%
+			image-rendering: crisp-edges
+			image-rendering: pixelated
+			background-image: url(/app/static/icon/slider_icons.png)
+	
+	.TokenSlider-Slider
+		@extend .slice_outline_white
+		flex-grow: 11
+
+		.TokenSlider-SliderInner
+			@include slice.slice_invert
+			border-radius: 0
+			position: relative
+
+			.TokenSlider-Bar
+				position: absolute
+				height: calc(100% - 6px)
+				clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px))
+
+			.TokenSlider-BarContent
+				position: absolute
+				display: flex
+				justify-content: center
+				top: 0
+				left: 0
+				width: 100%
+				height: 100%
+				padding: 6px
+
+				.TokenSlider-Input
+					padding: 0 2px
+					margin: 0
+					outline: 0
+					border: none
+					background: transparent
+
+					height: 24px
+
+					&:focus
+						background: transparentize(black, .8)
+
+				.TokenSlider-Title
+					width: 100%
+					flex-shrink: 1
+					min-width: 0
+
+				.TokenSlider-BarText
+					font-weight: 500
+					color: $neutral-1000
+					text-shadow: 0px 1px 2px $accent-800, 0px 1px 4px transparentize($accent-800, 0.8)
+
+				.TokenSlider-Value, .TokenSlider-Max
+					width: min-content
+
+				span
+					opacity: .6
+					padding: 3px
+
+.SlideNumericInput-Tester
+	opacity: 0 !important
+	top: -10000px !important
+	left: -10000px !important
+	position: absolute !important

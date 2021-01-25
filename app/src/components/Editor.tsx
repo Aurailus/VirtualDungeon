@@ -7,6 +7,7 @@ import './Editor.sass';
 interface Props {
 	user: string;
 	identifier: string;
+	mapIdentifier?: string;
 }
 
 function pad(n: number) {
@@ -14,7 +15,7 @@ function pad(n: number) {
 	return '' + n;
 }
 
-export default function Editor({ user, identifier }: Props) {
+export default function Editor({ user, identifier, mapIdentifier }: Props) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<Phaser.Game | null>(null);
 	const [ loadPercent, setLoadPercent ] = useState<number | undefined>(0);
@@ -30,10 +31,11 @@ export default function Editor({ user, identifier }: Props) {
 			setLoadPercent(0.25);
 			if (ignore || !rootRef.current) return;
 
-			editorRef.current = create(rootRef.current, setLoadPercent, user, identifier);
+			editorRef.current = create(rootRef.current, setLoadPercent, user, identifier, mapIdentifier);
 
 			const resizeCallback = () => {
 				const { width, height } = rootRef.current.getBoundingClientRect();
+				console.log(rootRef.current);
 				editorRef.current!.scale.resize(width, height);
 			};
 

@@ -1,5 +1,11 @@
+const CHUNK_SIZE = 100000;
 export function serialize(buf: ArrayBuffer): string {
-	return String.fromCharCode.apply(null, new Uint16Array(buf) as any);
+	let str = '';
+	for (let i = 0; i < buf.byteLength / CHUNK_SIZE; i++) {
+		const slice = new Uint16Array(buf.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE));
+		str += String.fromCharCode.apply(undefined, new Uint16Array(slice) as any);
+	}
+	return str;
 }
 
 export function deserialize(str: string): ArrayBuffer {

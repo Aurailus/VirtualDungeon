@@ -12,7 +12,7 @@ import Button from '../Button';
 export default function NewMapForm() {
 	const history = useHistory();
 	const [ ,, mergeData ] = useAppData();
-	const { campaign } = useParams<{ campaign: string }>();
+	const { user, campaign } = useParams<{ user: string; campaign: string }>();
 
 	const [ queryState, setQueryState ] = useState<'idle' | 'querying'>('idle');
 	
@@ -35,7 +35,7 @@ export default function NewMapForm() {
 		else {
 			const data = await res.json();
 			await mergeData(data);
-			history.push(`/campaign/${campaign}/maps`);
+			history.push(`/u/${user}/c/${campaign}/maps`);
 		}
 	};
 

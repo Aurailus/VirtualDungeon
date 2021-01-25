@@ -101,11 +101,16 @@ export default class MapController {
 		// socket.on('map_load', this.mapLoad.bind(this, user));
 
 		socket.on('action', this.onAction.bind(this, socket, room));
+		socket.on('serialize', this.onSerialize.bind(this, user, campaign));
 		// socket.on('get_campaign_assets', this.onGetCampaignAssets.bind(this, user));
 	}
 
 	private onAction(socket: IO.Socket, room: string, event: any) {
 		socket.in(room).emit('action', event);
+	}
+
+	private onSerialize(user: string, campaign: string, map: string, data: string) {
+		this.db.setMap(user, campaign, map, data);
 	}
 
 	// private async mapLoad(user: string, identifier: { campaign: string, map: string }, res: (data: string) => void) {

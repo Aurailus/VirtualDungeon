@@ -53,8 +53,7 @@ export interface Map {
 	name: string;
 	identifier: string;
 	
-	size: {x: number, y: number};
-	layers: string;
+	data: string;
 }
 
 export type AssetType =	'wall' | 'detail' | 'ground' | 'token';

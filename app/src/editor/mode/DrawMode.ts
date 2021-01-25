@@ -172,7 +172,7 @@ export default class DrawMode extends Mode {
 		const tilePos = cursorPos.floor();
 
 		let found: Token | undefined = undefined;
-		this.map.tokens.getTokens().forEach(t => {
+		this.map.tokens.getAllTokens().forEach(t => {
 			const isFound = t.x === tilePos.x && t.y === tilePos.y;
 			t.setSelected(!!(isFound && highlight));
 			if (isFound) found = t;

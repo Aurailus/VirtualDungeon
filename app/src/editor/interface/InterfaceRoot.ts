@@ -38,12 +38,11 @@ export default class InterfaceRoot {
 	private tileSidebar: TileSidebar | null = null;
 	private tokenSidebar: TokenSidebar | null = null;
 
-	init(scene: Phaser.Scene, display: 'edit' | 'view', input: InputManager,
-		mode: ModeMananger, actions: ActionManager, map: Map, assets: Asset[]) {
+	init(scene: Phaser.Scene, input: InputManager, mode: ModeMananger,
+		actions: ActionManager, map: Map, assets: Asset[]) {
 		
 		this.mode = mode;
 		this.scene = scene;
-		// this.actions = action;
 		this.inputManager = input;
 
 		this.camera = this.scene.cameras.add(0, 0, undefined, undefined, undefined, 'ui_camera');
@@ -55,24 +54,17 @@ export default class InterfaceRoot {
 		this.root.setName('root');
 		this.leftRoot = this.scene.add.container(0, 0);
 		this.root.add(this.leftRoot);
-		// this.rightRoot = this.scene.add.container(this.camera.displayWidth, this.camera.displayHeight);
-		// this.root.add(this.rightRoot);
 		
-		if (display === 'edit') {
-			this.leftRoot.add(new SidebarToggler(scene, 49, 1000, input, this));
+		this.leftRoot.add(new SidebarToggler(scene, 49, 1000, input, this));
 
-			// this.leftRoot.add(new ModeSwitcher(scene, 82, 1, input, mode));
-			// this.leftRoot.add(new HistoryManipulator(scene, 124, 1, history, input));
+		this.tokenSidebar = new TokenSidebar(scene, 0, 0, assets, input, mode);
+		this.leftRoot.add(this.tokenSidebar);
 
-			this.tokenSidebar = new TokenSidebar(scene, 0, 0, assets, input, mode);
-			this.leftRoot.add(this.tokenSidebar);
+		this.tileSidebar = new TileSidebar(scene, 0, 0, assets, input, mode, map);
+		this.leftRoot.add(this.tileSidebar);
 
-			this.tileSidebar = new TileSidebar(scene, 0, 0, assets, input, mode, map);
-			this.leftRoot.add(this.tileSidebar);
-
-			this.root.add(new TokenCards(scene, { map, assets }));
-			this.root.add(new LayerManager(scene, { map }));
-		}
+		this.root.add(new TokenCards(scene, { map, assets }));
+		this.root.add(new LayerManager(scene, { map }));
 		
 		this.root.add(new Toolbar(scene, { mode, actions }));
 	}

@@ -1,6 +1,6 @@
 import { Vec2 } from '../util/Vec';
 import { Layer } from '../util/Layer';
-import { TokenData } from '../map/token/Token';
+import { TokenRenderData, TokenData } from '../map/token/Token';
 
 export interface Tile {
 	type: 'tile';
@@ -21,7 +21,7 @@ export interface PlaceToken {
 
 export interface ModifyToken {
 	type: 'modify_token';
-	tokens: { pre: TokenData[]; post: TokenData[] };
+	tokens: { pre: TokenRenderData[]; post: TokenRenderData[] };
 }
 
 export interface DeleteToken {

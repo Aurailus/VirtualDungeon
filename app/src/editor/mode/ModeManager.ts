@@ -30,7 +30,7 @@ export default class ModeManager {
 
 	private evtHandler = new EventHandler<ModeSwitchEvent>();
 
-	init(scene: Phaser.Scene, _modes: 'edit' | 'view', map: Map, actions: ActionManager, assets: Asset[]) {
+	init(scene: Phaser.Scene, map: Map, actions: ActionManager, assets: Asset[]) {
 		this.modes = {
 			[ArchitectModeKey]: new ArchitectMode(scene, map, actions, assets),
 			[TokenModeKey]: new TokenMode(scene, map, actions, assets),
