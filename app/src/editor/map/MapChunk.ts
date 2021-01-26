@@ -23,6 +23,7 @@ export default class MapChunk extends Phaser.GameObjects.RenderTexture {
 			CHUNK_SIZE * TILE_SIZE + 4, CHUNK_SIZE * TILE_SIZE + 4);
 		this.setScale(1 / TILE_SIZE);
 		this.setOrigin(0, 0);
+		this.setDepth(this.layer.index * 25);
 
 		scene.add.existing(this);
 	}
@@ -44,6 +45,16 @@ export default class MapChunk extends Phaser.GameObjects.RenderTexture {
 				this.dirtyList = [];
 			}
 		}
+	}
+
+
+	/**
+	 * Sets whether or not the chunk should render as a shadow.
+	 */
+
+	setShadow(shadow: boolean) {
+		this.setTint(shadow ? 0x000000 : 0xffffff);
+		this.setAlpha(shadow ? .2 : 1);
 	}
 
 

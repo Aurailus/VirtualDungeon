@@ -87,10 +87,7 @@ export default class Map {
 	setActiveLayer(l: MapLayer | number) {
 		if (l instanceof MapLayer) l = l.index;
 		this.activeLayer = this.layers[l];
-		this.chunks.forEach((a, i) => a.forEach(cA => cA.forEach(c => {
-			c.setTint(i <= l ? 0xffffff : 0x000000);
-			c.setAlpha(i <= l ? 1 : 0.2);
-		})));
+		this.chunks.forEach((a, i) => a.forEach(cA => cA.forEach(c => c.setShadow(i > l))));
 	}
 
 
@@ -159,7 +156,9 @@ export default class Map {
 		for (let i = 0; i < Math.ceil(this.size.y / CHUNK_SIZE); i++) {
 			this.chunks[layer.index][i] = [];
 			for (let j = 0; j < Math.ceil(this.size.x / CHUNK_SIZE); j++) {
-				this.chunks[layer.index][i][j] = new MapChunk(this.scene, new Vec2(j, i), layer, this.tileStore);
+				const chunk = new MapChunk(this.scene, new Vec2(j, i), layer, this.tileStore);
+				chunk.setShadow(layer.index > (this.activeLayer?.index ?? 0));
+				this.chunks[layer.index][i][j] = chunk;
 			}
 		}
 	}

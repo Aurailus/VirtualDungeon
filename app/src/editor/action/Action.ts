@@ -1,6 +1,6 @@
 import { Vec2 } from '../util/Vec';
 import { Layer } from '../util/Layer';
-import { TokenRenderData, TokenData } from '../map/token/Token';
+import { TokenRenderData } from '../map/token/Token';
 
 export interface Tile {
 	type: 'tile';
@@ -16,17 +16,17 @@ export interface TileItem {
 
 export interface PlaceToken {
 	type: 'place_token';
-	tokens: TokenData[];
+	tokens: (TokenRenderData & { uuid: string })[];
 }
 
 export interface ModifyToken {
 	type: 'modify_token';
-	tokens: { pre: TokenRenderData[]; post: TokenRenderData[] };
+	tokens: { uuid: string; pre: TokenRenderData; post: TokenRenderData }[];
 }
 
 export interface DeleteToken {
 	type: 'delete_token';
-	tokens: TokenData[];
+	tokens: (TokenRenderData & { uuid: string})[];
 }
 
 export type Action = Tile | PlaceToken | ModifyToken | DeleteToken;

@@ -35,21 +35,6 @@ export default function AssetRoute() {
 						<img src={'/app/asset/' + currentAsset.path} role='presentational' alt=''/>
 						<Button onClick={handleDeleteAsset} label='Delete'/>
 					</Route>
-					{/* <Route exact path='/campaign/:id'><CampaignOverview campaign={currentCampaign} /></Route>
-					<Route exact path='/campaign/:id/players'>
-						<PlayerList players={[
-							{ name: 'Player', sprite: '/app/static/token/baby_blue_dragon.png' },
-							{ name: 'Player', sprite: '/app/static/token/cadin_1.png' },
-							{ name: 'Player', sprite: '/app/static/token/dragonfolk_1.png' },
-							{ name: 'Player', sprite: '/app/static/token/druid_male.png' },
-							{ name: 'Player', sprite: '/app/static/token/naexi_human_yklwa.png' }
-						]}/>
-					</Route>
-					<Route exact path='/campaign/:id/maps'><MapList maps={currentCampaign.maps} /></Route>
-					<Route exact path='/campaign/:id/maps/new'><NewMapForm /></Route>
-					<Route exact path='/campaign/:id/assets'></Route>
-
-					<Redirect to={`/campaign/${id}`} />*/}
 				</Switch>
 			</main>
 		</div>

@@ -1,13 +1,8 @@
 import EventHandler from '../../EventHandler';
 
 import { Vec2 } from '../../util/Vec';
-import { generateId } from '../../util/Helpers';
 
-
-/**
- * Represents a slider bar for a token.
- */
-
+/** Represents a slider bar for a token. */
 export interface TokenSliderData {
 	name: string;
 	color?: string;
@@ -18,75 +13,45 @@ export interface TokenSliderData {
 	current: number;
 }
 
-
-/**
- * The meta information (name, sliders, note) for a token.
- */
-
+/** The meta information (name, sliders, note) for a token. */
 export interface TokenMetaData {
-	uuid: string;
-
 	name: string;
 	note: string;
 	
 	sliders: TokenSliderData[];
 }
 
-
-/**
- * The render information for a token, such as position and sprite.
- */
-
+/** The render information for a token, such as position and sprite. */
 export interface TokenRenderData {
-	uuid: string;
-
+	layer: number;
 	pos: { x: number; y: number };
 	appearance: { sprite: string; index: number };
 }
 
-
-/**
- * Full token data, for serialization or info passing.
- */
-
+/** Full token data, for serialization or info passing. */
 export interface TokenData {
 	uuid: string;
-	render: Omit<TokenRenderData, 'uuid'>;
-	meta: Omit<TokenMetaData, 'uuid'>;
+	meta: TokenMetaData;
+	render: TokenRenderData;
 }
 
-
-/**
- * Event object emitted when a token's meta data is modified.
- */
-
+/** Event object emitted when a token's meta data is modified. */
 export interface TokenMetaEvent {
 	token: Token;
+	uuid: string;
+
 	pre: TokenMetaData;
 	post: TokenMetaData;
 }
 
-
-/**
- * Event object emitted when a token's texture changes, or it is moved.
- */
-
+/** Event object emitted when a token's texture changes, or it is moved. */
 export interface TokenRenderEvent {
 	token: Token;
-	pos: { pre: Vec2; post: Vec2 };
-	appearance: { pre: { sprite: string; index: number }; post: { sprite: string; index: number }};
+	uuid: string;
+
+	pre: TokenRenderData;
+	post: TokenRenderData;
 }
-
-
-/**
- * Default token meta data.
- */
-
-const DEFAULT_TOKEN_META: Omit<TokenMetaData, 'uuid'> = {
-	name: '',
-	note: '',
-	sliders: []
-};
 
 
 /**
@@ -98,24 +63,15 @@ export default class Token extends Phaser.GameObjects.Sprite {
 	readonly on_meta = new EventHandler<TokenMetaEvent>();
 	readonly on_render = new EventHandler<TokenRenderEvent>();
 
-	private shadow: Phaser.GameObjects.Sprite;
-
-	private meta: TokenMetaData;
+	readonly shadow?: Phaser.GameObjects.Sprite;
 	
 	private hovered: boolean = false;
 	private selected: boolean = false;
 
-	constructor(scene: Phaser.Scene, tokenData?: Partial<TokenMetaData>, pos?: Vec2, sprite?: string, index?: number) {
+	constructor(scene: Phaser.Scene, readonly uuid: string, layer: number, pos?: Vec2, sprite?: string, index?: number) {
 		super(scene, 0, 0, sprite ?? '', index);
 		this.scene.add.existing(this);
-		this.setDepth(500);
-
-		this.meta = { ...DEFAULT_TOKEN_META, uuid: '' };
-		this.setMeta({
-			...DEFAULT_TOKEN_META,
-			...tokenData ?? {},
-			uuid: tokenData?.uuid ?? generateId(32)
-		});
+		this.setDepth(layer * 25 + 10);
 
 		this.shadow = this.scene.add.sprite(this.x, this.y, sprite ?? '', index);
 		this.shadow.setOrigin(1 / 18, 1 / 18);
@@ -124,121 +80,104 @@ export default class Token extends Phaser.GameObjects.Sprite {
 		this.shadow.setTint(0x000000);
 		this.shadow.setDepth(this.depth - 1);
 
-		this.on('removefromscene', () => this.shadow.destroy());
+		this.scene.events.on('shutdown', () => console.log('yoo!'));
 
 		this.setOrigin(1 / 18, 1 / 18);
 		this.setScale(18 / 16 / this.width, 18 / 16 / this.height);
 		this.setPosition(pos?.x ?? 0, pos?.y ?? 0);
 	}
 
-	serialize(): TokenData {
-		const data = {
-			uuid: this.getUUID(),
-			meta: this.getMeta(),
-			render: this.getRender()
-		};
 
-		delete (data.meta as any).uuid;
-		delete (data.render as any).uuid;
-		return data;
-	};
+	/**
+	 * Returns a serialized render data for the token.
+	 */
 
-	getMeta(): TokenMetaData {
-		return JSON.parse(JSON.stringify(this.meta));
-	}
-
-	setMeta(data: Partial<TokenMetaData>) {
-		if (!this.meta) return;
-
-		const preSer = JSON.stringify(this.meta);
-		const postSer = JSON.stringify({ ...this.meta, ...data });
-		
-		if (preSer === postSer) return;
-
-		const pre = JSON.parse(preSer);
-		const post = JSON.parse(postSer);
-
-		this.meta = post;
-		this.on_meta.dispatch({ token: this, pre, post });
-	}
-
-	getRender(): TokenRenderData {
+	getRenderData(): TokenRenderData {
 		return {
-			uuid: this.getUUID(),
 			pos: new Vec2(this.x, this.y),
-			appearance: { sprite: this.texture.key, index: this.frame.name as any }
+			layer: Math.floor(this.depth / 25),
+			appearance: { sprite: this.texture?.key, index: this.frame?.name as any }
 		};
 	}
 
-	setRender(render: Partial<TokenRenderData>) {
+
+	/**
+	 * Updates the token with the render data provided.
+	 */
+
+	setRenderData(render: Partial<TokenRenderData>) {
 		if (render.pos) this.setPosition(render.pos.x, render.pos.y);
 		if (render.appearance) this.setTexture(render.appearance.sprite, render.appearance.index);
 	}
 
-	getUUID(): string {
-		return this.meta.uuid;
-	}
+
+	/**
+	 * Returns the current frame index being used by this token.
+	 */
 
 	getFrameIndex(): number {
 		return this.frame.name as any;
 	}
 
+
+	/**
+	 * Returns the number of frames this token's sprite has.
+	 */
+
 	getFrameCount(): number {
 		return Object.keys(this.texture.frames).length - 1;
 	}
 
-	setFrame(frame: number): this {
-		const pos = new Vec2(this.x, this.y);
-		const lastFrame = this.frame?.name as any || 0;
-		Phaser.GameObjects.Sprite.prototype.setFrame.call(this, frame);
 
-		if (this.on_render) this.on_render.dispatch({
-			token: this,
-			pos: { pre: pos, post: pos },
-			appearance: {
-				pre: { sprite: this.texture.key, index: lastFrame },
-				post: { sprite: this.texture.key, index: frame }
-			}
-		});
-
-		if (!this.shadow) return this;
-		this.shadow.setFrame(frame);
-		return this;
-	}
+	/**
+	 * Sets whether this token is selected or note.
+	 */
 
 	setSelected(selected: boolean) {
 		this.selected = selected;
 		this.updateShader();
 	}
 
+
+	/**
+	 * Sets whether this token is hovered or not.
+	 */
+
 	setHovered(hovered: boolean) {
 		this.hovered = hovered;
 		this.updateShader();
 	}
 
+
+	/**
+	 * Overrides of default phaser methods
+	 * to emit render methods & update shadow below.
+	 */
+
 	setPosition(x?: number, y?: number): this {
 		if (this.x === x && this.y === y) return this;
-		const pre = new Vec2(this.x, this.y);
-		const post = new Vec2(x, y);
-
+		const pre = this.getRenderData();
 		Phaser.GameObjects.Sprite.prototype.setPosition.call(this, x, y);
+		const post = this.getRenderData();
+		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
+		this.shadow?.setPosition(x, y! + this.displayHeight - this.shadow.displayHeight - 0.125);
+		return this;
+	}
 
-		if (this.on_render) this.on_render.dispatch({
-			token: this,
-			pos: { pre, post },
-			appearance: {
-				pre: { sprite: this.texture.key, index: this.getFrameIndex() },
-				post: { sprite: this.texture.key, index: this.getFrameIndex() }
-			}
-		});
-
-		if (!this.shadow) return this;
-		this.shadow.setPosition(x, y! + this.displayHeight - this.shadow.displayHeight - 0.125);
+	setFrame(frame: number): this {
+		const pre = this.getRenderData();
+		Phaser.GameObjects.Sprite.prototype.setFrame.call(this, frame);
+		const post = this.getRenderData();
+		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
+		this.shadow?.setFrame(frame);
 		return this;
 	}
 
 	setTexture(key: string, index?: string | number): this {
+		const pre = this.getRenderData();
 		Phaser.GameObjects.Sprite.prototype.setTexture.call(this, key, index);
+		const post = this.getRenderData();
+		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
 		this.setScale(18 / 16 / this.width, 18 / 16 / this.height);
 		if (!this.shadow) return this;
 
@@ -251,9 +190,14 @@ export default class Token extends Phaser.GameObjects.Sprite {
 
 	setVisible(visible: boolean): this {
 		Phaser.GameObjects.Sprite.prototype.setVisible.call(this, visible);
-		this.shadow.setVisible(visible);
+		this.shadow?.setVisible(visible);
 		return this;
 	}
+
+
+	/**
+	 * Updates the shader pipelines of the token.
+	 */
 
 	private updateShader() {
 		if (this.selected) {

@@ -6,26 +6,24 @@
 	max-width: 1000px
 	display: block
 	margin: 0 auto
-	margin-top: 56px
 
 	.AssetList-Grid
-		@include grid.auto_width(160px, 16px)
+		@include grid.auto_width(160px, 6px)
 
 		.AssetList-AssetWrap
 			.AssetList-Asset
-				width: 100%
 				height: 0
-				border: none
+				width: 100%
 				display: grid
-				user-select: none
 				position: relative
-				padding-bottom: 100%
-
+				
+				border: none
 				overflow: hidden
+				user-select: none
 				border-radius: 4px
+				padding-bottom: 100%
 				text-decoration: none
-				background-color: $neutral-200
-				box-shadow: 0px 2px 12px 0px transparentize($neutral-000, 0.9)
+				background: transparent
 
 				.AssetList-AssetInner
 					position: absolute
@@ -36,11 +34,12 @@
 					display: grid
 					grid-template-rows: 1fr auto
 
+					background-color: $neutral-100
+
 					.AssetList-AssetPreview
 						position: relative
 						padding: 8px
 						overflow: hidden
-						background-color: $neutral-100
 							
 						img
 							width: 100%
@@ -56,8 +55,11 @@
 						@include text.line_clamp
 
 						margin: 0
-						font-size: 18px
 						padding: 12px
+			
+						font-size: 18px
+						border-radius: 4px
+						background-color: $neutral-150
 
 			.AssetList-NewAsset
 				width: 100%
@@ -67,23 +69,14 @@
 				justify-content: center
 				align-items: center
 
-				overflow: hidden
-				border-radius: 4px
-				background-color: $neutral-100
-				box-shadow: 0px 2px 12px 0px transparentize($neutral-000, 0.9)
+				.AssetList-AssetInner
+					.AssetList-AssetPreview
+						display: flex
+						align-items: center
+						justify-content: center
 
-				border: 3px solid $neutral-250
-
-				min-height: 180px
-				height: 100%
-
-				img
-					width: 80px
-					height: 80px
-					image-rendering: crisp-edges
-					image-rendering: pixelated
-
-				p
-					font-size: 18px
-					margin: 0
-					margin-top: 4px
+						img
+							width: 80px
+							height: 80px
+							image-rendering: crisp-edges
+							image-rendering: pixelated

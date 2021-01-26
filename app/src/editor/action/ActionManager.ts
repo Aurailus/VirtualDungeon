@@ -88,13 +88,12 @@ export default class ActionManager {
 			break;
 
 		case 'delete_token':
-			item.tokens.forEach(t => this.map.tokens.createToken(t.render.pos as any,
-				{ uuid: t.uuid, ...t.meta }, t.render.appearance.sprite, t.render.appearance.index));
+			item.tokens.forEach(t => this.map.tokens.createToken(t.uuid, t.layer,
+				t.pos as any, {}, t.appearance.sprite, t.appearance.index));
 			break;
 		
 		case 'modify_token':
-			for (let i = 0; i < item.tokens.pre.length; i++)
-				this.map.tokens.setRender(item.tokens.pre[i].uuid, item.tokens.pre[i]);
+			item.tokens.forEach(({ uuid, pre }) => this.map.tokens.setRenderData(uuid, pre));
 			break;
 		}
 
@@ -116,8 +115,8 @@ export default class ActionManager {
 			break;
 
 		case 'place_token':
-			item.tokens.forEach(t => this.map.tokens.createToken(t.render.pos as any,
-				{ uuid: t.uuid, ...t.meta }, t.render.appearance.sprite, t.render.appearance.index));
+			item.tokens.forEach(t => this.map.tokens.createToken(t.uuid, t.layer,
+				t.pos as any, {}, t.appearance.sprite, t.appearance.index));
 			break;
 		
 		case 'delete_token':
@@ -125,8 +124,7 @@ export default class ActionManager {
 			break;
 		
 		case 'modify_token':
-			for (let i = 0; i < item.tokens.post.length; i++)
-				this.map.tokens.setRender(item.tokens.post[i].uuid, item.tokens.post[i]);
+			item.tokens.forEach(({ uuid, post }) => this.map.tokens.setRenderData(uuid, post));
 			break;
 		}
 

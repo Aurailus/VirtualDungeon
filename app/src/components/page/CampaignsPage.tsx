@@ -8,7 +8,7 @@ function testActive(match: any, desire: string) {
 	return match.pathname.match(/\/c\/?$/g) && match.search === desire;
 }
 
-export default function CampaignsListPage() {
+export default function CampaignsPage() {
 	const location = useLocation();
 
 	return (

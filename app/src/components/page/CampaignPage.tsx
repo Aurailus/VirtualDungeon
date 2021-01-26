@@ -16,10 +16,10 @@ export default function CampaignPage() {
 	const { user, campaign: camp } = useParams<{ user: string; campaign: string }>();
 	const campaign = (campaigns ?? []).filter(c => c.identifier === camp)[0];
 
-	if (!campaign) return <Redirect to='/campaigns/' />;
+	if (!campaign) return <Redirect to='/c/' />;
 
 	return (
-		<div class='CampaignPage Page'>
+		<div class='Page'>
 			<aside class='Page-Sidebar'>
 				<h2 class='Page-SidebarTitle'>{campaign.title}</h2>
 

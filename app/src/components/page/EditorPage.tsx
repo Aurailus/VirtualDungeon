@@ -4,7 +4,7 @@ import { useParams, useLocation } from 'react-router-dom';
 
 import Editor from '../Editor';
 
-import './Editor.sass';
+import './EditorPage.sass';
 
 export default function EditorPage() {
 	const { user, campaign } = useParams<{ user: string; campaign: string }>();

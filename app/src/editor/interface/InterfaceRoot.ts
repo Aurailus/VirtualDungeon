@@ -10,6 +10,7 @@ import SidebarToggler from './components/SidebarToggler';
 import Map from '../map/Map';
 import InputManager from '../InputManager';
 import ModeMananger from '../mode/ModeManager';
+import { DrawModeKey } from '../mode/DrawMode';
 import { TokenModeKey } from '../mode/TokenMode';
 import ActionManager from '../action/ActionManager';
 import { ArchitectModeKey } from '../mode/ArchitectMode';
@@ -89,7 +90,8 @@ export default class InterfaceRoot {
 		this.inputManager.setContext(uiHovered ? 'interface' : 'map');
 
 		if (this.inputManager.keyPressed('TAB')) this.mode.activate(
-			this.mode.getActive() === ArchitectModeKey ? TokenModeKey : ArchitectModeKey);
+			this.mode.getActive() === ArchitectModeKey ? TokenModeKey :
+				this.mode.getActive() === TokenModeKey ? DrawModeKey : ArchitectModeKey);
 
 		if (this.lastMode !== this.mode.getActive()) {
 			this.lastMode = this.mode.getActive();

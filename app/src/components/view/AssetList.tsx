@@ -9,7 +9,7 @@ interface Props {
 
 	newText?: string;
 	onNew?: () => void;
-	onClick: (user: string, identifier: string) => void;
+	onClick?: (user: string, identifier: string) => void;
 }
 
 export default function AssetList({ assets, newText, onNew, onClick }: Props) {
@@ -19,8 +19,20 @@ export default function AssetList({ assets, newText, onNew, onClick }: Props) {
 			{assets !== undefined &&
 				<Preact.Fragment>
 					<ul class='AssetList-Grid'>
+						{onNew &&
+							<li class='AssetList-AssetWrap'>
+								<button onClick={onNew} className='AssetList-Asset AssetList-NewAsset'>
+									<div class='AssetList-AssetInner'>
+										<div class='AssetList-AssetPreview'>
+											<img src='/app/static/icon/asset_new.png' role='presentational' alt=''/>
+										</div>
+										<p class='AssetList-AssetTitle'>{newText ?? 'Upload Asset'}</p>
+									</div>
+								</button>
+							</li>
+						}
 						{assets.map(a => <li class='AssetList-AssetWrap'>
-							<button class='AssetList-Asset' onClick={() => onClick(a.user, a.identifier)}>
+							<button class='AssetList-Asset' onClick={() => onClick?.(a.user, a.identifier)}>
 								<div class='AssetList-AssetInner'>
 									<div class='AssetList-AssetPreview'>
 										<img src={'/app/asset/' + a.path} role='presentational' alt='' loading='lazy'/>
@@ -29,12 +41,6 @@ export default function AssetList({ assets, newText, onNew, onClick }: Props) {
 								</div>
 							</button>
 						</li>)}
-						<li class='AssetList-AssetWrap'>
-							{onNew && <button onClick={onNew} className='AssetList-NewAsset'>
-								<img src='/app/static/icon/asset_new.png' alt=''/>
-								<p>{newText ?? 'Upload Asset'}</p>
-							</button>}
-						</li>
 					</ul>
 				</Preact.Fragment>
 			}

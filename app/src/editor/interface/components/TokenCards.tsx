@@ -17,20 +17,21 @@ interface Props {
 }
 
 export default bind<Props>(function TokenCards({ map, assets }: Props) {
-	const [ cards, setCards ] = useState<TokenMetaData[]>(map.tokens.getAllMeta());
+	const [ cards, setCards ] = useState<{ [uuid: string]: TokenMetaData }>(map.tokens.getAllMeta());
 	const [ pinned, setPinned ] = useState<string[]>([]);
 
 	useEffect(() => {
 		const eventCb = () => {
-			setCards(JSON.parse(JSON.stringify(map.tokens.getAllMeta())));
+			setCards(map.tokens.getAllMeta());
 		};
 		
 		map.tokens.event.bind(eventCb);
 		return () => map.tokens.event.unbind(eventCb);
 	}, []);
 
-	const handleSetProps = (ind: number, data: Partial<TokenMetaData>) => {
-		map.tokens.setMeta(cards[ind].uuid, data);
+	const handleSetProps = (uuid: string, data: Partial<TokenMetaData>) => {
+		setCards({ ...cards, [uuid]: { ...cards[uuid], ...data }});
+		map.tokens.setMeta(uuid, data);
 	};
 
 	const handleSetPinned = useCallback((uuid: string, pin?: boolean) => {
@@ -58,7 +59,7 @@ export default bind<Props>(function TokenCards({ map, assets }: Props) {
 			evt.stopPropagation();
 
 			const ind = Number.parseInt(evt.key.substr(1), 10);
-			if (cards.length >= ind) handleSetPinned(cards[ind - 1].uuid);
+			if (Object.keys(cards).length >= ind) handleSetPinned(Object.keys(cards)[ind - 1]);
 		};
 
 		window.addEventListener('keydown', fnKeyCallback);
@@ -67,12 +68,14 @@ export default bind<Props>(function TokenCards({ map, assets }: Props) {
 
 	return (
 		<div class='TokenCards'>
-			{cards.map((c, i) => <TokenCard {...c}
-				assets={assets}
-				pinned={pinned.includes(c.uuid)}
-				setProps={u => handleSetProps(i, u)}
-				setPinned={p => handleSetPinned(c.uuid, p)}
-			/>)}
+			{Object.keys(cards).map(uuid =>
+				<TokenCard {...cards[uuid]}
+					assets={assets}
+					pinned={pinned.includes(uuid)}
+					setProps={u => handleSetProps(uuid, u)}
+					setPinned={p => handleSetPinned(uuid, p)}
+				/>
+			)}
 		</div>
 	);
 });

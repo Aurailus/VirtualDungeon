@@ -71,9 +71,9 @@ export default class TokenSidebar extends Sidebar {
 
 		if (x === 0) this.backgrounds[y].setFrame(0);
 
-		let token = new Token(this.scene, {}, new Vec2(4 + x * 21, 4 + y * 21), sprite);
+		let token = new Token(this.scene, '', 50, new Vec2(4 + x * 21, 4 + y * 21), sprite);
 		token.setScale(1);
-
+		token.shadow?.destroy();
 		this.sprites.push(token);
 		this.add(token);
 

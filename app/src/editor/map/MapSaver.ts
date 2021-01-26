@@ -34,7 +34,7 @@ export function save(size: Vec2, identifier: string, layers: MapLayer[], tokens:
 		
 		size,
 		identifier,
-		tokens: tokens.serializeAllTokens()
+		tokens: tokens.serializeAll()
 	};
 
 	const mapJsonStr = JSON.stringify(mapJson);

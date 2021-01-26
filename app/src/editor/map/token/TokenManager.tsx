@@ -4,6 +4,7 @@ import EventHandler from '../../EventHandler';
 import Token, { TokenData, TokenMetaData, TokenRenderData, TokenRenderEvent } from './Token';
 
 import { Vec2 } from '../../util/Vec';
+import { generateId } from '../../util/Helpers';
 
 /** Token Event emitted by the TokenManager */
 export type TokenEvent = {
@@ -13,15 +14,24 @@ export type TokenEvent = {
 ) | {
 	type: 'create';
 	token: Token;
+	render: TokenRenderData;
 } | {
 	type: 'destroy';
+	render: TokenRenderData;
 });
+
+
+/** Default token meta data. */
+const DEFAULT_METADATA: TokenMetaData = {
+	name: '', note: '', sliders: []
+};
 
 export default class TokenManager {
 	readonly event = new EventHandler<TokenEvent>();
-	
-	private scene: Phaser.Scene = null as any;
+
 	private tokens: Token[] = [];
+	private scene: Phaser.Scene = null as any;
+	private meta: Map<string, TokenMetaData> = new Map();
 
 	init(scene: Phaser.Scene) {
 		this.scene = scene;
@@ -37,7 +47,7 @@ export default class TokenManager {
 
 	getToken(token: string): Token | undefined {
 		for (let i = 0; i < this.tokens.length; i++)
-			if (this.tokens[i].getUUID() === token)
+			if (this.tokens[i].uuid === token)
 				return this.tokens[i];
 		return undefined;
 	}
@@ -61,16 +71,20 @@ export default class TokenManager {
 	 * @returns the new token instance.
 	 */
 
-	createToken(pos: Vec2, meta: Partial<TokenMetaData>, sprite?: string, index?: number): Token {
-		const token = new Token(this.scene, meta, pos, sprite, index);
+	createToken(uuid: string, layer: number, pos: Vec2, meta?: Partial<TokenMetaData>, sprite?: string, index?: number): Token {
+		uuid = uuid || generateId(32);
+		this.setMeta(uuid, meta);
+		
+		const token = new Token(this.scene, uuid, layer, pos, sprite, index);
 		token.on_render.bind(this.onChange);
 		this.scene.add.existing(token);
 		this.tokens.push(token);
 		
 		this.event.dispatch({
 			type: 'create',
-			uuid: token.getUUID(),
-			token: token
+			uuid: uuid,
+			token: token,
+			render: token.getRenderData()
 		});
 		
 		return token;
@@ -80,28 +94,26 @@ export default class TokenManager {
 	/**
 	 * Deletes a token based on it's UUID or direct object.
 	 *
-	 * @param {string | Token} token - Either a token's UUID string, or the token instance itself.
+	 * @param {Token | string} token - Either a token's UUID string, or the token instance itself.
 	 * @returns the token's data prior to deletion, or undefined if the token was not found.
 	 */
 
-	deleteToken(token: string | Token): TokenData | undefined {
-		for (let i = 0; i < this.tokens.length; i++) {
-			if (typeof token === 'string' ? this.tokens[i].getUUID() === token : this.tokens[i] === token) {
-				token = this.tokens[i];
-				const data = token.serialize();
+	deleteToken(token: Token | string): TokenRenderData | undefined {
+		if (typeof token === 'string') token = this.tokens.filter(t => t.uuid === token)[0];
+		if (!token) return undefined;
 
-				token.destroy();
-				this.tokens.splice(i, 1);
+		const data = token.getRenderData();
+		this.tokens.splice(this.tokens.indexOf(token), 1);
+		token.shadow?.destroy();
+		token.destroy();
 
-				this.event.dispatch({
-					type: 'destroy',
-					uuid: token.getUUID()
-				});
+		this.event.dispatch({
+			type: 'destroy',
+			uuid: token.uuid,
+			render: token.getRenderData()
+		});
 
-				return data;
-			}
-		}
-		return undefined;
+		return data;
 	}
 
 
@@ -114,73 +126,94 @@ export default class TokenManager {
 
 	resetTokens(data?: TokenData[]): Token[] {
 		while (this.tokens.length > 0) this.deleteToken(this.tokens[this.tokens.length - 1]);
-		data?.forEach(d => this.createToken(new Vec2(d.render.pos as any), d.meta,
+		data?.forEach(d => this.createToken(
+			d.uuid, d.render.layer, new Vec2(d.render.pos as any), d.meta,
 			d.render.appearance.sprite, d.render.appearance.index));
 		return this.getAllTokens();
 	}
 
 
 	/**
-	 * Returns the serialized form of all tokens.
+	 * Returns a serialized representation of a token.
 	 *
-	 * @returns a TokenData[] of all token instances.
+	 * @param {Token | string} token - Either a token UUID or a token instance.
+	 * @returns the serialized token data.
 	 */
 
-	serializeAllTokens(): TokenData[] {
-		return this.tokens.map(t => t.serialize());
+	serialize(token: Token | string): TokenData | undefined {
+		if (typeof token === 'string') token = this.tokens.filter(t => t.uuid === token)[0];
+		if (!token) return undefined;
+
+		return {
+			uuid: token.uuid,
+			meta: this.meta.get(token.uuid)!,
+			render: token.getRenderData()
+		};
 	}
 
 
 	/**
-	 * Gets serialized token data for all the tokens within this manager.
+	 * Returns an array of serialized tokens.
+	 *
+	 * @returns a TokenData[] of all token instances.
+	 */
+
+	serializeAll(): TokenData[] {
+		return this.tokens.map(t => this.serialize(t)).filter(t => t) as TokenData[];
+	}
+
+
+	/**
+	 * Gets serialized token data for all existing tokens managed by this manager.
 	 * This data is cloned, and safe to modify.
 	 *
 	 * @returns an array of cloned TokenData objects corresponding to each token.
 	 */
 
-	getAllMeta(): TokenMetaData[] {
-		return this.tokens.map(t => t.getMeta());
+	getAllMeta(): { [key: string]: TokenMetaData } {
+		const meta: { [key: string]: TokenMetaData } = {};
+		for (let key of this.meta.keys()) {
+			if (this.tokens.filter(f => f.uuid === key).length)
+				meta[key] = JSON.parse(JSON.stringify(this.meta.get(key)));
+		}
+		return meta;
 	}
 
 
 	/**
 	 * Updates a token with the specified token data.
 	 *
+	 * @param {string} uuid - The token's UUID.
 	 * @param {Partial<TokenMetaData>} data - The data to update the token with.
-	 * @returns the token instance, if it exists.
 	 */
 
-	setMeta(uuid: string, data: Partial<TokenMetaData>): Token | undefined {
-		const token = this.getToken(uuid);
-		if (!token) return undefined;
-		token.setMeta(data);
-		return token;
+	setMeta(uuid: string, data?: Partial<TokenMetaData>) {
+		this.meta.set(uuid, { ...DEFAULT_METADATA, ...this.meta.get(uuid) ?? {}, ...data ?? {} });
 	}
 
 
 	/**
+	 * Sets a token's render information to the object provided.
 	 *
+	 * @param {string} uuid - The token's UUID.
+	 * @param {Partial<TokenRenderData>} data - The data to update the token with.
 	 */
 
-	setRender(uuid: string, data: Partial<TokenRenderData>): Token | undefined {
+	setRenderData(uuid: string, data: Partial<TokenRenderData>): Token | undefined {
 		const token = this.getToken(uuid);
 		if (!token) return undefined;
-		token.setRender(data);
+		token.setRenderData(data);
 		return token;
 	}
 
 
 	/**
-	 * Called by Tokens upon changing, triggers an event dispatch.
+	 * Called by Tokens upon render change, triggers an event dispatch.
 	 *
 	 * @param {TokenModifyEvent} event - The event object from the token's change.
 	 */
 
 	private onChange = (event: TokenRenderEvent) => {
-		this.event.dispatch({
-			type: 'modify',
-			uuid: event.token.getUUID(),
-			...event
-		});
+		this.event.dispatch({ type: 'modify', ...event });
 	};
 }

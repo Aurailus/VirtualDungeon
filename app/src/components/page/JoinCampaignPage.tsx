@@ -3,14 +3,11 @@ import { useAppData } from '../../Hooks';
 import { useState, useEffect } from 'preact/hooks';
 import { Switch, Route, Redirect, NavLink as Link, useParams, useHistory } from 'react-router-dom';
 
-import './JoinCampaign.sass';
+import './JoinCampaignPage.sass';
 
 import Button from '../Button';
 
-// import MapList from '../view/MapList';
-// import NewMapForm from '../view/NewMapForm';
 import PlayerList from '../view/PlayerList';
-// import PlayerInviteForm from '../view/PlayerInviteForm';
 import CampaignOverview from '../view/CampaignOverview';
 
 import { Campaign } from '../../../../common/DBStructs';

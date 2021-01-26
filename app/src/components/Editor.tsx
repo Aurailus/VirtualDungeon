@@ -35,7 +35,6 @@ export default function Editor({ user, identifier, mapIdentifier }: Props) {
 
 			const resizeCallback = () => {
 				const { width, height } = rootRef.current.getBoundingClientRect();
-				console.log(rootRef.current);
 				editorRef.current!.scale.resize(width, height);
 			};
 

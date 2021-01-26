@@ -1,10 +1,13 @@
 import './Pages.sass';
 
-export { default as Login } from './Login';
+export { default as Login } from './LoginPage';
 
-export { default as Editor } from './Editor';
+export { default as Editor } from './EditorPage';
 
-export { default as Campaign } from './Campaign';
-export { default as NewCampaign } from './NewCampaign';
-export { default as JoinCampaign } from './JoinCampaign';
-export { default as CampaignsList } from './CampaignsList';
+export { default as Campaign } from './CampaignPage';
+export { default as Campaigns } from './CampaignsPage';
+export { default as NewCampaign } from './NewCampaignPage';
+export { default as JoinCampaign } from './JoinCampaignPage';
+
+export { default as AssetCollection } from './AssetCollectionPage';
+export { default as AssetCollections } from './AssetCollectionsPage';

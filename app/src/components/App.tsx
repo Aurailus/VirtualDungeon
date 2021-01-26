@@ -5,9 +5,8 @@ import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-d
 
 import './App.sass';
 
-import AppSidebar from './AppSidebar';
 import * as Page from './page/Pages';
-import * as Routes from './route/Routes';
+import AppSidebar from './AppSidebar';
 
 import { AppData } from '../../../common/AppData';
 import { AppDataContext, updateAppData } from './AppDataContext';
@@ -45,7 +44,7 @@ export default function App() {
 				<div class='App'>
 					<Router basename='/app'>
 						{/* Enforce trailing slashes in all URLs to make relative links work properly. */}
-						<Route path="/:url*" exact strict render={props => <Redirect to={`${props.location.pathname}/${props.location.search}`}/>}/>
+						<Route path="/:url*" exact strict render={props => <Redirect to={`${props.location.pathname}/${props.location.search}`} />} />
 						
 						<Switch>
 							<Route path='/u/:user/c/:campaign/play' component={Page.Editor} />
@@ -54,14 +53,15 @@ export default function App() {
 									<AppSidebar />
 									<Switch>
 										<Route path='/c/new/' component={Page.NewCampaign} />
-										<Route path='/c/join/:token/' component={Page.JoinCampaign as any} />
-										<Route exact path='/c/' component={Page.CampaignsList} />
+										<Route path='/c/join/:token/' component={Page.JoinCampaign} />
+										<Route exact path='/c/' component={Page.Campaigns} />
 										<Redirect path='/c/' to='/c/' />
-										<Route path='/u/:user/c/:campaign/' component={Page.Campaign} />
 
-										<Route path='/a/' component={Routes.Assets} />
-										<Route path='/u/:user/a/:id' component={Routes.Asset} />
-										<Route path='/u/:user/collection/:id' component={Routes.Collection} />
+										<Route exact path='/a/' component={Page.AssetCollections} />
+										<Redirect path='/a/' to='/a/' />
+
+										<Route path='/u/:user/c/:campaign/' component={Page.Campaign} />
+										<Route path='/u/:user/a/:collection' component={Page.AssetCollection} />
 										
 										<Redirect to='/c/' />
 									</Switch>

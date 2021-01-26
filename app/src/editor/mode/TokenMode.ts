@@ -4,7 +4,7 @@ import Mode from './Mode';
 import Map from '../map/Map';
 import InputManager from '../InputManager';
 import ActionManager from '../action/ActionManager';
-import Token, { TokenData, TokenRenderData } from '../map/token/Token';
+import Token, { TokenRenderData } from '../map/token/Token';
 
 import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
@@ -39,7 +39,7 @@ export default class TokenMode extends Mode {
 		this.cursor.setScale(1 / 16);
 		this.cursor.setVisible(false);
 
-		this.preview = new Token(this.scene);
+		this.preview = new Token(scene, '', 50);
 		this.scene.add.existing(this.preview);
 		this.preview.setVisible(false);
 		this.preview.setAlpha(0.2);
@@ -158,9 +158,9 @@ export default class TokenMode extends Mode {
 		}
 
 		if (input.keyDown('DELETE') && this.selected.size > 0) {
-			const tokens = Array.from(this.selected).map(t => this.deleteToken(t)).filter(t => t) as TokenData[];
+			this.actions.push({ type: 'delete_token', tokens:
+				Array.from(this.selected).map(t => ({ uuid: t.uuid, ...(this.deleteToken(t) || {})})) as any });
 			this.selected = new Set();
-			this.actions.push({ type: 'delete_token', tokens });
 		}
 	}
 
@@ -214,7 +214,7 @@ export default class TokenMode extends Mode {
 	private handleMove(cursorPos: Vec2, input: InputManager) {
 		this.cursor.setVisible(false);
 
-		if (!this.preMove) this.preMove = Array.from(this.selected).map(t => t.getRender());
+		if (!this.preMove) this.preMove = Array.from(this.selected).map(t => t.getRenderData());
 
 		if (!this.selected.size) {
 			this.editMode = 'place';
@@ -225,9 +225,8 @@ export default class TokenMode extends Mode {
 			this.editMode = 'place';
 
 			if (this.clickTestState) {
-				const post: TokenRenderData[] = [];
-				for (let t of this.selected) post.push(t.getRender());
-				this.actions.push({ type: 'modify_token', tokens: { pre: this.preMove!, post } });
+				this.actions.push({ type: 'modify_token', tokens:
+					Array.from(this.selected).map((t, i) => ({ uuid: t.uuid, pre: this.preMove![i], post: t.getRenderData() })) });
 				this.preMove = null;
 			}
 			else if (this.clickTestState === false && this.hovered && input.keyDown('CTRL')) {
@@ -251,12 +250,13 @@ export default class TokenMode extends Mode {
 
 	private placeToken(cursorPos: Vec2): Token {
 		const asset = this.assets.filter(a => a.identifier === this.placeTokenType)[0];
-		const token = this.map.tokens.createToken(cursorPos, { name: asset.name }, this.placeTokenType);
-		this.actions.push({ type: 'place_token', tokens: [ token.serialize() ] });
+		const token = this.map.tokens.createToken('', this.map.getActiveLayer()?.index ?? 0,
+			cursorPos, { name: asset.name }, this.placeTokenType);
+		this.actions.push({ type: 'place_token', tokens: [{ uuid: token.uuid, ...token.getRenderData() }] });
 		return token;
 	}
 
-	private deleteToken(token: Token): TokenData | undefined {
+	private deleteToken(token: Token): TokenRenderData | undefined {
 		this.selected.delete(token);
 		if (this.hovered === token) this.hovered = null;
 		return this.map.tokens.deleteToken(token);
@@ -270,17 +270,15 @@ export default class TokenMode extends Mode {
 	}
 
 	private moveToken(x: number, y: number, index: number): void {
-		let pre: TokenRenderData[] = [];
-		let post: TokenRenderData[] = [];
-
-		this.selected.forEach((token) => {
-			const old = token.getRender();
-			pre.push(old);
-			token.setPosition(old.pos.x + x, old.pos.y + y);
-			token.setTexture(old.appearance.sprite, index);
-			post.push(token.getRender());
+		const tokens = Array.from(this.selected).map((token) => {
+			const data: any = { uuid: token.uuid };
+			data.pre = token.getRenderData();
+			token.setPosition(token.x + x, token.y + y);
+			token.setFrame(index);
+			data.post = token.getRenderData();
+			return data;
 		});
 		
-		this.actions.push({ type: 'modify_token', tokens: { pre, post } });
+		this.actions.push({ type: 'modify_token', tokens });
 	}
 }
