@@ -73,12 +73,12 @@ export default class TokenManager {
 
 	createToken(uuid: string, layer: number, pos: Vec2, meta?: Partial<TokenMetaData>, sprite?: string, index?: number): Token {
 		uuid = uuid || generateId(32);
-		this.setMeta(uuid, meta);
 		
 		const token = new Token(this.scene, uuid, layer, pos, sprite, index);
 		token.on_render.bind(this.onChange);
 		this.scene.add.existing(token);
 		this.tokens.push(token);
+		this.setMeta(uuid, meta);
 		
 		this.event.dispatch({
 			type: 'create',
@@ -104,7 +104,6 @@ export default class TokenManager {
 
 		const data = token.getRenderData();
 		this.tokens.splice(this.tokens.indexOf(token), 1);
-		token.shadow?.destroy();
 		token.destroy();
 
 		this.event.dispatch({
@@ -189,6 +188,7 @@ export default class TokenManager {
 
 	setMeta(uuid: string, data?: Partial<TokenMetaData>) {
 		this.meta.set(uuid, { ...DEFAULT_METADATA, ...this.meta.get(uuid) ?? {}, ...data ?? {} });
+		this.tokens.filter(t => t.uuid === uuid)[0]?.setMetaData(this.meta.get(uuid)!);
 	}
 
 

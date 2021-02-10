@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 
 import * as Scene from './scene/Scenes';
 
-export default function create(root: HTMLElement, onProgress: (progress: number) => void,
-	user: string, identifier: string, mapIdentifier?: string) {
+export default function create(root: HTMLElement, user: string, identifier: string, mapIdentifier: string | undefined,
+	onProgress: (progress: number) => void, onDirty: (dirty: boolean) => void) {
 	
 	const bounds = root.getBoundingClientRect();
 
@@ -19,6 +19,6 @@ export default function create(root: HTMLElement, onProgress: (progress: number)
 		scene: Scene.list
 	});
 
-	game.scene.start('InitScene', { user, onProgress, identifier, mapIdentifier });
+	game.scene.start('InitScene', { user, identifier, mapIdentifier, onProgress, onDirty });
 	return game;
 }

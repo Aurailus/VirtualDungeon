@@ -1,0 +1,22 @@
+@use '../../../style/text'
+@use '../../../style/slice'
+@use '../../../style/def' as *
+
+.LayerMenu
+	position: absolute
+	top: 0
+	right: calc(100% + 6px)
+	width: 400px
+
+	.LayerMenu-Top
+		display: flex
+		gap: 6px
+
+		.LayerMenu-Actions
+			flex-grow: 0
+
+			.Button
+				width: 60px
+
+		h1
+			margin: 0px 0

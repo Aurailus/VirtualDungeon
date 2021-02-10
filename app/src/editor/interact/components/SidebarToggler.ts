@@ -3,7 +3,7 @@ import type * as Phaser from 'phaser';
 import Component from './Component';
 
 import type InterfaceRoot from '../InterfaceRoot';
-import type InputManager from '../../InputManager';
+import type InputManager from '../../interact/InputManager';
 
 export default class SidebarToggler extends Component {
 	private button: Phaser.GameObjects.Sprite;

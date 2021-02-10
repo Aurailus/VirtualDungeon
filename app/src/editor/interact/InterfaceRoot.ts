@@ -8,10 +8,10 @@ import TokenSidebar from './components/TokenSidebar';
 import SidebarToggler from './components/SidebarToggler';
 
 import Map from '../map/Map';
-import InputManager from '../InputManager';
 import ModeMananger from '../mode/ModeManager';
 import { DrawModeKey } from '../mode/DrawMode';
 import { TokenModeKey } from '../mode/TokenMode';
+import InputManager from '../interact/InputManager';
 import ActionManager from '../action/ActionManager';
 import { ArchitectModeKey } from '../mode/ArchitectMode';
 
@@ -113,6 +113,10 @@ export default class InterfaceRoot {
 		}
 
 		update(this.root);
+	}
+
+	setVisible(visible: boolean) {
+		this.root.setVisible(visible);
 	}
 
 	setSidebarOpen(open: boolean) {

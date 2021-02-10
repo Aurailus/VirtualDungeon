@@ -1,9 +1,10 @@
 import type * as Phaser from 'phaser';
+import * as IO from 'socket.io-client';
 
 import type Mode from './Mode';
 import type Map from '../map/Map';
-import InputManager from '../InputManager';
 import EventHandler from '../EventHandler';
+import InputManager from '../interact/InputManager';
 import ActionManager from '../action/ActionManager';
 
 import DrawMode, { DrawModeKey } from './DrawMode';
@@ -30,11 +31,11 @@ export default class ModeManager {
 
 	private evtHandler = new EventHandler<ModeSwitchEvent>();
 
-	init(scene: Phaser.Scene, map: Map, actions: ActionManager, assets: Asset[]) {
+	init(scene: Phaser.Scene, map: Map, socket: IO.Socket, actions: ActionManager, assets: Asset[]) {
 		this.modes = {
-			[ArchitectModeKey]: new ArchitectMode(scene, map, actions, assets),
-			[TokenModeKey]: new TokenMode(scene, map, actions, assets),
-			[DrawModeKey]: new DrawMode(scene, map, actions, assets)
+			[ArchitectModeKey]: new ArchitectMode(scene, map, socket, actions, assets),
+			[TokenModeKey]: new TokenMode(scene, map, socket, actions, assets),
+			[DrawModeKey]: new DrawMode(scene, map, socket, actions, assets)
 		};
 
 		this.activate(Object.keys(this.modes)[0]);

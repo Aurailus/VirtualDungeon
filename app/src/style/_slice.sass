@@ -27,8 +27,9 @@ $slice-cell-size: 6px
 	&:active, &:focus-visible
 		@include slice('button_active')
 
-	&:disabled, &.Disabled
-		@include slice('button_disabled')
+	&:disabled, &.Disabled, &.Inactive
+		&:not(:active):not(:focus-visible)
+			@include slice('button_disabled')
 
 .slice_highlight
 	@include slice('highlight')

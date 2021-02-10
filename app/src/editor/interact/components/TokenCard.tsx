@@ -23,7 +23,10 @@ export default function TokenCard(props: TokenCardProps) {
 	// icon.dimensions!.x / icon.tileSize;
 
 	const handleAddSlider = () => {
-		props.setProps({ sliders: [ ...props.sliders, { name: 'Untitled', max: 10, current: 10, icon: 1 } ]});
+		props.setProps({ sliders: [
+			...props.sliders,
+			{ name: 'Untitled',  color: { h: .95, s: .59, v: .94 }, max: 10, current: 10, icon: 1 }
+		]});
 	};
 
 	const handleUpdateSlider = (ind: number, data: Partial<TokenSliderData>) => {

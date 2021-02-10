@@ -61,19 +61,16 @@ export default bind<Props>(function LayerManager(props: Props) {
 
 			<div class='Toolbar-Separator' />
 
-			{(mode === ArchitectModeKey || mode === TokenModeKey) &&
-				<Preact.Fragment>
-					<ButtonGroup>
-						<Button icon='undo' alt='Undo' noFocus={true}
-							disabled={!hasPrev} onClick={() => props.actions.prev()} />
-						<Button icon='redo' alt='Redo' noFocus={true}
-							disabled={!hasNext} onClick={() => props.actions.next()} />
-					</ButtonGroup>
-					<div class='Toolbar-Spacer' />
-				</Preact.Fragment>
-			}
+			<ButtonGroup>
+				<Button icon='undo' alt='Undo' noFocus={true}
+					disabled={!hasPrev} onClick={() => props.actions.prev()} />
+				<Button icon='redo' alt='Redo' noFocus={true}
+					disabled={!hasNext} onClick={() => props.actions.next()} />
+			</ButtonGroup>
 
-			{/* {(mode !== DrawModeKey) &&
+			<div class='Toolbar-Spacer' />
+
+			{/* (mode !== DrawModeKey) &&
 				<Preact.Fragment>
 					<ButtonGroup>
 						<Button icon='ruler' alt='Measure Distance'
@@ -88,7 +85,7 @@ export default bind<Props>(function LayerManager(props: Props) {
 					</ButtonGroup>
 					<div class='Toolbar-Spacer' />
 				</Preact.Fragment>
-			}*/}
+			*/}
 
 			{mode === TokenModeKey &&
 				<Preact.Fragment>

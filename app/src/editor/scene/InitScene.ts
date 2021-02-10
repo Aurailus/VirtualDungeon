@@ -14,6 +14,7 @@ interface InitProps {
 	identifier: string;
 	mapIdentifier?: string;
 
+	onDirty: (dirty: boolean) => void;
 	onProgress: (progress: number) => void;
 }
 
@@ -22,18 +23,19 @@ export default class InitScene extends Phaser.Scene {
 
 	constructor() { super({key: 'InitScene'}); }
 
-	async create({ user, onProgress, identifier, mapIdentifier }: InitProps) {
+	async create({ user, onProgress, onDirty, identifier, mapIdentifier }: InitProps) {
 		this.socket.on('disconnect', this.onDisconnect);
 		this.game.events.addListener('destroy', this.onDestroy);
 
-		const { res, map } = await this.onConnect(user, identifier, mapIdentifier);
+		const res = await this.onConnect(user, identifier, mapIdentifier);
 
 		this.scene.start('LoadScene', {
 			socket: this.socket,
 			user, identifier,
-			...res, map,
+			...res,
 			
-			onProgress
+			onProgress,
+			onDirty
 		});
 
 		this.game.scene.stop('InitScene');
@@ -51,15 +53,14 @@ export default class InitScene extends Phaser.Scene {
 	};
 
 	private onConnect = async (user: string, identifier: string, mapIdentifier: string | undefined):
-	Promise<{ res: { campaign: Campaign; assets: Asset[] }; map: string | undefined }> => {
+	Promise<{ campaign: Campaign; assets: Asset[]; map: string }> => {
 		
-		let res: { state: true; campaign: Campaign; assets: Asset[] } | { state: false; error?: string }
+		let res: { state: true; campaign: Campaign; assets: Asset[]; map: string } | { state: false; error?: string }
 			= await emit(this.socket, 'room_init', identifier);
 
-		let map: string | undefined;
-		if (res.state) map = (mapIdentifier ? res.campaign.maps.filter(m => m.identifier === mapIdentifier)[0] : res.campaign.maps[0]).data;
-		else res = await emit(this.socket, 'room_join', { user, identifier }) as { state: true; campaign: Campaign; assets: Asset[] };
+		if (res.state) res.map = (mapIdentifier ? res.campaign.maps.filter(m => m.identifier === mapIdentifier)[0] : res.campaign.maps[0]).data;
+		else res = await emit(this.socket, 'room_join', { user, identifier }) as { state: true; campaign: Campaign; assets: Asset[]; map: string };
 
-		return { res, map };
+		return res;
 	};
 }

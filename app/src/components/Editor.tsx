@@ -1,5 +1,6 @@
 import * as Preact from 'preact';
 import type Phaser from 'phaser';
+import { Prompt } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'preact/hooks';
 
 import './Editor.sass';
@@ -18,6 +19,8 @@ function pad(n: number) {
 export default function Editor({ user, identifier, mapIdentifier }: Props) {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<Phaser.Game | null>(null);
+
+	const [ dirty, setDirty ] = useState<boolean>(false);
 	const [ loadPercent, setLoadPercent ] = useState<number | undefined>(0);
 
 	/**
@@ -31,7 +34,7 @@ export default function Editor({ user, identifier, mapIdentifier }: Props) {
 			setLoadPercent(0.25);
 			if (ignore || !rootRef.current) return;
 
-			editorRef.current = create(rootRef.current, setLoadPercent, user, identifier, mapIdentifier);
+			editorRef.current = create(rootRef.current, user, identifier, mapIdentifier, setLoadPercent, setDirty);
 
 			const resizeCallback = () => {
 				const { width, height } = rootRef.current.getBoundingClientRect();
@@ -84,6 +87,7 @@ export default function Editor({ user, identifier, mapIdentifier }: Props) {
 					<p class='Editor-LoaderText'><small>Loading… </small>{pad(Math.round(loadPercent * 100))}%</p>
 				</div>
 			}
+			<Prompt when={dirty} message='Are you sure you want to leave? Changes that you made may not be saved.' />
 		</div>
 	);
 }

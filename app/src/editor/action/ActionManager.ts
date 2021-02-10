@@ -5,7 +5,7 @@ import Map from '../map/Map';
 import type { Action } from './Action';
 import ActionEvent from './ActionEvent';
 import EventHandler from '../EventHandler';
-import InputManager from '../InputManager';
+import InputManager from '../interact/InputManager';
 
 const SAVE_INTERVAL = 5 * 1000;
 
@@ -21,12 +21,15 @@ export default class ActionManager {
 	private historyHeldTime: number = 0;
 	private editTime: number | false = false;
 
-	init(_scene: Phaser.Scene, map: Map, socket: IO.Socket) {
-		this.map = map;
-		// this.scene = scene;
-		this.socket = socket;
+	private onDirty: (dirty: boolean) => void = null as any;
 
+	init(_scene: Phaser.Scene, map: Map, socket: IO.Socket, onDirty: (dirty: boolean) => void) {
+		this.map = map;
+		this.socket = socket;
+		this.onDirty = onDirty;
 		this.socket.on('action', this.apply.bind(this));
+
+		window.onbeforeunload = () => this.editTime ? '' : null;
 	}
 
 	update(input: InputManager) {
@@ -49,16 +52,17 @@ export default class ActionManager {
 		}
 		else this.historyHeldTime = 0;
 
-		if (this.editTime && Date.now() - SAVE_INTERVAL > this.editTime) {
-			this.socket.emit('serialize', this.map.identifier, this.map.save());
-			this.editTime = 0;
-		}
+		if (this.editTime && Date.now() - SAVE_INTERVAL > this.editTime) this.saveMap();
 	}
 
 	push(item: Action): void {
 		this.history.splice(this.head + 1, this.history.length - this.head, item);
 		this.head = this.history.length - 1;
-		if (!this.editTime) this.editTime = Date.now();
+		
+		if (!this.editTime) {
+			this.editTime = Date.now();
+			this.onDirty(true);
+		}
 
 		this.socket.emit('action', item);
 		this.event.dispatch({ event: 'push', head: this.head, length: this.history.length });
@@ -137,5 +141,11 @@ export default class ActionManager {
 
 	hasNext(): boolean {
 		return this.head < this.history.length - 1;
+	}
+
+	private saveMap() {
+		this.socket.emit('serialize', this.map.identifier, this.map.save());
+		this.onDirty(false);
+		this.editTime = 0;
 	}
 }

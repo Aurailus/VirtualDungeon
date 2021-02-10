@@ -5,27 +5,37 @@ import './DrawToolbar.sass';
 
 import Button from '../../../components/Button';
 import ButtonGroup from '../../../components/ButtonGroup';
+import Color from '../../../components/input/fields/InputColor';
 
-import DrawMode, { DrawModeTool, DrawModeEvent } from '../../mode/DrawMode';
+import DrawMode, { DrawModeTool, DrawModeToolEvent, DrawModeColorEvent } from '../../mode/DrawMode';
 
 interface Props {
 	mode: DrawMode;
 }
 
 export default function DrawToolbar(props: Props) {
+	const [ color, setColor ] = useState<any>(props.mode.getColor());
 	const [ tool, setTool ] = useState<DrawModeTool>(props.mode.getTool());
 
 	useEffect(() => {
-		const actionCb = (evt: DrawModeEvent) => {
-			setTool(evt.currentTool);
-		};
+		const toolCb = (evt: DrawModeToolEvent) => setTool(evt.currentTool);
+		const colorCb = (evt: DrawModeColorEvent) => setColor(evt.currentColor);
 		
-		props.mode.bind(actionCb);
-		return () => props.mode.unbind(actionCb);
+		props.mode.tool.bind(toolCb);
+		props.mode.color.bind(colorCb);
+
+		return () => {
+			props.mode.tool.unbind(toolCb);
+			props.mode.color.unbind(colorCb);
+		};
 	}, [ props.mode ]);
 
 	return (
 		<Preact.Fragment>
+			<div class='Button DrawToolbar-Color'>
+				<Color full showHex value={color} setValue={c => props.mode.setColor(c)} />
+			</div>
+			<div class='Toolbar-Spacer' />
 			<ButtonGroup>
 				<Button icon='line' alt='Draw Line Art' onClick={() => props.mode.setTool('line')}
 					noFocus={true} inactive={tool !== 'line'} />

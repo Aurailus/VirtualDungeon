@@ -27,6 +27,7 @@ export default class LoadScene extends Phaser.Scene {
 		this.load.image('cursor');
 		this.load.image('grid_tile');
 		this.load.image('erase_tile');
+		this.load.image('user_highlight');
 
 		this.load.setPrefix('ui_');
 
@@ -42,12 +43,12 @@ export default class LoadScene extends Phaser.Scene {
 		this.load.spritesheet('select_cursor', undefined, {frameWidth: 21, frameHeight: 18});
 		this.load.spritesheet('sidebar_toggle', undefined, {frameWidth: 30, frameHeight: 18});
 
+		this.load.spritesheet('slider_icons', undefined, {frameWidth: 12, frameHeight: 12});
+
 		this.load.setPrefix('');
 		this.load.setPath('');
 
 		this.load.image('shader_light_mask', '/static/editor/light_mask.png');
-
-		this.load.audio('mystify', '/static/mus_mystify.wav');
 
 		this.load.setPath('/asset/');
 
@@ -73,10 +74,12 @@ export default class LoadScene extends Phaser.Scene {
 			}
 
 			else if (a.type === 'wall' || a.type === 'detail')
-				return Patch.tileset(this, a.identifier, a.tileSize);
+				Patch.tileset(this, a.identifier, a.tileSize);
 
-			else return new Promise<void>(resolve => resolve());
+			return new Promise<void>(resolve => resolve());
 		}));
+
+		await Patch.tileset(this, 'user_highlight', 16);
 
 		this.editorData.onProgress(undefined);
 

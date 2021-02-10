@@ -1,7 +1,6 @@
 import * as Phaser from 'phaser';
 
 import MapLayer from './MapLayer';
-import TileStore from './TileStore';
 
 import { Vec2 } from '../util/Vec';
 
@@ -11,20 +10,19 @@ export const DIRTY_LIMIT = (CHUNK_SIZE * CHUNK_SIZE) / 2;
 
 
 /**
- * A visual representation of a chunk of a MapLayer.
+ * A highlight / checkerboard map overlay.
  */
 
-export default class MapChunk extends Phaser.GameObjects.RenderTexture {
+export default class HighlightMapChunk extends Phaser.GameObjects.RenderTexture {
 	private dirtyList: Vec2[] = [];
 	private fullyDirty: boolean = true;
 	private tile: Phaser.GameObjects.Sprite;
 
-	constructor(scene: Phaser.Scene, private pos: Vec2, readonly layer: MapLayer, private tileStore: TileStore) {
+	constructor(scene: Phaser.Scene, private pos: Vec2, readonly layer: MapLayer) {
 		super(scene, CHUNK_SIZE * pos.x - 2 / TILE_SIZE, CHUNK_SIZE * pos.y - 2 / TILE_SIZE,
 			CHUNK_SIZE * TILE_SIZE + 4, CHUNK_SIZE * TILE_SIZE + 4);
 		this.setScale(1 / TILE_SIZE);
 		this.setOrigin(0, 0);
-		this.updateDepth();
 
 		this.tile = new Phaser.GameObjects.Sprite(this.scene, 0, 0, '');
 		this.tile.setVisible(false);
@@ -50,25 +48,6 @@ export default class MapChunk extends Phaser.GameObjects.RenderTexture {
 				this.dirtyList = [];
 			}
 		}
-	}
-
-
-	/**
-	 * Sets whether or not the chunk should render as a shadow.
-	 */
-
-	setShadow(shadow: boolean) {
-		this.setTint(shadow ? 0x000000 : 0xffffff);
-		this.setAlpha(shadow ? .2 : 1);
-	}
-
-
-	/**
-	 * Updates the depth of the chunk based on the layer's index.
-	 */
-
-	updateDepth() {
-		this.setDepth(-1000 + this.layer.index * 25);
 	}
 
 
@@ -120,35 +99,18 @@ export default class MapChunk extends Phaser.GameObjects.RenderTexture {
 	private drawTile(x: number, y: number): void {
 		const pos = new Vec2(x + this.pos.x * CHUNK_SIZE, y + this.pos.y * CHUNK_SIZE);
 
-		let wallTile = this.layer.getTile('wall', pos);
-		let wallTileIndex = this.layer.getTileIndex('wall', pos);
+		let highlightTint = this.layer.getTile('wall', pos);
+		let highlightIndex = this.layer.getTileIndex('wall', pos);
 
-		let floorTile = this.layer.getTile('floor', pos);
-		let floorTileIndex = this.layer.getTileIndex('floor', pos);
-
-		let detailTile = this.layer.getTile('detail', pos);
-		let detailTileIndex = this.layer.getTileIndex('detail', pos);
-
-		if (floorTile > 0) {
+		this.erase('erase_tile', x * TILE_SIZE + 2, y * TILE_SIZE + 2);
+		if (highlightTint > 0) {
 			this.tile.setPosition(x * TILE_SIZE + 2, y * TILE_SIZE + 2);
-			this.tile.setTexture(this.tileStore.floorTiles[floorTile].identifier, floorTileIndex);
-			this.draw(this.tile);
-		}
-		else {
-			this.erase('erase_tile', x * TILE_SIZE + 2, y * TILE_SIZE + 2);
-			if (wallTile === 0 && detailTile === 0) return;
-		}
-
-		if (detailTile > 0) {
-			this.tile.setPosition(x * TILE_SIZE + 2, y * TILE_SIZE + 2);
-			this.tile.setTexture(this.tileStore.detailTiles[detailTile].identifier, detailTileIndex);
+			this.tile.setTexture('user_highlight', highlightIndex);
+			this.tile.setTint(highlightTint);
 			this.draw(this.tile);
 		}
 
-		if (wallTile > 0) {
-			this.tile.setPosition(x * TILE_SIZE + 2, y * TILE_SIZE + 2);
-			this.tile.setTexture(this.tileStore.wallTiles[wallTile].identifier, wallTileIndex);
-			this.draw(this.tile);
-		}
+		if ((x % 2 === 0 && y % 2 === 0) || (x % 2 !== 0 && y % 2 !== 0))
+			this.drawFrame('grid_tile', 0, x * TILE_SIZE + 2, y * TILE_SIZE + 2);
 	}
 }

@@ -1,58 +1,95 @@
 import * as Phaser from 'phaser';
+import * as IO from 'socket.io-client';
 
 import Mode from './Mode';
-import Map from '../map/Map';
+import GameMap from '../map/Map';
 import Shape from '../shape/Shape';
 import Token from '../map/token/Token';
-import InputManager from '../InputManager';
 import EventHandler from '../EventHandler';
+import InputManager from '../interact/InputManager';
 import ActionManager from '../action/ActionManager';
+import ArchitectController from '../interact/ArchitectController';
 
 import Cone from '../shape/Cone';
 import Circle from '../shape/Circle';
 
 import { Vec2 } from '../util/Vec';
 import { Asset } from '../util/Asset';
+import * as Color from '../../../../common/Color';
 
 export const DrawModeKey = 'DRAW';
 
 export type DrawModeTool = 'line' | 'tile' | 'circle' | 'cone';
 
-export interface DrawModeEvent {
+export interface DrawModeToolEvent {
 	currentTool: DrawModeTool;
 };
 
-// const PLAYER_TINT = 0xffee99;
-const PLAYER_TINT = 0x99ffee;
+export interface DrawModeColorEvent {
+	currentColor: Color.HSV;
+}
 
 export default class DrawMode extends Mode {
-	private drawTool: DrawModeTool = 'circle';
+	readonly tool = new EventHandler<DrawModeToolEvent>();
+	readonly color = new EventHandler<DrawModeColorEvent>();
+
+	private drawTool: DrawModeTool = 'tile';
 
 	private current?: Cone | Circle;
 	private editContext: 'move' | 'scale' = 'scale';
 
-	private drawings: Set<Cone | Circle> = new Set();
+	private ownedDrawings: Map<string, Cone | Circle> = new Map();
+	private otherDrawings: Map<string, Cone | Circle> = new Map();
 	private drawingRoot: Phaser.GameObjects.Container;
+	
+	private controller: ArchitectController;
 
-	private evtHandler = new EventHandler<DrawModeEvent>();
+	constructor(scene: Phaser.Scene, map: GameMap, socket: IO.Socket, actions: ActionManager, assets: Asset[]) {
+		super(scene, map, socket, actions, assets);
 
-	constructor(scene: Phaser.Scene, map: Map, actions: ActionManager, assets: Asset[]) {
-		super(scene, map, actions, assets);
+		this.controller = new ArchitectController(scene, actions);
 
 		this.drawingRoot = this.scene.add.container(0, 0);
 		this.drawingRoot.setDepth(10000);
+
+		this.socket.on('update_drawing', (uuid: string, type: string, data: string) => {
+			let drawing = this.otherDrawings.get(uuid);
+			if (!drawing) {
+				if (type === 'cone') drawing = new Cone(this.scene, new Vec2(), type);
+				else if (type === 'circle') drawing = new Circle(this.scene, new Vec2(), type);
+				else return;
+
+				this.drawingRoot.add(drawing);
+				this.otherDrawings.set(uuid, drawing);
+			}
+			drawing.deserialize(data);
+		});
+
+		this.socket.on('delete_drawing', (uuid: string) => {
+			this.otherDrawings.get(uuid)?.destroy();
+			this.otherDrawings.delete(uuid);
+		});
 	}
 
 	update(cursorPos: Vec2, input: InputManager) {
 
+
+		// Switch modes
+
+		if 			(input.keyPressed('E')) this.setTool('circle');
+		else if (input.keyPressed('C')) this.setTool('cone');
+		else if (input.keyPressed('T')) this.setTool('tile');
+		else if (input.keyPressed('I')) this.setTool('line');
+
 		// Update and select active shape.
 
-		if (!this.current) {
-			for (let d of this.drawings.values()) {
+		if (!this.current && this.drawTool !== 'tile') {
+			for (let d of this.ownedDrawings.values()) {
 				const interact = d.updateInteractions(cursorPos);
 				if (interact) {
 					if (input.mouseRightDown()) {
-						this.drawings.delete(d);
+						this.ownedDrawings.delete(d.uuid);
+						this.socket.emit('delete_drawing', d.uuid);
 						d.destroy();
 					}
 					else if (input.mouseLeftPressed()) {
@@ -64,6 +101,11 @@ export default class DrawMode extends Mode {
 					}
 				}
 			}
+		}
+
+		for (let d of [ ...this.ownedDrawings.values(), this.current ]) {
+			if (!d) continue;
+			if (d.getAndClearDirty()) this.socket.emit('update_drawing', d.uuid, d.type, d.serialize());
 		}
 
 		// Edit or create current shape.
@@ -80,19 +122,27 @@ export default class DrawMode extends Mode {
 
 		case 'cone':
 			this.handleCone(cursorPos, input);
+			break;
+
+		case 'tile':
+			this.handleTile(cursorPos, input);
+			break;
 		}
 
 		// Commit or destroy active shape.
 
 		if (this.current) {
 			if (input.keyPressed('SPACE')) {
-				this.current.setTint(PLAYER_TINT);
-				this.drawings.add(this.current);
+				this.current.setTint(Color.HSVToInt(this.getColor()));
+				this.ownedDrawings.set(this.current.uuid, this.current);
 			}
 
 			if (input.mouseLeftReleased()) {
 				this.current.showIndicators(false);
-				if (!this.drawings.has(this.current)) this.current.destroy();
+				if (!this.ownedDrawings.has(this.current.uuid)) {
+					this.socket.emit('delete_drawing', this.current.uuid);
+					this.current.destroy();
+				}
 				this.current = undefined;
 			}
 		}
@@ -104,28 +154,46 @@ export default class DrawMode extends Mode {
 
 	setTool(tool: DrawModeTool) {
 		this.drawTool = tool;
-		this.evtHandler.dispatch({ currentTool: tool });
+
+		if (tool === 'tile') {
+			this.controller.activate();
+			this.ownedDrawings.forEach(d => {
+				d.showIndicators(false);
+				d.showHighlight(false);
+				d.showHandles(false);
+			});
+		}
+		else this.controller.deactivate();
+
+		this.tool.dispatch({ currentTool: tool });
 	}
 
-	activate() { /* No activation logic */ }
+	getColor(): Color.HSV {
+		return this.scene.data.get('player_tint');
+	}
+
+	setColor(color: Color.HSV) {
+		if (color.v === 0) color.v = 0.01;
+		this.scene.data.set('player_tint', color);
+		this.color.dispatch({ currentColor: color });
+	}
+
+	activate() {
+		if (this.drawTool === 'tile') this.controller.activate();
+		this.controller.setLayer(this.map.getHighlightLayer());
+	}
 
 	deactivate() {
-		if (this.current && !this.drawings.has(this.current)) this.current.destroy();
+		if (this.current && !this.ownedDrawings.has(this.current.uuid)) this.current.destroy();
 		this.current = undefined;
 
-		this.drawings.forEach(d => {
+		this.ownedDrawings.forEach(d => {
 			d.showHandles(false);
 			d.showHighlight(false);
 			d.showIndicators(false);
 		});
-	}
 
-	bind(cb: (evt: DrawModeEvent) => boolean | void) {
-		this.evtHandler.bind(cb);
-	}
-
-	unbind(cb: (evt: DrawModeEvent) => boolean | void) {
-		this.evtHandler.unbind(cb);
+		this.controller.deactivate();
 	}
 
 	private handleCircle(cursorPos: Vec2, input: InputManager) {
@@ -161,7 +229,7 @@ export default class DrawMode extends Mode {
 		}
 
 		if (input.mouseLeftReleased() && this.editContext === 'move') {
-			if (!this.drawings.has(this.current)) return;
+			if (!this.ownedDrawings.has(this.current.uuid)) return;
 			const token = this.findPotentialAttach(circle, cursorPos);
 			if (token) circle.attachToToken(token);
 		}
@@ -243,9 +311,15 @@ export default class DrawMode extends Mode {
 		}
 
 		if (input.mouseLeftReleased() && this.editContext === 'move') {
-			if (!this.drawings.has(this.current)) return;
+			if (!this.ownedDrawings.has(this.current.uuid)) return;
 			const token = this.findPotentialAttach(cone, cursorPos);
 			if (token) cone.attachToToken(token);
 		}
+	}
+
+	private handleTile(cursorPos: Vec2, input: InputManager) {
+		this.controller.update(cursorPos, input);
+		this.controller.setActiveTileType('wall');
+		this.controller.setActiveTile(Color.HSVToInt(this.getColor()));
 	}
 }

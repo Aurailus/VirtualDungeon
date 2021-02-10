@@ -5,6 +5,12 @@ import Shape, { ShapeIntersect, HANDLE_SIZE } from './Shape';
 import { Vec2 } from '../util/Vec';
 import { clamp } from '../util/Helpers';
 
+export interface SerializedCircle {
+	origin: { x: number; y: number };
+	end: { x: number; y: number };
+	tint: number;
+}
+
 const UNFOCUSED_FILL_ALPHA = 0.05;
 const FOCUSED_FILL_ALPHA = 0.15;
 const UNFOCUSED_STROKE_ALPHA = 0.6;
@@ -13,7 +19,7 @@ const FOCUSED_STROKE_ALPHA = 1;
 export default class Circle extends Shape {
 	readonly type = 'circle';
 
-	private end: Vec2 = new Vec2(0);
+	private end: Vec2;
 
 	private intersects: boolean = false;
 
@@ -26,14 +32,15 @@ export default class Circle extends Shape {
 	private moveHandle: Phaser.GameObjects.Ellipse;
 	private scaleHandle: Phaser.GameObjects.Ellipse;
 
-	constructor(scene: Phaser.Scene, protected origin: Vec2) {
-		super(scene, origin);
+	constructor(scene: Phaser.Scene, protected origin: Vec2, uuid?: string) {
+		super(scene, origin, uuid);
+		this.end = origin;
 
 		this.midLine = this.scene.add.line();
 		this.circle = this.scene.add.ellipse(this.origin.x, this.origin.y);
 
 		this.indicator = this.scene.add.text(this.origin.x, this.origin.y, '',
-			{ fontFamily: 'monospace', fontSize: '32px', align: 'center' });
+			{ fontFamily: 'sans-serif', fontSize: '32px', align: 'center' });
 		this.moveHandle = this.scene.add.ellipse(0, 0, HANDLE_SIZE * 2, HANDLE_SIZE * 2, 0xffffff);
 		this.scaleHandle = this.scene.add.ellipse(0, 0, HANDLE_SIZE * 2, HANDLE_SIZE * 2, 0xffffff);
 
@@ -50,6 +57,23 @@ export default class Circle extends Shape {
 		this.moveHandle.setAlpha(.5);
 	}
 
+	serialize() {
+		const data: SerializedCircle = {
+			origin: this.origin,
+			end: this.end,
+			tint: this.tint
+		};
+
+		return JSON.stringify(data);
+	}
+
+	deserialize(d: string) {
+		const data = JSON.parse(d) as SerializedCircle;
+		this.setOrigin(new Vec2(data.origin));
+		this.setEnd(new Vec2(data.end));
+		this.setTint(data.tint);
+	}
+
 	setOrigin(origin: Vec2) {
 		if (this.origin.equals(origin)) return;
 		const offset = new Vec2(origin.x - this.origin.x, origin.y - this.origin.y);
@@ -57,10 +81,13 @@ export default class Circle extends Shape {
 		this.origin = origin;
 
 		this.updatePrimitives();
+		this.dirty = true;
 	}
 
 	setEnd(end: Vec2) {
 		if (this.end.equals(end)) return;
+
+		const lastRadius = new Vec2(this.end.x - this.origin.x, this.end.y - this.origin.y).length();
 
 		const diff = new Vec2(end.x - this.origin.x, end.y - this.origin.y);
 		const dir = diff.normalize();
@@ -70,6 +97,7 @@ export default class Circle extends Shape {
 		this.end = new Vec2(this.origin.x + dir.x * radius, this.origin.y + dir.y * radius);
 
 		this.updatePrimitives();
+		if (Math.abs(lastRadius - radius) > 0.01) this.dirty = true;
 	}
 
 	getRadius(): number {
@@ -118,8 +146,8 @@ export default class Circle extends Shape {
 		const diff = new Vec2(this.end.x - this.origin.x, this.end.y - this.origin.y);
 		let radius = diff.length();
 
-		const fill = this.intersects || this.showingHighlight ? FOCUSED_FILL_ALPHA : UNFOCUSED_FILL_ALPHA;
-		const stroke = this.intersects || this.showingHighlight ? FOCUSED_STROKE_ALPHA : UNFOCUSED_STROKE_ALPHA;
+		const fill = this.showingHighlight ? FOCUSED_FILL_ALPHA : UNFOCUSED_FILL_ALPHA;
+		const stroke = this.showingHighlight ? FOCUSED_STROKE_ALPHA : UNFOCUSED_STROKE_ALPHA;
 
 		this.circle.setSize(radius * 2, radius * 2);
 		this.circle.setOrigin(0.5);

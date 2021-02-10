@@ -1,3 +1,7 @@
+@use '../../../style/text'
+@use '../../../style/slice'
+@use '../../../style/def' as *
+
 .LayerManager
 	display: grid
 	grid-gap: 6px
@@ -8,7 +12,15 @@
 	width: 230px
 	height: auto
 
+	transition: width 0.2s, right 0.2s
+
+	&.Collapsed
+		width: 41px
+		right: -6px
+
 	.LayerManager-Layer
+		@include text.line_clamp
+
 		outline: 0
 		border: none
 		font: inherit

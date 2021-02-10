@@ -9,6 +9,6 @@ export default interface EditorData {
 	assets: Asset[];
 	map?: string;
 
-	display: 'edit' | 'view';
+	onDirty: (dirty: boolean) => void;
 	onProgress: (progress: number | undefined) => void;
 }

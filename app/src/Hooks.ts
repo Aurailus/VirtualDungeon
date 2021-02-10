@@ -1,3 +1,4 @@
+import * as Preact from 'preact';
 import { useEffect, useContext } from 'preact/hooks';
 
 import { AppData, AppDataSpecifier } from '../../common/AppData';
@@ -32,4 +33,56 @@ export function useAppData(refresh?: AppDataSpecifier | AppDataSpecifier[], depe
 	}, dependents ?? []);
 
 	return [ ctx.data, updateAppData.bind(undefined, ctx.mergeData), ctx.mergeData ];
+}
+
+
+/**
+ * Calls onCancel if a click event is triggered on an element that is not a child of the currently ref'd popup.
+ * Optionally, a condition function can be supplied, and the cancel test will only occur if the function returns true.
+ * Any dependents for the condition function can be supplied in the dependents array,
+ * this hook will automatically handle depending on the current popup, cancel function, and condition function.
+ *
+ * @param {Preact.RefObject<any>} roots - A ref of elements to exclude from outside-clicks.
+ * @param {Function} onCancel - The function to call if a click occurs outside of `popup`.
+ * @param {Function} condition - An optional function to determine whether or not to run the click test.
+ * @param {any[]} dependents - An array of dependents for the condition function.
+ */
+
+export function usePopupCancel(roots: Preact.RefObject<any> | Preact.RefObject<any>[],
+	onCancel: () => any, condition?: () => boolean, dependents?: any[]) {
+	
+	const body = document.getElementsByTagName('body')[0];
+
+	useEffect(() => {
+		const rootsArray = Array.isArray(roots) ? roots : [ roots ];
+		if (condition && !condition()) return;
+
+		const handlePointerCancel = (e: MouseEvent | TouchEvent) => {
+			let x = e.target as HTMLElement;
+			while (x) {
+				for (const r of rootsArray) if (x === r.current) return;
+				x = x.parentNode as HTMLElement;
+			}
+			onCancel();
+		};
+
+		const handleFocusCancel = (e: FocusEvent) => {
+			let x = e.target as HTMLElement;
+			while (x) {
+				for (const r of rootsArray) if (x === r.current) return;
+				x = x.parentNode as HTMLElement;
+			}
+			onCancel();
+		};
+
+		body.addEventListener('focusin', handleFocusCancel);
+		body.addEventListener('mousedown', handlePointerCancel);
+		body.addEventListener('touchstart', handlePointerCancel);
+
+		return () => {
+			body.removeEventListener('focusin', handleFocusCancel);
+			body.removeEventListener('mousedown', handlePointerCancel);
+			body.removeEventListener('touchstart', handlePointerCancel);
+		};
+	}, [ onCancel, condition, ...dependents || [] ]);
 }

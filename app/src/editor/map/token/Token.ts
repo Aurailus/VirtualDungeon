@@ -1,11 +1,12 @@
 import EventHandler from '../../EventHandler';
 
 import { Vec2 } from '../../util/Vec';
+import * as Color from '../../../../../common/Color';
 
 /** Represents a slider bar for a token. */
 export interface TokenSliderData {
 	name: string;
-	color?: string;
+	color: Color.HSV;
 	icon?: number;
 
 	min?: number;
@@ -59,32 +60,39 @@ export interface TokenRenderEvent {
  * which can be set, updated, and retrieved through public methods.
  */
 
-export default class Token extends Phaser.GameObjects.Sprite {
+export default class Token extends Phaser.GameObjects.Container {
 	readonly on_meta = new EventHandler<TokenMetaEvent>();
 	readonly on_render = new EventHandler<TokenRenderEvent>();
 
-	readonly shadow?: Phaser.GameObjects.Sprite;
+	private sprite: Phaser.GameObjects.Sprite;
+	private shadow: Phaser.GameObjects.Sprite;
 	
 	private hovered: boolean = false;
 	private selected: boolean = false;
 
-	constructor(scene: Phaser.Scene, readonly uuid: string, layer: number, pos?: Vec2, sprite?: string, index?: number) {
-		super(scene, 0, 0, sprite ?? '', index);
-		this.scene.add.existing(this);
-		this.setDepth(layer * 25 + 10);
+	private bars: Phaser.GameObjects.GameObject[] = [];
+	// private meta: TokenMetaData = { name: '', note: '', sliders: [] };
 
-		this.shadow = this.scene.add.sprite(this.x, this.y, sprite ?? '', index);
+	constructor(scene: Phaser.Scene, readonly uuid: string, layer: number, pos?: Vec2, sprite?: string, index?: number) {
+		super(scene, 0, 0);
+		this.scene.add.existing(this);
+
+		this.setDepth(-1000 + layer * 25 + 1);
+		this.setPosition(pos?.x ?? 0, pos?.y ?? 0);
+
+		this.shadow = this.scene.add.sprite(0, 0, sprite ?? '', index);
 		this.shadow.setOrigin(1 / 18, 1 / 18);
 		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
 		this.shadow.setAlpha(0.1, 0.1, 0.3, 0.3);
 		this.shadow.setTint(0x000000);
-		this.shadow.setDepth(this.depth - 1);
+		this.add(this.shadow);
 
-		this.scene.events.on('shutdown', () => console.log('yoo!'));
+		this.sprite = this.scene.add.sprite(0, 0, sprite ?? '', index);
+		this.sprite.setOrigin(1 / 18, 1 / 18);
+		this.sprite.setScale(18 / 16 / this.sprite.width, 18 / 16 / this.sprite.height);
+		this.add(this.sprite);
 
-		this.setOrigin(1 / 18, 1 / 18);
-		this.setScale(18 / 16 / this.width, 18 / 16 / this.height);
-		this.setPosition(pos?.x ?? 0, pos?.y ?? 0);
+		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.125;
 	}
 
 
@@ -95,8 +103,8 @@ export default class Token extends Phaser.GameObjects.Sprite {
 	getRenderData(): TokenRenderData {
 		return {
 			pos: new Vec2(this.x, this.y),
-			layer: Math.floor(this.depth / 25),
-			appearance: { sprite: this.texture?.key, index: this.frame?.name as any }
+			layer: Math.floor((this.depth + 1000) / 25),
+			appearance: { sprite: this.sprite.texture?.key, index: this.sprite.frame?.name as any }
 		};
 	}
 
@@ -112,11 +120,21 @@ export default class Token extends Phaser.GameObjects.Sprite {
 
 
 	/**
+	 * Sets the token's metadata.
+	 */
+
+	setMetaData(meta: TokenMetaData) {
+		// this.meta = meta;
+		this.updateSliders(meta.sliders);
+	}
+
+
+	/**
 	 * Returns the current frame index being used by this token.
 	 */
 
 	getFrameIndex(): number {
-		return this.frame.name as any;
+		return this.sprite.frame.name as any;
 	}
 
 
@@ -125,7 +143,7 @@ export default class Token extends Phaser.GameObjects.Sprite {
 	 */
 
 	getFrameCount(): number {
-		return Object.keys(this.texture.frames).length - 1;
+		return Object.keys(this.sprite.texture.frames).length - 1;
 	}
 
 
@@ -156,26 +174,27 @@ export default class Token extends Phaser.GameObjects.Sprite {
 
 	setPosition(x?: number, y?: number): this {
 		if (this.x === x && this.y === y) return this;
+		if (!this.sprite) return Phaser.GameObjects.Sprite.prototype.setPosition.call(this, x, y) as any;
+		
 		const pre = this.getRenderData();
 		Phaser.GameObjects.Sprite.prototype.setPosition.call(this, x, y);
 		const post = this.getRenderData();
-		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
-		this.shadow?.setPosition(x, y! + this.displayHeight - this.shadow.displayHeight - 0.125);
+		if (this.sprite) this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
 		return this;
 	}
 
 	setFrame(frame: number): this {
 		const pre = this.getRenderData();
-		Phaser.GameObjects.Sprite.prototype.setFrame.call(this, frame);
+		this.sprite.setFrame(frame);
+		this.shadow.setFrame(frame);
 		const post = this.getRenderData();
 		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
-		this.shadow?.setFrame(frame);
 		return this;
 	}
 
 	setTexture(key: string, index?: string | number): this {
 		const pre = this.getRenderData();
-		Phaser.GameObjects.Sprite.prototype.setTexture.call(this, key, index);
+		this.sprite.setTexture(key, index);
 		const post = this.getRenderData();
 		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
 		this.setScale(18 / 16 / this.width, 18 / 16 / this.height);
@@ -183,14 +202,8 @@ export default class Token extends Phaser.GameObjects.Sprite {
 
 		this.shadow.setTexture(key, index);
 		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
-		this.shadow.y = this.y + this.displayHeight - this.shadow.displayHeight - 0.125;
+		this.shadow.y = this.displayHeight - this.shadow.displayHeight - 0.125;
 
-		return this;
-	}
-
-	setVisible(visible: boolean): this {
-		Phaser.GameObjects.Sprite.prototype.setVisible.call(this, visible);
-		this.shadow?.setVisible(visible);
 		return this;
 	}
 
@@ -201,12 +214,56 @@ export default class Token extends Phaser.GameObjects.Sprite {
 
 	private updateShader() {
 		if (this.selected) {
-			this.setPipeline('outline');
-			this.pipeline.set1f('tex_size', this.texture.source[0].width);
+			this.sprite.setPipeline('outline');
+			this.sprite.pipeline.set1f('tex_size', this.sprite.texture.source[0].width);
 		}
 		else if (this.hovered) {
-			this.setPipeline('brighten');
+			this.sprite.setPipeline('brighten');
 		}
-		else this.resetPipeline();
+		else this.sprite.resetPipeline();
+	}
+
+
+	/**
+	 * Updates slider indicators
+	 */
+
+	private updateSliders(sliders: TokenSliderData[]) {
+		this.bars.forEach(bar => bar.destroy());
+		if (sliders.length === 0) return;
+		
+		const SLIDER_WIDTH  = 32 / 16;
+		const SLIDER_HEIGHT =  6 / 16;
+		const STROKE_WIDTH  =  1 / 32;
+		
+		let Y_OFFSET = -(SLIDER_HEIGHT + STROKE_WIDTH) * sliders.length - 4 / 16;
+
+		const outline = this.scene.add.rectangle((1 - SLIDER_WIDTH) / 2, Y_OFFSET,
+			SLIDER_WIDTH, (SLIDER_HEIGHT + STROKE_WIDTH) * sliders.length - STROKE_WIDTH, 0xffffff);
+		outline.setStrokeStyle(STROKE_WIDTH * 2, 0xffffff);
+		outline.setOrigin(0);
+		this.bars.push(outline);
+		this.add(outline);
+
+		sliders.forEach(s => {
+			const bg = this.scene.add.rectangle((1 - SLIDER_WIDTH) / 2, Y_OFFSET, SLIDER_WIDTH, SLIDER_HEIGHT, 0x19216c);
+			bg.setOrigin(0);
+			this.bars.push(bg);
+			this.add(bg);
+
+			const fg = this.scene.add.rectangle((1 - SLIDER_WIDTH) / 2, Y_OFFSET,
+				Math.min((s.current / s.max) * SLIDER_WIDTH, SLIDER_WIDTH), SLIDER_HEIGHT, Color.HSVToInt(s.color));
+			fg.setOrigin(0);
+			this.bars.push(fg);
+			this.add(fg);
+
+			const icon = this.scene.add.sprite(-.5, Y_OFFSET, 'ui_slider_icons', s.icon);
+			icon.setOrigin(0);
+			icon.setScale((1 / 12) * SLIDER_HEIGHT);
+			this.bars.push(icon);
+			this.add(icon);
+
+			Y_OFFSET += SLIDER_HEIGHT + STROKE_WIDTH;
+		});
 	}
 }

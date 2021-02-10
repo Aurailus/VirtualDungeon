@@ -267,9 +267,7 @@ export default class Database {
 			user, identifier, maps: { $elemMatch: { identifier: mapIdentifier }}});
 		if (mapExists) throw 'A map of this name already exists.';
 
-		console.log(mapIdentifier);
-
-		const stub = JSON.stringify({ format: '1.0.0', identifier: mapIdentifier, size: { x: 32, y: 32 }, tokens: [] });
+		const stub = JSON.stringify({ format: '1.0.0', identifier: mapIdentifier, size: { x: 64, y: 64 }, tokens: [] });
 		const data = stub.length + '|' + stub;
 
 		await collection.updateOne({ user, identifier }, { $push: { maps: { name: map, identifier: mapIdentifier, data }}});

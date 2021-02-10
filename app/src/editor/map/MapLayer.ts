@@ -44,7 +44,7 @@ export default class MapLayer {
 	private data: { [ key in Layer ]: LayerData } = {
 		wall: { tiles: [], tilesets: [] }, floor: { tiles: [], tilesets: [] }, detail: { tiles: [], tilesets: [] } };
 
-	constructor(readonly index: number, public size: Vec2) {
+	constructor(public index: number, public size: Vec2) {
 		const createLayerData = (startTile: number | (() => number), startTileset: number): LayerData => {
 			let layer: LayerData = { tiles: [], tilesets: [] };
 
@@ -139,6 +139,7 @@ export default class MapLayer {
 	init(onDirty: (x: number, y: number) => void) {
 		this.onDirty = onDirty;
 	}
+	
 
 	/**
 	 * Sets a tile to the tileset provided, automatically smart-tiling as needed.

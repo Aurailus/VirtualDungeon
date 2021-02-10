@@ -3,10 +3,17 @@
 
 .TokenSlider
 	display: flex
+	position: relative
 	gap: 6px
 
 	.TokenSlider-IconWrap
 		@extend .slice_highlight
+		
+		outline: 0
+		padding: 0
+
+		&:hover, &:focus-visible
+			filter: brightness(120%)
 
 		.TokenSlider-Icon
 			@include slice.slice_invert
@@ -14,10 +21,10 @@
 			height: 36px
 
 			border-radius: 0
-			background-size: 900%
+			background-size: 1300%
 			image-rendering: crisp-edges
 			image-rendering: pixelated
-			background-image: url(/app/static/icon/slider_icons.png)
+			background-image: url(/app/static/editor/slider_icons.png)
 	
 	.TokenSlider-Slider
 		@extend .slice_outline_white
@@ -71,6 +78,41 @@
 				span
 					opacity: .6
 					padding: 3px
+
+	.TokenSlider-Options
+		@extend .slice_background
+
+		z-index: 1
+		position: absolute
+		bottom: 14 * 3px
+		width: calc(100% + 12px)
+		left: -6px
+
+		overflow: visible
+
+		.TokenSlider-OptionsInner
+			@include slice.slice_invert
+
+			width: 100%
+			overflow: visible
+
+			h3
+				margin: 12px 6px 6px 6px
+				font-size: 25px
+
+			.ColorPicker
+				width: calc(100% + 18px * 2)
+
+			.TokenSlider-IconSelector
+				display: grid
+				margin: 0
+				padding: 6px
+				grid-gap: 3px
+				width: calc(100% + 18px * 2)
+				grid-template-columns: repeat(auto-fill, 36px)
+				grid-template-rows: 36px
+				
+				list-style-type: none
 
 .SlideNumericInput-Tester
 	opacity: 0 !important

@@ -4,8 +4,8 @@ import Sidebar from './Sidebar';
 
 import Map from '../../map/Map';
 import ModeManager from '../../mode/ModeManager';
-import type InputManager from '../../InputManager';
 import ArchitectMode from '../../mode/ArchitectMode';
+import type InputManager from '../../interact/InputManager';
 
 import { Asset } from '../../util/Asset';
 
@@ -52,17 +52,19 @@ export default class TileSidebar extends Sidebar {
 	}
 
 	elemClick(x: number, y: number): void {
+		const controller = (this.mode.active as ArchitectMode).controller;
+		if (!controller) return;
 		if (y < 4) {
-			(this.mode.active as ArchitectMode).activeTileset = this.map.tileStore.indices[this.walls[x + (y - 1) * 3]];
-			(this.mode.active as ArchitectMode).activeLayer = 'wall';
+			controller.setActiveTile(this.map.tileStore.indices[this.walls[x + (y - 1) * 3]]);
+			controller.setActiveTileType('wall');
 		}
 		else if (y < 8) {
-			(this.mode.active as ArchitectMode).activeTileset = this.map.tileStore.indices[this.floors[x + (y - 5) * 3]];
-			(this.mode.active as ArchitectMode).activeLayer = 'floor';
+			controller.setActiveTile(this.map.tileStore.indices[this.floors[x + (y - 5) * 3]]);
+			controller.setActiveTileType('floor');
 		}
 		else {
-			(this.mode.active as ArchitectMode).activeTileset = this.map.tileStore.indices[this.details[x + (y - 9) * 3]];
-			(this.mode.active as ArchitectMode).activeLayer = 'detail';
+			controller.setActiveTile(this.map.tileStore.indices[this.details[x + (y - 9) * 3]]);
+			controller.setActiveTileType('detail');
 		}
 	}
 

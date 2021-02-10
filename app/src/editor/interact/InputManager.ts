@@ -1,3 +1,5 @@
+import { Vec2 } from '../util/Vec';
+
 export type Context = 'map' | 'interface';
 
 type ScrollEvent = ((delta: number) => boolean | void);
@@ -11,12 +13,13 @@ export default class InputManager {
 	private leftMouseStateLast: boolean = false;
 	private rightMouseStateLast: boolean = false;
 	private middleMouseStateLast: boolean = false;
+
+	private mousePos: Vec2 = new Vec2(0, 0);
+	private scrollEvents: ScrollEvent[] = [];
 	
 	private keys: {[key: string]: Phaser.Input.Keyboard.Key} = {};
 	private keysDown: {[key: string]: boolean } = {};
 	private keysDownLast: {[key: string]: boolean } = {};
-
-	private scrollEvents: ScrollEvent[] = [];
 
 	private focus: boolean = true;
 
@@ -61,6 +64,11 @@ export default class InputManager {
 			evt.stopPropagation();
 		});
 		
+
+		window.addEventListener('mousemove', (evt: MouseEvent) => {
+			this.mousePos = new Vec2(evt.x, evt.y);
+		});
+
 		const updateKeys = () => {
 			Object.values(this.keys).forEach(k => k.enabled = this.focus);
 		};
@@ -101,6 +109,10 @@ export default class InputManager {
 
 	setContext(context: Context) {
 		this.context = context;
+	}
+
+	getMousePos(): Vec2 {
+		return new Vec2(this.mousePos);
 	}
 
 	mouseDown(): boolean {

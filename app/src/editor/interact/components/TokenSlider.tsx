@@ -3,9 +3,12 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 
 import './TokenSlider.sass';
 
+import ColorPicker from '../../../components/input/ColorPicker';
+
 import { TokenSliderData } from '../../map/token/Token';
 
 import { clamp } from '../../util/Helpers';
+import * as Color from '../../../../../common/Color';
 
 function SliderNumericInput(props: { min: number; max: number;
 	value: number; setValue: (val: number) => void; class?: string; }) {
@@ -51,20 +54,31 @@ interface Props extends TokenSliderData {
 }
 
 export default function TokenSlider(props: Props) {
+	const [ showOptions, setShowOptions ] = useState<boolean>(false);
+
 	const handleChangeName = (e: any) => {
 		const name: string = e.target.value;
 		props.setProps({ name });
 	};
 
+	let icons: Preact.VNode[] = [];
+	for (let i = 0; i < 16; i++) {
+		icons.push(
+			<button class='TokenSlider-IconWrap' onClick={() => props.setProps({ icon: i })}>
+				<div class='TokenSlider-Icon' style={{ backgroundPosition: `${i * (100 / 12)}% 0`}} />
+			</button>
+		);
+	}
+
 	return (
 		<div class='TokenSlider'>
-			<div class='TokenSlider-IconWrap'>
-				<div class='TokenSlider-Icon' style={{ backgroundPosition: `${(props.icon || 0) * (100 / 8)}% 0`}} />
-			</div>
+			<button class='TokenSlider-IconWrap' onClick={() => setShowOptions(o => !o)}>
+				<div class='TokenSlider-Icon' style={{ backgroundPosition: `${(props.icon || 0) * (100 / 12)}% 0`}} />
+			</button>
 			<div class='TokenSlider-Slider'>
 				<div class='TokenSlider-SliderInner'>
-					<div class='TokenSlider-Bar' style={{ backgroundColor: props.color ?? '#f06292',
-						width: 'calc(' + ((props.current - (props.min || 0)) / props.max) * 100 + '% - 6px)'}}/>
+					<div class='TokenSlider-Bar' style={{ backgroundColor: Color.HSVToHex(props.color),
+						width: 'calc(' + Math.min((props.current - (props.min || 0)) / props.max, 1) * 100 + '% - 6px)'}}/>
 					<div class='TokenSlider-BarContent'>
 						<input class='TokenSlider-Input TokenSlider-BarText TokenSlider-Title'
 							value={props.name} onChange={handleChangeName}/>
@@ -77,6 +91,17 @@ export default function TokenSlider(props: Props) {
 					</div>
 				</div>
 			</div>
+			{showOptions && <div class='TokenSlider-Options'>
+				<div class='TokenSlider-OptionsInner'>
+					<h3>{props.name}</h3>
+
+					<ColorPicker value={props.color} setValue={color => props.setProps({ color })} />
+
+					<ul class='TokenSlider-IconSelector'>
+						{icons}
+					</ul>
+				</div>
+			</div>}
 		</div>
 	);
 }

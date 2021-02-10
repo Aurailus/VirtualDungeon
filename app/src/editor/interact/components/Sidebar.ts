@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 
 import Component from './Component';
-import InputManager from '../../InputManager';
+import InputManager from '../../interact/InputManager';
 
 import { clamp } from '../../util/Helpers';
 import { Vec2, Vec4 } from '../../util/Vec';

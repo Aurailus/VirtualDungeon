@@ -1,8 +1,9 @@
 import * as Phaser from 'phaser';
+import * as IO from 'socket.io-client';
 
 import Mode from './Mode';
 import Map from '../map/Map';
-import InputManager from '../InputManager';
+import InputManager from '../interact/InputManager';
 import ActionManager from '../action/ActionManager';
 import Token, { TokenRenderData } from '../map/token/Token';
 
@@ -30,8 +31,8 @@ export default class TokenMode extends Mode {
 	private cursor: Phaser.GameObjects.Sprite;
 	private primitives: (Phaser.GameObjects.Line | Phaser.GameObjects.Sprite)[] = [];
 
-	constructor(scene: Phaser.Scene, map: Map, actions: ActionManager, assets: Asset[]) {
-		super(scene, map, actions, assets);
+	constructor(scene: Phaser.Scene, map: Map, socket: IO.Socket, actions: ActionManager, assets: Asset[]) {
+		super(scene, map, socket, actions, assets);
 
 		this.cursor = this.scene.add.sprite(0, 0, 'cursor');
 		this.cursor.setDepth(1000);
@@ -64,7 +65,8 @@ export default class TokenMode extends Mode {
 
 		cursorPos = cursorPos.floor();
 
-		if (this.preview.texture.key !== this.placeTokenType) this.preview.setTexture(this.placeTokenType, 0);
+		if (this.preview.getRenderData().appearance.sprite !== this.placeTokenType)
+			this.preview.setTexture(this.placeTokenType, 0);
 
 		switch (this.editMode) {
 		default: break;

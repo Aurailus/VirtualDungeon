@@ -1,33 +1,33 @@
 import * as Preact from 'preact';
-// import { Color } from 'auriserve-api';
 import { forwardRef } from 'preact/compat';
 import { useState, useRef } from 'preact/hooks';
-// import { usePopupCancel } from '../../../Hooks';
+import { usePopupCancel } from '../../../Hooks';
 
 import './InputColor.sass';
 
-// import Popup from '../../Popup';
-// import InputText from './InputText';
-// import ColorPicker from '../ColorPicker';
+import Popup from '../../Popup';
+import InputText from './InputText';
+import ColorPicker from '../ColorPicker';
 
 import { WidgetProps } from '../Input';
+import * as Color from '../../../../../common/Color';
 
 interface Props {
 	writable?: boolean;
-	displayHex?: boolean;
+	showHex?: boolean;
 	full?: boolean;
 }
 
-const InputColor = forwardRef<HTMLInputElement, Props & WidgetProps>((props, _fRef) => {
+const InputColor = forwardRef<HTMLInputElement, Props & WidgetProps>((props, fRef) => {
 	const inputRef = useRef<HTMLDivElement>(null);
-	const [ /* pickerActive */, setPickerActive ] = useState(false);
+	const [ pickerActive, setPickerActive ] = useState(false);
 
-	// usePopupCancel(inputRef, () => setPickerActive(false));
+	usePopupCancel(inputRef, () => setPickerActive(false));
 
 	return (
 		<div class={('InputColor ' + (props.full ? 'Full ' : '') + (props.class ?? '')).trim()}
 			style={props.style} onFocusCapture={() => setPickerActive(true)} ref={inputRef}>
-			{/* <InputText
+			<InputText
 				ref={fRef}
 				value={Color.HSVToHex(props.value)}
 				setValue={hex => props.setValue(Color.hexToHSV(hex))}
@@ -36,7 +36,7 @@ const InputColor = forwardRef<HTMLInputElement, Props & WidgetProps>((props, _fR
 			<div class='InputColor-ColorIndicator' style={{ backgroundColor: Color.HSVToHex(props.value) }}/>
 			<Popup active={pickerActive} defaultAnimation={true}>
 				<ColorPicker {...props} parent={inputRef.current} />
-			</Popup>*/}
+			</Popup>
 		</div>
 	);
 });

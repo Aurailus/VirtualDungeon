@@ -5,6 +5,12 @@ import Shape, { ShapeIntersect, HANDLE_SIZE } from './Shape';
 import { Vec2 } from '../util/Vec';
 import { clamp } from '../util/Helpers';
 
+export interface SerializedCone {
+	origin: { x: number; y: number };
+	end: { x: number; y: number };
+	tint: number;
+}
+
 const UNFOCUSED_FILL_ALPHA = 0.05;
 const FOCUSED_FILL_ALPHA = 0.15;
 const UNFOCUSED_STROKE_ALPHA = 0.6;
@@ -27,16 +33,15 @@ export default class Cone extends Shape {
 	private moveHandle: Phaser.GameObjects.Ellipse;
 	private scaleHandle: Phaser.GameObjects.Ellipse;
 
-
-	constructor(scene: Phaser.Scene, protected origin: Vec2) {
-		super(scene, origin);
+	constructor(scene: Phaser.Scene, protected origin: Vec2, uuid?: string) {
+		super(scene, origin, uuid);
 		this.end = origin;
 
 		this.midLine = this.scene.add.line();
 		this.triangle = this.scene.add.polygon(0, 0, [ new Vec2(0, 0) ]);
 
 		this.indicator = this.scene.add.text(0, 0, '',
-			{ fontFamily: 'monospace', fontSize: '32px', align: 'center' });
+			{ fontFamily: 'sans-serif', fontSize: '32px', align: 'center' });
 		this.moveHandle = this.scene.add.ellipse(0, 0, HANDLE_SIZE * 2, HANDLE_SIZE * 2, 0xffffff);
 		this.scaleHandle = this.scene.add.ellipse(0, 0, HANDLE_SIZE * 2, HANDLE_SIZE * 2, 0xffffff);
 
@@ -52,12 +57,30 @@ export default class Cone extends Shape {
 		this.moveHandle.setAlpha(.5);
 	}
 
+	serialize() {
+		const data: SerializedCone = {
+			origin: this.origin,
+			end: this.end,
+			tint: this.tint
+		};
+
+		return JSON.stringify(data);
+	}
+
+	deserialize(d: string) {
+		const data = JSON.parse(d) as SerializedCone;
+		this.setOrigin(new Vec2(data.origin));
+		this.setEnd(new Vec2(data.end));
+		this.setTint(data.tint);
+	}
+
 	setOrigin(origin: Vec2) {
 		if (this.origin.equals(origin)) return;
 		const offset = new Vec2(origin.x - this.origin.x, origin.y - this.origin.y);
 		this.end = new Vec2(this.end.x + offset.x, this.end.y + offset.y);
 		this.origin = origin;
 
+		this.dirty = true;
 		this.updatePrimitives();
 	}
 
@@ -76,12 +99,14 @@ export default class Cone extends Shape {
 		let dir = new Vec2(Math.cos(angle), Math.sin(angle));
 		this.end = new Vec2(this.origin.x + dir.x * len, this.origin.y + dir.y * len);
 
+		this.dirty = true;
 		this.updatePrimitives();
 	}
 
 	setTint(tint: number = 0xffffff) {
 		if (tint === this.tint) return;
 		this.tint = tint;
+		this.dirty = true;
 		this.updatePrimitives();
 	}
 
@@ -155,7 +180,7 @@ export default class Cone extends Shape {
 		this.midLine.setLineWidth(.03);
 		this.midLine.setOrigin(0);
 
-		this.indicator.setText(`${Math.round(len * 25) / 5}ft\n${Math.round(angle * (180 / Math.PI))}°`);
+		this.indicator.setText(`${Math.round(len * 50) / 10}ft\n${Math.round(angle * (180 / Math.PI))}°`);
 		this.indicator.setPosition(this.origin.x + diff.x / 1.55 - this.indicator.displayWidth / 2,
 			this.origin.y + diff.y / 1.55 - this.indicator.displayHeight / 2);
 		this.indicator.setOrigin(0);
