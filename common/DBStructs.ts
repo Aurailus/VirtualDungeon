@@ -60,8 +60,9 @@ export type AssetType =	'wall' | 'detail' | 'ground' | 'token';
 
 export interface AssetCollection {
 	user: string;
-	identifier: string;
 	name: string;
+	identifier: string;
+	description: string;
 
 	items: string[];
 }

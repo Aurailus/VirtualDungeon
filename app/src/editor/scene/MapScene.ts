@@ -40,6 +40,10 @@ export default class MapScene extends Phaser.Scene {
 		this.map.init(this, this.assets);
 		if (data.map) this.map.load(data.map);
 
+		let s = this.add.sprite(2, 2, 'wall_dungeon', '__BASE');
+		s.setOrigin(0);
+		s.setScale(1/16);
+
 		data.socket.on('get_map', (res: (map: string) => void) => res(this.map.save()));
 
 		this.actions.init(this, this.map, data.socket, data.onDirty);

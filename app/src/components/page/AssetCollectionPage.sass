@@ -1,0 +1,53 @@
+@use '../../style/def' as *
+
+.AssetCollectionPage
+	.AssetCollectionPage-Top
+		width: 100%
+		display: grid
+		overflow: hidden
+		position: relative
+		height: clamp(250px, 30vw, 350px)
+
+		.AssetCollectionPage-TopBackgroundImage
+			z-index: 1
+			width: 100%
+			height: 100%
+			position: absolute
+
+			background-size: cover
+			background-position: center center
+
+			// &.Blur
+			// 	filter: blur(16px) brightness(65%)
+
+		.AssetCollectionPage-TopBackdropBlur
+			z-index: 1
+			bottom: 0
+			width: 100%
+			height: 100%
+			position: absolute
+
+			background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.3) 70%, rgba(0, 0, 0, 0.7))
+			-webkit-mask-image: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.8) 65%, black 80%)
+			backdrop-filter: blur(10px)
+
+		.AssetCollectionPage-HeaderWrap
+			display: flex
+			align-items: flex-end
+			justify-content: center
+			padding: 16px
+			
+			.AssetCollectionPage-Header
+				width: $wrap-med
+				position: relative
+				z-index: 2
+
+				h2
+					font-size: 39px
+					margin-bottom: 0
+
+				p
+					max-width: Max(85%, $wrap-small)
+					font-weight: 500
+					opacity: 0.7
+					line-height: 1.25

@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import { Vec2, Vec4 } from './util/Vec';
 
-const PATCH_TIMING = false;
+const PATCH_TIMING = true;
 
 /**
  * Patches a partial tileset into a full tileset by combining parts of other textures.
@@ -141,7 +141,7 @@ export function tileset(scene: Phaser.Scene, tileset_key: string, tile_size: num
 	draw(new Vec4(1.5, 3, 2, 4), new Vec2(7.5, 4));
 	draw(new Vec4(1, 3, 1.5, 3.5), new Vec2(7, 4));
 	draw(new Vec4(6, 0.5, 6.5, 1), new Vec2(7, 4.5));
-
+	
 	const tex = canvas.saveTexture(tileset_key);
 	for (let i = 0; i < 5; i++) {
 		for (let j = 0; j < 10; j++) {
