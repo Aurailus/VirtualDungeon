@@ -1,12 +1,12 @@
 import * as Phaser from 'phaser';
 
-import { Layer } from '../util/Layer';
-import { Asset, AssetType } from '../util/Asset';
+import { Asset, TileAssetType } from '../../../../common/DBStructs';
 
 interface TileInfo {
 	res: number;
 	ind: number;
 	identifier: string;
+	type: TileAssetType;
 }
 
 /**
@@ -14,36 +14,45 @@ interface TileInfo {
  */
 
 export default class TileStore {
-	indices: { [tileset_key: string]: number } = {};
-	wallTiles: { [index: number]: TileInfo } = {};
-	floorTiles: { [index: number]: TileInfo } = {};
-	detailTiles: { [index: number]: TileInfo } = {};
-
-	private currentInd: { [layer in Layer]: number } = { wall: 1, floor: 1, detail: 1 };
-
+	private indices: { [ type in TileAssetType]: { [ identifier: string ]: number }} = { floor: {}, wall: {}, detail: {} };
+	private tiles: { [ type in TileAssetType]: TileInfo[] } = { floor: [], wall: [], detail: [] };
 
 	/**
 	 * Initializes tilesets from a list of assets.
 	 */
 
 	init(textures: Phaser.Textures.TextureManager, assets: Asset[]) {
-		for (const tileset of assets.filter(a => a.type !== 'token'))
-			this.addTileset(textures, tileset.type, tileset.identifier);
+		for (const tile of assets.filter(a => a.type !== 'token'))
+			this.addTile(textures, tile.type as TileAssetType, tile.identifier);
 	}
 
 
 	/**
-	 * Adds the specified tileset to the map.
+	 * Gets the info for a tile by its index or identifier.
+	 * This method is O(1) regardless of the parameter type.
+	 *
+	 * @param {string | number} identifierOrIndex - The identifier or index of the tile to retrieve.
+	 * @returns a TileInfo instance if the tile exists, or undefined.
 	 */
 
-	private addTileset(textures: Phaser.Textures.TextureManager, layer: AssetType, identifier: string): void {
-		const ind = this.currentInd[layer as Layer]++;
+	getTile(type: TileAssetType, identiferOrindex: string | number): TileInfo | undefined {
+		if (typeof identiferOrindex === 'string') identiferOrindex = this.indices[type][identiferOrindex];
+		return this.tiles[type][identiferOrindex - 1];
+	}
+
+	/**
+	 * Adds the specified tile to the TileStore.
+	 *
+	 * @param {TextureManager} textures - The Phaser Texture Manager containing the asset.
+	 * @param {type} - The tile type that is being added.
+	 * @param {identifier} - The identifier of the tile.
+	 */
+
+	private addTile(textures: Phaser.Textures.TextureManager, type: TileAssetType, identifier: string): void {
+		const ind = this.tiles[type].length + 1;
 		const res = textures.get(identifier).getSourceImage(0).width / 9;
 
-		if (layer === 'wall') this.wallTiles[ind] = { res, ind, identifier };
-		else if (layer === 'floor') this.floorTiles[ind] = { res, ind, identifier };
-		else if (layer === 'detail') this.detailTiles[ind] = { res, ind, identifier };
-
-		this.indices[identifier] = ind;
+		this.tiles[type].push({ ind, res, identifier, type });
+		this.indices[type][identifier] = ind;
 	}
 }

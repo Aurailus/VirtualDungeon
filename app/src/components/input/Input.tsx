@@ -15,6 +15,9 @@ export { default as Label } from './InputLabel';
 export { default as Divider } from './InputDivider';
 export { default as Annotation } from './InputAnnotation';
 
+export { default as Button } from './fields/InputButton';
+export { default as SelectRow, InputSelectRowItem as SelectRowItem } from './fields/InputSelectRow';
+
 export { default as Text } from './fields/InputText';
 // export { default as Color } from './fields/InputColor';
 // export { default as Select } from './fields/InputSelect';

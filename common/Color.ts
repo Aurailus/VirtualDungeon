@@ -160,6 +160,16 @@ export function hexToHSV(hex: string): HSV {
  * @returns {number} the RGB representation of the color in an int.
  */
 
-export function HSVToInt(color: HSV) {
-	return parseInt(HSVToHex(color).substr(1), 16);
+export function HSVToInt(hsv: HSV) {
+	return parseInt(HSVToHex(hsv).substr(1), 16);
+}
+
+export function hexToInt(hex: string) {
+	return parseInt(hex.substr(1), 16);
+}
+
+export function intToHex(int: number) {
+	let s = int.toString(16);
+	while (s.length < 6) s = '00' + s;
+	return '#' + s;
 }

@@ -12,7 +12,7 @@ import TokenMode, { TokenModeKey } from './TokenMode';
 import ArchitectMode, { ArchitectModeKey } from './ArchitectMode';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../util/Asset';
+import { Asset } from '../../../../common/DBStructs';
 
 export interface ModeSwitchEvent {
 	from: string;
@@ -31,12 +31,12 @@ export default class ModeManager {
 
 	private evtHandler = new EventHandler<ModeSwitchEvent>();
 
-	init(scene: Phaser.Scene, map: Map, socket: IO.Socket, actions: ActionManager, assets: Asset[]) {
-		this.modes = {
-			[ArchitectModeKey]: new ArchitectMode(scene, map, socket, actions, assets),
-			[TokenModeKey]: new TokenMode(scene, map, socket, actions, assets),
-			[DrawModeKey]: new DrawMode(scene, map, socket, actions, assets)
-		};
+	init(scene: Phaser.Scene, state: 'owner' | 'player',
+		map: Map, socket: IO.Socket, actions: ActionManager, assets: Asset[]) {
+		
+		if (state === 'owner') this.modes[ArchitectModeKey] = new ArchitectMode(scene, map, socket, actions, assets);
+		this.modes[TokenModeKey] = new TokenMode(scene, map, socket, actions, assets);
+		this.modes[DrawModeKey] = new DrawMode(scene, map, socket, actions, assets);
 
 		this.activate(Object.keys(this.modes)[0]);
 	}
@@ -47,6 +47,14 @@ export default class ModeManager {
 		this.active = this.modes[mode];
 		this.active?.activate();
 		this.modeStr = mode;
+	}
+
+	getModes(): string[] {
+		return Object.keys(this.modes);
+	}
+
+	hasMode(mode: string): boolean {
+		return this.modes[mode] !== undefined;
 	}
 
 	getActive(): string {

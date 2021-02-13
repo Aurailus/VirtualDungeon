@@ -1,0 +1,65 @@
+@use '../../../style/ext'
+@use '../../../style/def' as *
+
+.InputSelectRow
+	display: inline-block
+	position: relative
+
+	padding: 6px
+	border-radius: 4px
+	background-color: $neutral-250
+
+	.InputSelectRow-Highlight
+		top: 6px
+		z-index: 0
+		position: absolute
+
+		height: 36px
+		border-radius: 4px
+		background-color: $accent-600
+
+		$bez: cubic-bezier(0.33, 0.65, 0.62, 1.11)
+		transition: left $t-fast $bez, width $t-fast $bez, transform $t-ufast, color $t-fast
+
+	&:active
+		.InputSelectRow-Highlight
+			transform: scale(0.9)
+			background-color: $accent-500
+
+	&.Disabled
+		.InputSelectRow-Highlight
+			background-color: $neutral-400
+
+.InputSelectRowItem
+	position: relative
+
+	padding: 10px
+	margin-right: 16px
+
+	outline: 0
+	border: none
+	font-size: 14px
+	font-weight: 500
+	user-select: none
+	border-radius: 4px
+	letter-spacing: 1px
+	color: $neutral-800
+	text-transform: uppercase
+	background-color: transparent
+
+	transition: color $t-fast, background-color $t-fast
+
+	&:last-child
+		margin-right: 0
+
+	&:focus-visible
+		background-color: transparentize($neutral-600, 0.8)
+
+	&:disabled
+		color: $neutral-600
+
+	&:active, &.Selected
+		color: $neutral-1000
+
+		&:disabled
+			color: $neutral-900

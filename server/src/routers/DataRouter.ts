@@ -138,26 +138,18 @@ export default class DataRouter extends Router {
 		 */
 
 		this.router.post('/asset/upload/', this.authRoute(async (user, req, res) => {
-			const type: 'floor' | 'token' | 'detail' | 'wall' = req.body.type;
-			const tokenType: '1' | '4' | '8' = req.body.tokenType;
+			const data = JSON.parse(req.body.data);
+			const type: 'floor' | 'token' | 'detail' | 'wall' = data.type;
 
-			const name = req.body.name;
-			const identifier = req.body.identifier;
-
-			if (typeof name !== 'string' || typeof identifier !== 'string' ||
+			if (typeof data.name !== 'string' || typeof data.identifier !== 'string' ||
 				(type !== 'token' && type !== 'floor' && type !== 'wall' && type !== 'detail') ||
-				(type === 'token' && tokenType !== '1' && tokenType !== '4' && tokenType !== '8'))
+				(type === 'token' && data.tokenType !== 1 && data.tokenType !== 4 && data.tokenType !== 8))
 				return res.sendStatus(400);
 
 			const file = req.files?.file;
 			if (!file || Array.isArray(file)) return res.sendStatus(400);
 
-			const status = await this.db.uploadAsset(user, {
-				type, file,
-				identifier, name,
-				tokenType: Number.parseInt(tokenType, 10) as 1 | 4 | 8
-			});
-
+			const status = await this.db.uploadAsset(user, type, file, data);
 			if (status !== 200) res.sendStatus(status);
 			else res.send(await getAppData(user, 'assets'));
 

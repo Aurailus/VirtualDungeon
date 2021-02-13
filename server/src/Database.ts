@@ -19,23 +19,7 @@ const ASSET_PATH = path.join(path.dirname(path.dirname(__dirname)), 'assets');
 export const uploadLimit = 2 * 1024 * 1024;
 export const accountLimit = 5 * 1024 * 1024;
 
-interface BaseAssetData {
-	name: string;
-	identifier: string;
-	file: UploadedFile;
-}
-
-interface TilesetData {
-	type: 'floor' | 'wall' | 'detail'
-}
-
-interface TokenData {
-	type: 'token',
-	tokenType: 1 | 4 | 8
-}
-
-export type UploadError = 'req_invalid' | 'server_error';
-export type AssetData = BaseAssetData & (TilesetData | TokenData);
+// export type UploadError = 'req_invalid' | 'server_error';
 
 async function getIdentifier(base: string, len: number = 32) {
 	return crypto.createHash('md5').update(base + await crypto.randomBytes(8)).digest('hex').substr(0, len);
@@ -64,51 +48,20 @@ export default class Database {
 
 			await this.createUser('me@auri.xyz', 'Auri', 'password');
 			await this.createUser('zythia.woof@gmail.com', 'Zythia', 'password');
-
-			// await this.db.collection('assets').insertMany([{
-			// 	type: 'ground',
-
-			// 	user: 'me@auri.xyz',
-			// 	identifier: 'fantasy_floor_rock',
-			// 	name: 'Rocky Ground',
-
-			// 	path: 'auri_16x_fantasy_floor_rock.png',
-			// 	size: 0,
-				
-			// 	tileSize: 16
-			// }, {
-			// 	type: 'wall',
-
-			// 	user: 'me@auri.xyz',
-			// 	identifier: 'fantasy_wall_dungeon',
-			// 	name: 'Dungeon Bricks',
-
-			// 	path: 'auri_16x_fantasy_wall_dungeon.png',
-			// 	size: 0,
-				
-			// 	tileSize: 16
-			// }, {
-			// 	type: 'token',
-
-			// 	user: 'me@auri.xyz',
-			// 	identifier: 'fantasy_cadin_1',
-			// 	name: 'Cadin 1',
-
-			// 	path: 'auri_16x_fantasy_cadin_1.png',
-			// 	fileSize: 0,
-				
-			// 	dimensions: {x: 18, y: 18},
-			// 	tileSize: 18
-			// }] as DB.Asset[]);
+			await this.createUser('jrccoombs@gmail.com', 'Jaycee', 'password');
 
 			// await this.db.collection('collections').insertMany([{
 			// 	user: 'me@auri.xyz',
 			// 	identifier: '16x_fantasy',
 			// 	name: 'Fantasy (16x)',
+			// 	description: '',
+			// 	items: []
 			// }, {
 			// 	user: 'me@auri.xyz',
 			// 	identifier: PERSONAL_IDENTIFIER,
 			// 	name: 'Personal Assets',
+			// 	description: '',
+			// 	items: []
 			// }] as DB.AssetCollection[]);
 		}
 		catch (e) {
@@ -340,11 +293,11 @@ export default class Database {
 			assetIdentifiers.push(...(await this.db!.collection('collections').findOne({ user: user, identifier: iden }))?.items || []);
 		}));
 
-		return await Promise.all(assetIdentifiers.map(async (idenString) => {
+		return (await Promise.all(assetIdentifiers.map(async (idenString) => {
 			const user = idenString.substring(0, idenString.indexOf(':'));
 			const identifier = idenString.substring(idenString.indexOf(':') + 1);
 			return await this.db!.collection('assets').findOne({ user, identifier });
-		}));
+		}))).filter(asset => asset !== null);
 	}
 
 
@@ -394,22 +347,25 @@ export default class Database {
 	 * Returns a status code for the file.
 	 *
 	 * @param {string} user - The user identifier.
-	 * @param {AssetData} data - Data for the new asset.
+	 * @param {DB.UploadData} data - Data for the new asset.
 	 */
 
-	async uploadAsset(user: string, data: AssetData): Promise<number> {
+	async uploadAsset(user: string, type: DB.AssetType, file: UploadedFile, data: DB.UploadData): Promise<number> {
 		// Validate that the file is the right format, and under the file size limit.
-		if (data.file.mimetype !== 'image/png' || data.file.size > uploadLimit || data.file.truncated) return 400;
+		if (file.mimetype !== 'image/png' || file.size > uploadLimit || file.truncated) return 400;
+		
 		// Validate that the identifier and name formats are valid and within the required lengths.
-		if (data.identifier.length > 32 || data.name.length > 64 || this.sanitizeName(data.identifier) != data.identifier) return 400;
+		let identifier = '';
+		try { identifier = this.sanitizeName(data.identifier || data.name); } catch { return 400; }
+		if (identifier.length > 32 || data.name?.length < 3 || data.name.length > 64) return 400;
 
 		// Check that there's space in the user's account and modify their asset space.
+		const fileSize = file.size;
 		const ret = await this.db!.collection('users').findOneAndUpdate(
-			{ user: user, assetSize: { $lte: accountLimit - data.file.size }}, { $inc: { assetSize: data.file.size }});
+			{ user: user, assetSize: { $lte: accountLimit - fileSize }}, { $inc: { assetSize: fileSize }});
 		if (ret.value === null) return 402;
 
 		// Move the file to the asset directory.
-
 		let assetName = '', assetPath = '';
 		while (true) {
 			assetName = await getIdentifier(data.identifier) + '.png';
@@ -418,32 +374,22 @@ export default class Database {
 			catch (e) { if (e.code === 'ENOENT') break; }
 		}
 
-		await data.file.mv(assetPath);
-		let tokenSize: number | undefined = undefined;
-		const size: { width: number, height: number } = await sizeOf(assetPath) as any;
-
-		if (data.type === 'token') {
-			if (data.tokenType === 1) tokenSize = Math.round(size.width);
-			if (data.tokenType === 4) tokenSize = Math.round(size.width / 2);
-			if (data.tokenType === 8) tokenSize = Math.round(size.width / 3);
-		}
+		await file.mv(assetPath);
+		let imageSize: { x: number; y: number; width?: number; height?: number } = await sizeOf(assetPath) as any;
+		imageSize = { x: imageSize.width!, y: imageSize.height! };
+		const tokenType: number | undefined = (data as any).tokenType;
+		const tileSize: { x: number, y: number } | undefined = type == 'token' ?
+			{ x: (data as any).tileSize?.x ?? 1, y: (data as any).tileSize?.y ?? 1 } : undefined;
 
 		await this.db!.collection('assets').insertOne({
-			type: data.type,
-			user: user,
-			identifier: data.identifier,
-			name: data.name,
-			path: assetName,
-			fileSize: data.file.size,
-			tileSize: tokenSize ?? 16,
-			dimensions: { x: size.width, y: size.height }
+			user, identifier, name: data.name, type, tokenType,
+			tileSize, fileSize, imageSize,
+			path: assetName
 		} as DB.Asset);
 
 		await this.db!.collection('collections').findOneAndUpdate({ user: user, identifier: PERSONAL_IDENTIFIER }, {
-			$push: {  items: user + ':' + data.identifier }
+			$push: {  items: user + ':' + identifier }
 		}, {upsert: true});
-
-		// console.log((await this.db!.collection('collection.find({})).toArray());
 
 		return 200;
 	}

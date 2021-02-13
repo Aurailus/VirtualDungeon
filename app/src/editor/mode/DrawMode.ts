@@ -14,8 +14,8 @@ import Cone from '../shape/Cone';
 import Circle from '../shape/Circle';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../util/Asset';
 import * as Color from '../../../../common/Color';
+import { Asset } from '../../../../common/DBStructs';
 
 export const DrawModeKey = 'DRAW';
 

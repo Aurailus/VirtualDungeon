@@ -71,10 +71,11 @@ export default class TokenManager {
 	 * @returns the new token instance.
 	 */
 
-	createToken(uuid: string, layer: number, pos: Vec2, meta?: Partial<TokenMetaData>, sprite?: string, index?: number): Token {
+	createToken(uuid: string, layer: number, pos: Vec2, meta?: Partial<TokenMetaData>,
+		scale: number = 1, sprite?: string, index?: number): Token {
 		uuid = uuid || generateId(32);
-		
-		const token = new Token(this.scene, uuid, layer, pos, sprite, index);
+
+		const token = new Token(this.scene, uuid, layer, pos, scale, sprite, index);
 		token.on_render.bind(this.onChange);
 		this.scene.add.existing(token);
 		this.tokens.push(token);
@@ -127,7 +128,7 @@ export default class TokenManager {
 		while (this.tokens.length > 0) this.deleteToken(this.tokens[this.tokens.length - 1]);
 		data?.forEach(d => this.createToken(
 			d.uuid, d.render.layer, new Vec2(d.render.pos as any), d.meta,
-			d.render.appearance.sprite, d.render.appearance.index));
+			d.render.implicitScale, d.render.appearance.sprite, d.render.appearance.index));
 		return this.getAllTokens();
 	}
 

@@ -33,7 +33,7 @@ export default bind<Props>(function LayerManager(props: Props) {
 		return () => props.actions.event.unbind(actionCb);
 	}, [ props.actions ]);
 
-	const [ mode, setMode ] = useState<string>(ArchitectModeKey);
+	const [ mode, setMode ] = useState<string>(props.mode.getActive());
 
 	useEffect(() => {
 		const modeCb = (evt: ModeSwitchEvent) => {
@@ -51,8 +51,8 @@ export default bind<Props>(function LayerManager(props: Props) {
 	return (
 		<div class='Toolbar'>
 			<ButtonGroup class='Toolbar-ModeSelector'>
-				<Button icon='architect' alt='Build Map' noFocus={true}
-					inactive={mode !== ArchitectModeKey} onClick={() => handleSetMode(ArchitectModeKey)} />
+				{props.mode.hasMode(ArchitectModeKey) && <Button icon='architect' alt='Build Map' noFocus={true}
+					inactive={mode !== ArchitectModeKey} onClick={() => handleSetMode(ArchitectModeKey)} />}
 				<Button icon='token' alt='Manage Tokens' noFocus={true}
 					inactive={mode !== TokenModeKey} onClick={() => handleSetMode(TokenModeKey)} />
 				<Button icon='draw' alt='Draw Markup' noFocus={true}

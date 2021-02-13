@@ -25,6 +25,7 @@ export interface TokenMetaData {
 /** The render information for a token, such as position and sprite. */
 export interface TokenRenderData {
 	layer: number;
+	implicitScale: number;
 	pos: { x: number; y: number };
 	appearance: { sprite: string; index: number };
 }
@@ -73,7 +74,8 @@ export default class Token extends Phaser.GameObjects.Container {
 	private bars: Phaser.GameObjects.GameObject[] = [];
 	// private meta: TokenMetaData = { name: '', note: '', sliders: [] };
 
-	constructor(scene: Phaser.Scene, readonly uuid: string, layer: number, pos?: Vec2, sprite?: string, index?: number) {
+	constructor(scene: Phaser.Scene, readonly uuid: string, layer: number, pos?: Vec2,
+		public implicitScale: number = 1, sprite?: string, index?: number) {
 		super(scene, 0, 0);
 		this.scene.add.existing(this);
 
@@ -81,16 +83,14 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.setPosition(pos?.x ?? 0, pos?.y ?? 0);
 
 		this.shadow = this.scene.add.sprite(0, 0, sprite ?? '', index);
-		this.shadow.setOrigin(1 / 18, 1 / 18);
-		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
 		this.shadow.setAlpha(0.1, 0.1, 0.3, 0.3);
 		this.shadow.setTint(0x000000);
 		this.add(this.shadow);
 
 		this.sprite = this.scene.add.sprite(0, 0, sprite ?? '', index);
-		this.sprite.setOrigin(1 / 18, 1 / 18);
-		this.sprite.setScale(18 / 16 / this.sprite.width, 18 / 16 / this.sprite.height);
 		this.add(this.sprite);
+
+		this.updateScale();
 
 		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.125;
 	}
@@ -103,6 +103,7 @@ export default class Token extends Phaser.GameObjects.Container {
 	getRenderData(): TokenRenderData {
 		return {
 			pos: new Vec2(this.x, this.y),
+			implicitScale: this.implicitScale,
 			layer: Math.floor((this.depth + 1000) / 25),
 			appearance: { sprite: this.sprite.texture?.key, index: this.sprite.frame?.name as any }
 		};
@@ -114,7 +115,9 @@ export default class Token extends Phaser.GameObjects.Container {
 	 */
 
 	setRenderData(render: Partial<TokenRenderData>) {
+		this.implicitScale = render.implicitScale ?? 1;
 		if (render.pos) this.setPosition(render.pos.x, render.pos.y);
+		if (render.implicitScale) this.updateScale();
 		if (render.appearance) this.setTexture(render.appearance.sprite, render.appearance.index);
 	}
 
@@ -197,14 +200,30 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.sprite.setTexture(key, index);
 		const post = this.getRenderData();
 		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
-		this.setScale(18 / 16 / this.width, 18 / 16 / this.height);
 		if (!this.shadow) return this;
 
 		this.shadow.setTexture(key, index);
-		this.shadow.setScale(18 / 16 / this.shadow.width, 18 / 16 / 4 / this.shadow.height);
+		this.updateScale();
 		this.shadow.y = this.displayHeight - this.shadow.displayHeight - 0.125;
 
 		return this;
+	}
+
+
+	/**
+	 * Updates the scale of the token.
+	 */
+
+	private updateScale() {
+		const frameWidth = this.sprite.width;
+		const scaleFactor = frameWidth / (frameWidth - 2) / frameWidth * this.implicitScale;
+
+		this.sprite.setScale(scaleFactor, scaleFactor);
+		this.shadow.setScale(scaleFactor, scaleFactor / 4);
+
+		this.shadow.setOrigin(1 / frameWidth, 1 / frameWidth);
+		this.sprite.setOrigin(1 / frameWidth, 1 / frameWidth);
+
 	}
 
 
@@ -237,8 +256,9 @@ export default class Token extends Phaser.GameObjects.Container {
 		const STROKE_WIDTH  =  1 / 32;
 		
 		let Y_OFFSET = -(SLIDER_HEIGHT + STROKE_WIDTH) * sliders.length - 4 / 16;
+		const X_OFFSET = (this.implicitScale / 2 - SLIDER_WIDTH / 2);
 
-		const outline = this.scene.add.rectangle((1 - SLIDER_WIDTH) / 2, Y_OFFSET,
+		const outline = this.scene.add.rectangle(X_OFFSET, Y_OFFSET,
 			SLIDER_WIDTH, (SLIDER_HEIGHT + STROKE_WIDTH) * sliders.length - STROKE_WIDTH, 0xffffff);
 		outline.setStrokeStyle(STROKE_WIDTH * 2, 0xffffff);
 		outline.setOrigin(0);
@@ -246,18 +266,18 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.add(outline);
 
 		sliders.forEach(s => {
-			const bg = this.scene.add.rectangle((1 - SLIDER_WIDTH) / 2, Y_OFFSET, SLIDER_WIDTH, SLIDER_HEIGHT, 0x19216c);
+			const bg = this.scene.add.rectangle(X_OFFSET, Y_OFFSET, SLIDER_WIDTH, SLIDER_HEIGHT, 0x19216c);
 			bg.setOrigin(0);
 			this.bars.push(bg);
 			this.add(bg);
 
-			const fg = this.scene.add.rectangle((1 - SLIDER_WIDTH) / 2, Y_OFFSET,
+			const fg = this.scene.add.rectangle(X_OFFSET, Y_OFFSET,
 				Math.min((s.current / s.max) * SLIDER_WIDTH, SLIDER_WIDTH), SLIDER_HEIGHT, Color.HSVToInt(s.color));
 			fg.setOrigin(0);
 			this.bars.push(fg);
 			this.add(fg);
 
-			const icon = this.scene.add.sprite(-.5, Y_OFFSET, 'ui_slider_icons', s.icon);
+			const icon = this.scene.add.sprite(X_OFFSET + 1/24, Y_OFFSET, 'ui_slider_icons', s.icon);
 			icon.setOrigin(0);
 			icon.setScale((1 / 12) * SLIDER_HEIGHT);
 			this.bars.push(icon);

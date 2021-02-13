@@ -1,6 +1,6 @@
 import * as Preact from 'preact';
 import { useAppData } from '../../Hooks';
-import { Switch, Route, Redirect, useParams, useHistory } from 'react-router-dom';
+import { Redirect, useParams, useHistory } from 'react-router-dom';
 
 import Button from '../Button';
 
@@ -9,8 +9,8 @@ export default function AssetRoute() {
 	if (!assets) return null;
 
 	const history = useHistory();
-	const { id } = useParams<{ id: string }>();
-	const currentAsset = (assets ?? []).filter(a => a.identifier === id)[0];
+	const { asset } = useParams<{ asset: string }>();
+	const currentAsset = (assets ?? []).filter(a => a.identifier === asset)[0];
 
 	if (!currentAsset) return <Redirect to='/assets/' />;
 
@@ -18,10 +18,10 @@ export default function AssetRoute() {
 		fetch('/data/asset/delete', {
 			method: 'POST', cache: 'no-cache',
 			headers: {'Content-Type': 'application/json'},
-			body: JSON.stringify({ identifier: id })
+			body: JSON.stringify({ identifier: asset })
 		});
 		
-		history.push('/assets');
+		history.push('../');
 	};
 
 	return (
@@ -30,12 +30,8 @@ export default function AssetRoute() {
 				<h2 class='Page-SidebarTitle'>{currentAsset.name}</h2>
 			</aside>
 			<main class='AssetRoute-Main'>
-				<Switch>
-					<Route>
-						<img src={'/app/asset/' + currentAsset.path} role='presentational' alt=''/>
-						<Button onClick={handleDeleteAsset} label='Delete'/>
-					</Route>
-				</Switch>
+				<img src={'/app/asset/' + currentAsset.path} role='presentational' alt=''/>
+				<Button onClick={handleDeleteAsset} label='Delete'/>
 			</main>
 		</div>
 	);

@@ -93,7 +93,7 @@ export default class ActionManager {
 
 		case 'delete_token':
 			item.tokens.forEach(t => this.map.tokens.createToken(t.uuid, t.layer,
-				t.pos as any, {}, t.appearance.sprite, t.appearance.index));
+				t.pos as any, {}, t.implicitScale, t.appearance.sprite, t.appearance.index));
 			break;
 		
 		case 'modify_token':
@@ -120,7 +120,7 @@ export default class ActionManager {
 
 		case 'place_token':
 			item.tokens.forEach(t => this.map.tokens.createToken(t.uuid, t.layer,
-				t.pos as any, {}, t.appearance.sprite, t.appearance.index));
+				t.pos as any, {}, t.implicitScale, t.appearance.sprite, t.appearance.index));
 			break;
 		
 		case 'delete_token':

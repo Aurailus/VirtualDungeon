@@ -7,10 +7,9 @@ import ModeManager from '../../mode/ModeManager';
 import ArchitectMode from '../../mode/ArchitectMode';
 import type InputManager from '../../interact/InputManager';
 
-import { Asset } from '../../util/Asset';
+import { Asset } from '../../../../../common/DBStructs';
 
 export default class TileSidebar extends Sidebar {
-	
 	walls: string[] = [];
 	floors: string[] = [];
 	details: string[] = [];
@@ -55,15 +54,15 @@ export default class TileSidebar extends Sidebar {
 		const controller = (this.mode.active as ArchitectMode).controller;
 		if (!controller) return;
 		if (y < 4) {
-			controller.setActiveTile(this.map.tileStore.indices[this.walls[x + (y - 1) * 3]]);
+			controller.setActiveTile(this.map.tileStore.getTile('wall', this.walls[x + (y - 1) * 3])!.ind);
 			controller.setActiveTileType('wall');
 		}
 		else if (y < 8) {
-			controller.setActiveTile(this.map.tileStore.indices[this.floors[x + (y - 5) * 3]]);
+			controller.setActiveTile(this.map.tileStore.getTile('floor', this.floors[x + (y - 5) * 3])!.ind);
 			controller.setActiveTileType('floor');
 		}
 		else {
-			controller.setActiveTile(this.map.tileStore.indices[this.details[x + (y - 9) * 3]]);
+			controller.setActiveTile(this.map.tileStore.getTile('detail', this.details[x + (y - 9) * 3])!.ind);
 			controller.setActiveTileType('detail');
 		}
 	}

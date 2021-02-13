@@ -7,8 +7,6 @@ import BrightenPipeline from '../shader/BrightenPipeline';
 
 import EditorData from '../EditorData';
 
-import { Vec2 } from '../util/Vec';
-
 export default class LoadScene extends Phaser.Scene {
 	editorData: EditorData = null as any;
 
@@ -53,10 +51,11 @@ export default class LoadScene extends Phaser.Scene {
 		this.load.setPath('/asset/');
 
 		for (let a of this.editorData!.assets) {
-			if (a.type === 'token' || a.type === 'floor')
-				this.load.spritesheet(a.identifier, a.path, { frameWidth: a.tileSize, frameHeight: a.tileSize });
-
-			else if (a.type === 'wall' || a.type === 'detail')
+			if (a.type === 'token') {
+				const fw = a.imageSize.x / (a.tokenType === 4 ? 2 : a.tokenType === 8 ? 3 : 1);
+				this.load.spritesheet(a.identifier, a.path, { frameWidth: fw, frameHeight: fw });
+			}
+			else if (a.type === 'wall' || a.type === 'detail' || a.type === 'floor')
 				this.load.image(a.identifier, a.path);
 		}
 	}
@@ -67,14 +66,16 @@ export default class LoadScene extends Phaser.Scene {
 		glRenderer.pipelines.add('outline',  new OutlinePipeline(this.game));
 
 		await Promise.all(this.editorData!.assets.map(a => {
-			if (a.type === 'token') {
-				const { width, height } = (this.textures.get(a.identifier).frames as any).__BASE;
-				a.dimensions = new Vec2(width, height);
-				return Patch.sprite(this, a.identifier, Math.floor(a.dimensions!.x / a.tileSize));
-			}
+			if (a.type === 'token')
+				return Patch.sprite(this, a.identifier, a.tokenType === 4 ? 2 : a.tokenType === 8 ? 3 : 1);
 
 			else if (a.type === 'wall' || a.type === 'detail')
-				Patch.tileset(this, a.identifier, a.tileSize);
+				// TODO: Tilesize needs to come back!)
+				Patch.tileset(this, a.identifier, 16);
+
+			else if (a.type === 'floor')
+				// TODO: Tilesize needs to come back!
+				Patch.floor(this, a.identifier, 16);
 
 			return new Promise<void>(resolve => resolve());
 		}));

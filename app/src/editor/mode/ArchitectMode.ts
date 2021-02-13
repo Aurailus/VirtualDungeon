@@ -8,7 +8,7 @@ import ActionManager from '../action/ActionManager';
 import ArchitectController from '../interact/ArchitectController';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../util/Asset';
+import { Asset } from '../../../../common/DBStructs';
 
 export const ArchitectModeKey = 'ARCHITECT';
 

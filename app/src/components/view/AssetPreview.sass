@@ -1,0 +1,125 @@
+@use '../../style/ext'
+@use '../../style/def' as *
+
+.AssetPreview
+	display: inline-block
+	width: 100%
+	padding: 8px
+	border-radius: 4px
+	background-color: $neutral-250
+
+	.AssetPreview-Inner
+		display: grid
+		width: 100%
+		aspect-ratio: 1
+		background-size: 0px
+
+		& > div
+			image-rendering: pixelated
+			background-image: var(--bg)
+			background-repeat: no-repeat
+			background-size: 100%
+
+		&.Tile
+			grid-template-rows: repeat(3, minmax(0, 1fr))
+			grid-template-columns: repeat(3, minmax(0, 1fr))
+
+			& > div
+				min-height: 0
+				background-size: #{7 * 100.5%} #{2 * 100.5%}
+		
+			&.wall > div, &.detail > div
+				&:nth-child(1)
+					background-position: #{100% * (2/6)} 0
+				&:nth-child(2)
+					background-position: #{100% * (1/6)} 0
+				&:nth-child(3)
+					background-position: #{100% * (3/6)} 0
+
+				&:nth-child(4)
+					background-position: 0 0
+				&:nth-child(5)
+					background-position: #{100% * (4/6)} 100%
+				&:nth-child(6)
+					background-position: #{100% * (1/6)} 100%
+
+				&:nth-child(7)
+					background-position: #{100% * (2/6)} 100%
+				&:nth-child(8)
+					background-position: 0 100%
+				&:nth-child(9)
+					background-position: #{100% * (3/6)} 100%
+			
+			&.ground > div
+				&:nth-child(1)
+					background-position: #{100% * (3/8)} 0
+				&:nth-child(2)
+					background-position: #{100% * (1/8)} #{100% * (2/6)}
+				&:nth-child(3)
+					background-position: #{100% * (5/8)} 0
+
+				&:nth-child(4)
+					background-position: #{100% * (2/8)} #{100% * (1/6)}
+				&:nth-child(5)
+					background-position: 0 #{100% * (6/6)}
+				&:nth-child(6)
+					background-position: 0 #{100% * (1/6)}
+
+				&:nth-child(7)
+					background-position: #{100% * (3/8)} #{100% * (2/6)}
+				&:nth-child(8)
+					background-position: #{100% * (1/8)} 0
+				&:nth-child(9)
+					background-position: #{100% * (5/8)} #{100% * (2/6)}
+
+		&.Token
+
+			@keyframes Token-Anim-4
+				0%, 24.99999%
+					background-position: 0% 0%
+				25%, 49.99999%
+					background-position: 100% 0%
+				50%, 74.99999%
+					background-position: 0% 100%
+				75%, 100%
+					background-position: 100% 100%
+
+			@keyframes Token-Anim-8
+				0%, 12.49999%
+					background-position: 0% 0%
+				12.5%, 24.99999%
+					background-position: 50% 0%
+				25%, 37.49999%
+					background-position: 100% 0%
+				37.5%, 49.99999%
+					background-position: 100% 50%
+				50%, 62.49999%
+					background-position: 100% 100%
+				62.5%, 74.99999%
+					background-position: 50% 100%
+				75%, 87.49999%
+					background-position: 0% 100%
+				87.5%, 100%
+					background-position: 0% 50%
+					
+			&.Slice4 div
+				background-size: 200% 200%
+				animation: Token-Anim-4 1000000000s infinite
+				animation-play-state: paused
+
+			&.Slice8 div
+				animation: Token-Anim-8 1000000000s infinite
+				background-size: 300% 300%
+				animation-play-state: paused
+
+
+			&.Anim, &.AnimHover:hover
+				&.Slice4 div
+					animation: Token-Anim-4 2.5s infinite
+					animation-play-state: running
+
+				&.Slice8 div
+					animation: Token-Anim-8 5s infinite
+					animation-play-state: running
+
+

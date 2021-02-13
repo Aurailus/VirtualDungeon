@@ -56,7 +56,9 @@ export interface Map {
 	data: string;
 }
 
-export type AssetType =	'wall' | 'detail' | 'ground' | 'token';
+export type TileAssetType =	'wall' | 'detail' | 'floor';
+export type TokenAssetType = 'token';
+export type AssetType = TileAssetType | TokenAssetType;
 
 export interface AssetCollection {
 	user: string;
@@ -67,18 +69,27 @@ export interface AssetCollection {
 	items: string[];
 }
 
-export interface Asset {
-	type: AssetType;
+interface BaseAsset {
 	user: string;
 	identifier: string;
 	
 	name: string;
 	path: string;
 	fileSize: number;
-
-	tileSize?: number; // Amount of tiles a token takes (on both axis)
-	dimensions: {x: number, y: number} // Image dimensions;
+	imageSize: {x: number, y: number}
 }
+
+export interface TileAsset extends BaseAsset {
+	type: TileAssetType;
+}
+
+export interface TokenAsset extends BaseAsset {
+	type: TokenAssetType;
+	tokenType: 1 | 4 | 8;
+	tileSize: { x: number, y: number }
+}
+
+export type Asset = TileAsset | TokenAsset;
 
 export interface Invite {
 	user: string;
@@ -86,3 +97,20 @@ export interface Invite {
 
 	token: string;
 }
+
+interface BaseUploadData {
+	name: string;
+	identifier: string;
+}
+
+interface TokenUploadData extends BaseUploadData {
+	type: 'token';
+	tokenType: 1 | 4 | 8;
+	tileSize: { x: number; y: number };
+}
+
+interface TileUploadData extends BaseUploadData {
+	type: 'wall' | 'floor' | 'detail';
+}
+
+export type UploadData = TokenUploadData | TileUploadData;

@@ -86,7 +86,8 @@ export default class MapController {
 			this.bindEvents(socket, identifier);
 			room.players.push(socket);
 
-			const map = await this.getMapFromOwner(room.owner);
+			const map = await this.getMapFromOwner(room.owner, 1000);
+
 			res({ state: true, assets: await this.db.getCampaignAssets(camUser, camID), campaign, map });
 		}
 		catch (error) {
@@ -118,11 +119,18 @@ export default class MapController {
 		socket.on('delete_drawing', this.onDeleteDrawing.bind(this, socket, room));
 	}
 
-	private async getMapFromOwner(owner: IO.Socket): Promise<string> {
+	private async getMapFromOwner(owner: IO.Socket, timeout: number = 1000): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
+			let respond = true;
+			setTimeout(() => {
+				respond = false;
+				reject('No response from owner.');
+			}, timeout);
+
+
 			owner.emit('get_map', (map: string) => {
 				if (typeof map !== 'string') reject();
-				resolve(map);
+				if (respond) resolve(map);
 			});
 		});
 	}

@@ -9,7 +9,7 @@ import Map from '../../map/Map';
 import TokenCard from './TokenCard';
 import { TokenMetaData } from '../../map/token/Token';
 
-import { Asset } from '../../util/Asset';
+import { Asset } from '../../../../../common/DBStructs';
 
 interface Props {
 	map: Map;

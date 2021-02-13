@@ -8,7 +8,7 @@ import ActionManager from '../action/ActionManager';
 import Token, { TokenRenderData } from '../map/token/Token';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../util/Asset';
+import { Asset, TokenAsset } from '../../../../common/DBStructs';
 
 export const TokenModeKey = 'TOKEN';
 
@@ -109,13 +109,18 @@ export default class TokenMode extends Mode {
 		if (this.selected.size) this.keyboardMoveToken(input);
 
 		// Find the currently hovered token.
-		if (!this.hovered || this.hovered.x !== cursorPos.x || this.hovered.y !== cursorPos.y) {
+		if (!this.hovered || cursorPos.x < this.hovered.x || cursorPos.y < this.hovered.y
+			|| cursorPos.x >= this.hovered.x + this.hovered.implicitScale
+			|| cursorPos.y >= this.hovered.y + this.hovered.implicitScale) {
 			this.hovered?.setHovered(false);
 			this.hovered = null;
 
 			for (let i = this.map.tokens.getAllTokens().length - 1; i >= 0; i--) {
 				let token = this.map.tokens.getAllTokens()[i];
-				if (cursorPos.x === token.x && cursorPos.y === token.y) {
+				// console.log([ token.x, token.y, token.implicitScale, token.x + token.implicitScale, token.y + token.implicitScale ]);
+				if (cursorPos.x >= token.x && cursorPos.y >= token.y
+					&& cursorPos.x < token.x + token.implicitScale && cursorPos.y < token.y + token.implicitScale) {
+					
 					this.hovered = token;
 					this.hovered.setHovered(true);
 					break;
@@ -251,9 +256,9 @@ export default class TokenMode extends Mode {
 	}
 
 	private placeToken(cursorPos: Vec2): Token {
-		const asset = this.assets.filter(a => a.identifier === this.placeTokenType)[0];
+		const asset = this.assets.filter(a => a.identifier === this.placeTokenType)[0] as TokenAsset;
 		const token = this.map.tokens.createToken('', this.map.getActiveLayer()?.index ?? 0,
-			cursorPos, { name: asset.name }, this.placeTokenType);
+			cursorPos, { name: asset.name }, Number.parseInt(asset.tileSize.x as any, 10), this.placeTokenType);
 		this.actions.push({ type: 'place_token', tokens: [{ uuid: token.uuid, ...token.getRenderData() }] });
 		return token;
 	}

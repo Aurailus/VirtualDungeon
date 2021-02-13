@@ -3,37 +3,43 @@ import * as Phaser from 'phaser';
 import MapLayer from './MapLayer';
 import TileStore from './TileStore';
 import * as MapSaver from './MapSaver';
+import Lighting from './lighting/Lighting';
 import TokenManager from './token/TokenManager';
 import MapChunk, { CHUNK_SIZE } from './MapChunk';
 import HighlightMapChunk from './HighlightMapChunk';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../util/Asset';
+import { Asset } from '../../../../common/DBStructs';
 
+const MAX_ACCEPTABLE_DELAY = 250;
 
 /**
  * Main map controller that manages the map data and chunks.
  */
 
 export default class Map {
-	identifier: string = '';
-	size: Vec2 = new Vec2(2, 2);
-	tileStore: TileStore = new TileStore();
+	identifier = '';
+	size = new Vec2(2, 2);
 
-	tokens: TokenManager = new TokenManager();
+	lighting = new Lighting();
+	tileStore = new TileStore();
+	tokens = new TokenManager();
 	
+	private activeLayer?: MapLayer;
 	private layers: MapLayer[] = [];
 	private highlightLayer?: MapLayer;
-	private activeLayer?: MapLayer = undefined;
 
 	private scene: Phaser.Scene = undefined as any;
+	
 	private chunks: MapChunk[][][] = [];
 	private highlights: HighlightMapChunk[][] = [];
 
 	init(scene: Phaser.Scene, assets: Asset[]) {
 		this.scene = scene;
 
+
 		this.tokens.init(scene);
+		this.lighting.init(scene, this);
 		this.tileStore.init(scene.textures, assets);
 	}
 
@@ -48,18 +54,19 @@ export default class Map {
 		for (let layer of this.chunks) {
 			for (let chunkRow of layer) {
 				for (let chunk of chunkRow) {
-					if (Date.now() - start > 4) return;
+					if (Date.now() - start > MAX_ACCEPTABLE_DELAY) return;
 					chunk.redraw();
 				}
 			}
 		}
-
 		for (let chunkRow of this.highlights) {
 			for (let chunk of chunkRow) {
-				if (Date.now() - start > 4) return;
+				if (Date.now() - start > MAX_ACCEPTABLE_DELAY) return;
 				chunk.redraw();
 			}
 		}
+
+		this.lighting.update();
 	}
 
 
@@ -219,7 +226,7 @@ export default class Map {
 		for (let i = 0; i < Math.ceil(this.size.y / CHUNK_SIZE); i++) {
 			this.highlights[i] = [];
 			for (let j = 0; j < Math.ceil(this.size.x / CHUNK_SIZE); j++) {
-				const chunk = new HighlightMapChunk(this.scene, new Vec2(j, i), this.highlightLayer);
+				const chunk = new HighlightMapChunk(this.scene, new Vec2(j, i), this.highlightLayer, this.tileStore);
 				this.highlights[i][j] = chunk;
 			}
 		}
@@ -263,6 +270,7 @@ export default class Map {
 	 */
 
 	private handleDirty = (layerIndex: number, x: number, y: number) => {
+		this.lighting.tileUpdatedAt(x, y);
 		this.chunks[layerIndex][Math.floor(y / CHUNK_SIZE)][Math.floor(x / CHUNK_SIZE)].setDirty(new Vec2(x % CHUNK_SIZE, y % CHUNK_SIZE));
 	};
 }

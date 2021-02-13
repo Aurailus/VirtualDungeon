@@ -8,7 +8,7 @@ import ModeManager from '../../mode/ModeManager';
 import type InputManager from '../../interact/InputManager';
 
 import { Vec2 } from '../../util/Vec';
-import { Asset } from '../../util/Asset';
+import { Asset } from '../../../../../common/DBStructs';
 
 export default class TokenSidebar extends Sidebar {
 	spinTimer: number = 0;
@@ -71,7 +71,7 @@ export default class TokenSidebar extends Sidebar {
 
 		if (x === 0) this.backgrounds[y].setFrame(0);
 
-		let token = new Token(this.scene, '', 50, new Vec2(4 + x * 21, 4 + y * 21), sprite);
+		let token = new Token(this.scene, '', 50, new Vec2(4 + x * 21, 4 + y * 21), 1, sprite);
 		token.setScale(16);
 		this.sprites.push(token);
 		this.add(token);

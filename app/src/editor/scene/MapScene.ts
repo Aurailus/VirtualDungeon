@@ -10,7 +10,7 @@ import ModeManager from '../mode/ModeManager';
 import CameraControl from '../interact/CameraController';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../util/Asset';
+import { Asset } from '../../../../common/DBStructs';
 import EditorData from '../EditorData';
 
 export default class MapScene extends Phaser.Scene {
@@ -39,15 +39,10 @@ export default class MapScene extends Phaser.Scene {
 
 		this.map.init(this, this.assets);
 		if (data.map) this.map.load(data.map);
-
-		let s = this.add.sprite(2, 2, 'wall_dungeon', '__BASE');
-		s.setOrigin(0);
-		s.setScale(1/16);
-
 		data.socket.on('get_map', (res: (map: string) => void) => res(this.map.save()));
 
 		this.actions.init(this, this.map, data.socket, data.onDirty);
-		this.mode.init(this, this.map, data.socket, this.actions, this.assets);
+		this.mode.init(this, data.state, this.map, data.socket, this.actions, this.assets);
 		this.interface.init(this, this.inputManager, this.mode, this.actions, this.map, this.assets);
 	}
 
@@ -69,7 +64,7 @@ export default class MapScene extends Phaser.Scene {
 			const pos = new Vec2(cam.scrollX, cam.scrollY);
 
 			this.interface.setVisible(false);
-			cam.setSize(snapSize.x, snapSize.y);
+			cam.setSize(Math.min(snapSize.x, this.map.size.x * 16), Math.min(snapSize.y, this.map.size.y * 16));
 			cam.centerOn(this.map.size.x / 2, this.map.size.y / 2);
 			cam.setZoom(cam.width / this.map.size.x);
 			

@@ -5,7 +5,7 @@ import InputManager from '../interact/InputManager';
 import ActionManager from '../action/ActionManager';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../util/Asset';
+import { Asset } from '../../../../common/DBStructs';
 
 
 /**

@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import { Vec2, Vec4 } from './util/Vec';
 
-const PATCH_TIMING = true;
+const PATCH_TIMING = false;
 
 /**
  * Patches a partial tileset into a full tileset by combining parts of other textures.
@@ -20,17 +20,17 @@ const PATCH_TIMING = true;
 export function tileset(scene: Phaser.Scene, tileset_key: string, tile_size: number) {
 	const s = PATCH_TIMING ? Date.now() : 0;
 
-	const canvas = new Phaser.GameObjects.RenderTexture(scene, 0, 0, 10 * tile_size, 5 * tile_size);
-	canvas.draw(tileset_key);
+	const img = scene.textures.get(tileset_key).source[0].image as HTMLImageElement;
+	scene.textures.removeKey(tileset_key);
 
-	let part: Phaser.GameObjects.Sprite | Phaser.GameObjects.RenderTexture
-		= new Phaser.GameObjects.Sprite(scene, 0, 0, tileset_key, '__BASE');
-	part.setOrigin(0, 0);
+	const canvas = scene.textures.createCanvas(tileset_key, 10 * tile_size, 5 * tile_size);
+	canvas.draw(0, 0, img);
 
+	const ctx = canvas.getContext();
 	function draw(source: Vec4, dest: Vec2) {
-		part.setCrop(source.x * tile_size, source.y * tile_size, (source.z - source.x) * tile_size, (source.w - source.y) * tile_size);
-		part.setPosition((dest.x - source.x) * tile_size, (dest.y - source.y) * tile_size);
-		canvas.draw(part);
+		const data = ctx.getImageData(source.x * tile_size, source.y * tile_size,
+			(source.z - source.x) * tile_size, (source.w - source.y) * tile_size);
+		ctx.putImageData(data, dest.x * tile_size, dest.y * tile_size);
 	}
 
 	// End Pieces and Walls
@@ -80,24 +80,6 @@ export function tileset(scene: Phaser.Scene, tileset_key: string, tile_size: num
 	draw(new Vec4(6, 0.5, 6.5, 1), new Vec2(0, 4.5));
 	draw(new Vec4(5.5, 0.5, 6, 1), new Vec2(0.5, 4.5));
 
-	/*
-	 * So here's why this is horrible:
-	 * - Phaser doesn't let you copy a region of a RenderTexture to the same RenderTexture.
-	 * - Creating a new RenderTexture and drawing the original directly onto it flips it upside down for some reason?
-	 * - Scaling that upside-down RenderTexture to upside-right fucks with the draw() function's positioning.
-	 *
-	 * In other words, yeah, it's fucked man. The janky solution below is the only way I've found to make it work,
-	 * so if future-Auri is looking at this and making a snarky comment to her friends about how she could do it
-	 * *so much better*, please, just don't. Don't do it.
-	 */
-
-	part.setCrop();
-	part = new Phaser.GameObjects.RenderTexture(scene, 0, 0, canvas.width, canvas.height);
-	part.setOrigin(0, 0);
-	const temp = new Phaser.GameObjects.Sprite(scene, 0, 0, canvas.texture);
-	temp.setOrigin(0, 0);
-	part.draw(temp);
-
 	// Derived Forms (Pink)
 
 	draw(new Vec4(2, 0, 4, 0.5), new Vec2(3, 2));
@@ -141,13 +123,46 @@ export function tileset(scene: Phaser.Scene, tileset_key: string, tile_size: num
 	draw(new Vec4(1.5, 3, 2, 4), new Vec2(7.5, 4));
 	draw(new Vec4(1, 3, 1.5, 3.5), new Vec2(7, 4));
 	draw(new Vec4(6, 0.5, 6.5, 1), new Vec2(7, 4.5));
-	
-	const tex = canvas.saveTexture(tileset_key);
-	for (let i = 0; i < 5; i++) {
-		for (let j = 0; j < 10; j++) {
-			tex.add(j + i * 10, 0, j * tile_size, tile_size * 5 - (i + 1) * tile_size, tile_size, tile_size);
-		}
-	}
+
+	// for (let i = 0; i < canvas.width; i++) {
+	// 	for (let j = 0; j < canvas.height; j++) {
+	// 		const data = ctx.getImageData(i, j, 1, 1).data;
+	// 		let color = false;
+	// 		for (let k = 0; k < 3; k++) if (data[k] !== 0) {
+	// 			color = true;
+	// 			break;
+	// 		}
+	// 		if (color) ctx.clearRect(i, j, 1, 1);
+	// 	}
+	// }
+
+	canvas.refresh();
+	// console.log(scene.textures.get(tileset_key));
+
+	for (let i = 0; i < 5; i++)
+		for (let j = 0; j < 10; j++)
+			canvas.add(j + i * 10, 0, j * tile_size, i * tile_size, tile_size, tile_size);
+
+	if (PATCH_TIMING) console.log(`Patched Tileset '${tileset_key}' in ${Date.now() - s} ms.`);
+}
+
+
+/**
+ */
+
+export function floor(scene: Phaser.Scene, tileset_key: string, tile_size: number) {
+	const s = PATCH_TIMING ? Date.now() : 0;
+
+	const img = scene.textures.get(tileset_key).source[0].image as HTMLImageElement;
+	scene.textures.removeKey(tileset_key);
+
+	const canvas = scene.textures.createCanvas(tileset_key, 9 * tile_size, 7 * tile_size);
+	canvas.draw(0, 0, img);
+	canvas.refresh();
+
+	for (let j = 0; j < 9; j++)
+		for (let i = 0; i < 7; i++)
+			canvas.add(j + i * 9, 0, j * tile_size, i * tile_size, tile_size, tile_size);
 
 	if (PATCH_TIMING) console.log(`Patched Tileset '${tileset_key}' in ${Date.now() - s} ms.`);
 }

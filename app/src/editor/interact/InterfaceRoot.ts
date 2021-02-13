@@ -15,7 +15,7 @@ import InputManager from '../interact/InputManager';
 import ActionManager from '../action/ActionManager';
 import { ArchitectModeKey } from '../mode/ArchitectMode';
 
-import { Asset } from '../util/Asset';
+import { Asset } from '../../../../common/DBStructs';
 
 const UI_OFFSET = -10000;
 const CLOSED_SIDEBAR_OFFSET = -68;
@@ -25,7 +25,7 @@ export default class InterfaceRoot {
 
 	private scene: Phaser.Scene = null as any;
 
-	private lastMode: string = ArchitectModeKey;
+	private lastMode: string = '';
 
 	private mode: ModeMananger = null as any;
 	// private actions: ActionManager = null as any;
@@ -53,7 +53,7 @@ export default class InterfaceRoot {
 
 		this.root = this.scene.add.container(UI_OFFSET, 0);
 		this.root.setName('root');
-		this.leftRoot = this.scene.add.container(0, 0);
+		this.leftRoot = this.scene.add.container(CLOSED_SIDEBAR_OFFSET, 0);
 		this.root.add(this.leftRoot);
 		
 		this.leftRoot.add(new SidebarToggler(scene, 49, 1000, input, this));
@@ -89,9 +89,11 @@ export default class InterfaceRoot {
 		let uiHovered = testActive(this.root);
 		this.inputManager.setContext(uiHovered ? 'interface' : 'map');
 
-		if (this.inputManager.keyPressed('TAB')) this.mode.activate(
-			this.mode.getActive() === ArchitectModeKey ? TokenModeKey :
-				this.mode.getActive() === TokenModeKey ? DrawModeKey : ArchitectModeKey);
+		if (this.inputManager.keyPressed('TAB')) {
+			const modes = this.mode.getModes();
+			const currentInd = (modes.indexOf(this.mode.getActive()) + 1) % modes.length;
+			this.mode.activate(modes[currentInd]);
+		}
 
 		if (this.lastMode !== this.mode.getActive()) {
 			this.lastMode = this.mode.getActive();
@@ -127,21 +129,7 @@ export default class InterfaceRoot {
 			repeat: 0,
 			
 			x: (open ? 0 : CLOSED_SIDEBAR_OFFSET)
-			// {
-			// 	from: (open ? CLOSED_SIDEBAR_OFFSET : 0),
-			// 	to:
-			// }
 		});
-
-		// this.scene.tweens.add({
-		// 	targets: [this.tileSidebar, this.tokenSidebar],
-		// 	ease: 'Cubic',
-		// 	duration: 225,
-		// 	repeat: 0,
-
-		// 	// alpha: { from: (open ? 0 : 2.5), to: (open ? 1 : 0) }
-		// 	alpha: (open ? 1 : 0)
-		// });
 	}
 
 	private displayArchitectMode() {
@@ -153,21 +141,12 @@ export default class InterfaceRoot {
 			ease: 'Cubic',
 			duration: 0,
 
-			// x: { from: CLOSED_SIDEBAR_OFFSET, to: 0 }
 			alpha: { from: 0, to: 1 }
 		});
 	}
 
 	private hideArchitectMode() {
 		if (!this.tileSidebar) return;
-		// this.scene.tweens.add({
-		// 	targets: this.tileSidebar,
-		// 	ease: 'Cubic',
-		// 	duration: 300,
-
-		// 	// x: { from: 0, to: CLOSED_SIDEBAR_OFFSET / 2 }
-		// 	alpha: { from: 1, to: 0 }
-		// });
 	}
 
 	private displayTokenMode() {
@@ -179,20 +158,11 @@ export default class InterfaceRoot {
 			ease: 'Cubic',
 			duration: 0,
 
-			// x: { from: CLOSED_SIDEBAR_OFFSET, to: 0 }
 			alpha: { from: 0, to: 1 }
 		});
 	}
 
 	private hideTokenMode() {
 		if (!this.tokenSidebar) return;
-		// this.scene.tweens.add({
-		// 	targets: this.tokenSidebar,
-		// 	ease: 'Cubic',
-		// 	duration: 300,
-
-		// 	// x: { from: 0, to: CLOSED_SIDEBAR_OFFSET / 2 }
-		// 	alpha: { from: 1, to: 0 }
-		// });
 	}
 }

@@ -6,7 +6,7 @@ import TokenSlider from './TokenSlider';
 import Text from '../../../components/input/fields/InputText';
 import { TokenSliderData, TokenMetaData } from '../../map/token/Token';
 
-import { Asset } from '../../util/Asset';
+import { Asset } from '../../../../../common/DBStructs';
 
 interface TokenCardProps extends TokenMetaData {
 	assets: Asset[];

@@ -2,6 +2,8 @@ import * as Preact from 'preact';
 
 import './AssetList.sass';
 
+import AssetPreview from './AssetPreview';
+
 import { Asset } from '../../../../common/DBStructs';
 
 interface Props {
@@ -34,9 +36,7 @@ export default function AssetList({ assets, newText, onNew, onClick }: Props) {
 						{assets.map(a => <li class='AssetList-AssetWrap'>
 							<button class='AssetList-Asset' onClick={() => onClick?.(a.user, a.identifier)}>
 								<div class='AssetList-AssetInner'>
-									<div class='AssetList-AssetPreview'>
-										<img src={'/app/asset/' + a.path} role='presentational' alt='' loading='lazy'/>
-									</div>
+									<AssetPreview type={a.type} tokenType={(a as any).tokenType} path={`/app/asset/${a.path}`} animate='hover' />
 									<p class='AssetList-AssetTitle'>{a.name || 'Untitled'}</p>
 								</div>
 							</button>
