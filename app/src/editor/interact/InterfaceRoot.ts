@@ -9,7 +9,6 @@ import SidebarToggler from './components/SidebarToggler';
 
 import Map from '../map/Map';
 import ModeMananger from '../mode/ModeManager';
-import { DrawModeKey } from '../mode/DrawMode';
 import { TokenModeKey } from '../mode/TokenMode';
 import InputManager from '../interact/InputManager';
 import ActionManager from '../action/ActionManager';
@@ -28,13 +27,11 @@ export default class InterfaceRoot {
 	private lastMode: string = '';
 
 	private mode: ModeMananger = null as any;
-	// private actions: ActionManager = null as any;
 	private inputManager: InputManager = null as any;
 	private camera: Phaser.Cameras.Scene2D.Camera = null as any;
 
 	private root: Phaser.GameObjects.Container = null as any;
 	private leftRoot: Phaser.GameObjects.Container = null as any;
-	// private rightRoot: Phaser.GameObjects.Container = null as any;
 	
 	private tileSidebar: TileSidebar | null = null;
 	private tokenSidebar: TokenSidebar | null = null;
@@ -90,13 +87,13 @@ export default class InterfaceRoot {
 		this.inputManager.setContext(uiHovered ? 'interface' : 'map');
 
 		if (this.inputManager.keyPressed('TAB')) {
-			const modes = this.mode.getModes();
-			const currentInd = (modes.indexOf(this.mode.getActive()) + 1) % modes.length;
+			const modes = this.mode.listIdentifiers();
+			const currentInd = (modes.indexOf(this.mode.getActiveIdentifier()) + 1) % modes.length;
 			this.mode.activate(modes[currentInd]);
 		}
 
-		if (this.lastMode !== this.mode.getActive()) {
-			this.lastMode = this.mode.getActive();
+		if (this.lastMode !== this.mode.getActiveIdentifier()) {
+			this.lastMode = this.mode.getActiveIdentifier();
 			switch (this.lastMode) {
 			default:
 				this.setSidebarOpen(false);
@@ -133,36 +130,30 @@ export default class InterfaceRoot {
 	}
 
 	private displayArchitectMode() {
-		if (!this.tileSidebar) return;
-		setTimeout(() => this.leftRoot.bringToTop(this.tileSidebar!), 16);
-		this.setSidebarOpen(true);
-		this.scene.tweens.add({
-			targets: this.tileSidebar,
-			ease: 'Cubic',
-			duration: 0,
-
-			alpha: { from: 0, to: 1 }
-		});
+		if (this.tileSidebar) {
+			this.leftRoot.bringToTop(this.tileSidebar);
+			this.tileSidebar.setAlpha(1);
+			this.setSidebarOpen(true);
+		}
 	}
 
 	private hideArchitectMode() {
-		if (!this.tileSidebar) return;
+		if (this.tileSidebar) {
+			this.tileSidebar.setAlpha(0);
+		}
 	}
 
 	private displayTokenMode() {
-		if (!this.tokenSidebar) return;
-		this.setSidebarOpen(true);
-		setTimeout(() => this.leftRoot.bringToTop(this.tokenSidebar!), 16);
-		this.scene.tweens.add({
-			targets: this.tokenSidebar,
-			ease: 'Cubic',
-			duration: 0,
-
-			alpha: { from: 0, to: 1 }
-		});
+		if (this.tokenSidebar) {
+			this.leftRoot.bringToTop(this.tokenSidebar);
+			this.tokenSidebar.setAlpha(1);
+			this.setSidebarOpen(true);
+		}
 	}
 
 	private hideTokenMode() {
-		if (!this.tokenSidebar) return;
+		if (this.tokenSidebar) {
+			this.tokenSidebar.setAlpha(0);
+		}
 	}
 }

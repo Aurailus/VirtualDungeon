@@ -32,10 +32,6 @@ export default function DrawToolbar(props: Props) {
 
 	return (
 		<Preact.Fragment>
-			<div class='Button DrawToolbar-Color'>
-				<Color full showHex value={color} setValue={c => props.mode.setColor(c)} />
-			</div>
-			<div class='Toolbar-Spacer' />
 			<ButtonGroup>
 				<Button icon='line' alt='Draw Line Art' onClick={() => props.mode.setTool('line')}
 					noFocus={true} inactive={tool !== 'line'} />
@@ -49,6 +45,10 @@ export default function DrawToolbar(props: Props) {
 				<Button icon='cone' alt='Highlight Cone' onClick={() => props.mode.setTool('cone')}
 					noFocus={true} inactive={tool !== 'cone'} />
 			</ButtonGroup>
+			<div class='Toolbar-Spacer' />
+			<div class='Button DrawToolbar-Color'>
+				<Color full showHex value={color} setValue={c => props.mode.setColor(c)} />
+			</div>
 		</Preact.Fragment>
 	);
 };

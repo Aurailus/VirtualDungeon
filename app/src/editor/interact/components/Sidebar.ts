@@ -104,7 +104,7 @@ export default abstract class Sidebar extends Component {
 	}
 
 	private onWheel = (delta: number) => {
-		if (this.mouseCollides()) {
+		if (this.mouseCollides() && this.alpha) {
 			this.scrollY = clamp(this.scrollY + delta * 21, 0, -1000);
 
 			this.scene.tweens.add({

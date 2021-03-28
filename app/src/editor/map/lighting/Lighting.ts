@@ -66,7 +66,11 @@ export default class Lighting {
 		}
 	}
 
-	addLight(pos: Vec2, radius?: number, intensity?: number ) {
+	lightMoved(from: Vec2, to: Vec2) {
+		console.log(from, to);
+	}
+
+	addLight(pos: Vec2, radius?: number, intensity?: number) {
 		const s = new LightSource(this.scene, this.map, pos, radius ?? 5, intensity ?? 1);
 		this.sources.push(s);
 
@@ -78,5 +82,9 @@ export default class Lighting {
 		for (let i = minChunkPos.x; i <= maxChunkPos.x; i++)
 			for (let j = minChunkPos.y; j <= maxChunkPos.y; j++)
 				this.dirtyChunks.add(this.chunks[j][i]);
+	}
+
+	listLights(): LightSource[] {
+		return this.sources;
 	}
 }

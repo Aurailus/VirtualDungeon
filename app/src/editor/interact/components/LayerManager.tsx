@@ -40,14 +40,14 @@ interface Props {
 }
 
 export default bind<Props>(function LayerManager({ map }: Props) {
-	const [ editing, setEditing ] = useState<boolean>(false);
-	const [ collapsed, setCollapsed ] = useState<boolean>(true);
 	const [ layers, setLayers ] = useState<MapLayer[]>([ ...map.getLayers() ]);
 	const [ activeLayer, setActiveLayer ] = useState<number | undefined>(map.getActiveLayer()?.index);
+
+	const [ visibility, setVisibility ] = useState<'collapsed' | 'side' | 'full'>('collapsed');
+	const active = map.getActiveLayer();
 	
 	const handleCollapse = () => {
-		setCollapsed(!collapsed);
-		if (!collapsed) setEditing(false);
+		setVisibility(visibility === 'collapsed' ? 'side' : 'collapsed');
 	};
 
 	const handleAddLayer = () => {
@@ -69,31 +69,45 @@ export default bind<Props>(function LayerManager({ map }: Props) {
 	};
 
 	const handleEditLayer = () => {
-		setEditing(!editing);
-		if (!editing) setCollapsed(false);
+		setVisibility(visibility === 'full' ? 'side' : 'full');
 	};
 
-	const active = map.getActiveLayer();
+	const handleSetName = (name: string) => {
+		active!.name = name;
+		setLayers([ ...map.getLayers() ]);
+	};
+
+	const handleMoveLayer = (off: number) => {
+		console.log(off);
+	};
 
 	return (
-		<div class={('LayerManager ' + (collapsed ? 'Collapsed' : '')).trim()}>
-			{editing && active && <LayerMenu
-				name={active.name}
-				canMoveUp={active.index > 0}
-				canMoveDown={active.index < map.getLayers().length - 1}
-				handleMove={() => {/* Not yet implemented.*/}}
-			/>}
-			<ButtonGroup>
-				{!collapsed && <Preact.Fragment>
-					<Button icon='add' alt='Add Layer' onClick={handleAddLayer} noFocus />
-					<Button icon='remove' alt='Remove Layer' onClick={handleRemoveLayer} disabled={activeLayer === undefined} noFocus />
-					<Button icon='edit' alt='Edit Layer' onClick={handleEditLayer} disabled={activeLayer === undefined} noFocus />
-				</Preact.Fragment>}
-				<Button icon={collapsed ? 'nav_left' : 'nav_right'} alt='Collapse Panel'
-					noFocus onClick={handleCollapse} />
-			</ButtonGroup>
-			{layers.map(l => <Layer layer={l} active={activeLayer === l.index}
-				onClick={() => handleClickLayer(l.index)} onEdit={handleEditLayer} />)}
+		<div class={'LayerManager ' + visibility}>
+			<div class='LayerManager-Layers'>
+				<ButtonGroup>
+					{visibility !== 'collapsed' && <Preact.Fragment>
+						<Button icon='add' alt='Add Layer' onClick={handleAddLayer} noFocus />
+						<Button icon='remove' alt='Remove Layer' onClick={handleRemoveLayer} disabled={activeLayer === undefined} noFocus />
+						<Button icon='edit' alt='Edit Layer' onClick={handleEditLayer} disabled={activeLayer === undefined} noFocus />
+					</Preact.Fragment>}
+					<Button icon={visibility === 'collapsed' ? 'nav_left' : 'nav_right'} alt='Collapse Panel'
+						noFocus onClick={handleCollapse} />
+				</ButtonGroup>
+				{layers.map(l => <Layer layer={l} active={activeLayer === l.index}
+					onClick={() => handleClickLayer(l.index)} onEdit={handleEditLayer} />)}
+			</div>
+			{visibility === 'full' && active && <Preact.Fragment>
+				<div class='LayerManager-Separator' />
+				<LayerMenu
+					visibility={'visible'}
+					onVisibility={console.log}
+					name={active.name}
+					onName={handleSetName}
+					canMoveUp={active.index > 0}
+					canMoveDown={active.index < map.getLayers().length - 1}
+					onMove={handleMoveLayer}
+				/>
+			</Preact.Fragment>}
 		</div>
 	);
 });

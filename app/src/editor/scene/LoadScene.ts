@@ -27,6 +27,9 @@ export default class LoadScene extends Phaser.Scene {
 		this.load.image('erase_tile');
 		this.load.image('user_highlight');
 
+		this.load.image('light_tint');
+		this.load.image('light_base');
+
 		this.load.setPrefix('ui_');
 
 		this.load.image('quick_selector');

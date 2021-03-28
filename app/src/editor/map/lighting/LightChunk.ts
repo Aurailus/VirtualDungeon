@@ -39,8 +39,8 @@ export default class LightChunk extends Phaser.GameObjects.Image {
 	applySources(sources: LightSource[]) {
 		// const t = Date.now();
 
-		// this.context.fillStyle = '#001133';
-		this.context.fillStyle = '#003311';
+		this.context.fillStyle = '#001133';
+		// this.context.fillStyle = '#003311';
 		// this.context.fillStyle = '#332211';
 		this.context.fillRect(1, 1, this.canvas.width, this.canvas.height);
 

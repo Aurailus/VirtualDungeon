@@ -51,7 +51,8 @@ export default class TileSidebar extends Sidebar {
 	}
 
 	elemClick(x: number, y: number): void {
-		const controller = (this.mode.active as ArchitectMode).controller;
+		if (!(this.mode.active instanceof ArchitectMode)) return;
+		const controller = (this.mode.active as any).controller;
 		if (!controller) return;
 		if (y < 4) {
 			controller.setActiveTile(this.map.tileStore.getTile('wall', this.walls[x + (y - 1) * 3])!.ind);

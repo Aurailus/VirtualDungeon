@@ -1,22 +1,19 @@
 @use '../../../style/def' as *
 
-.Toolbar
+.Toolbar, .Toolbar-ModeSelector
 	display: flex
 	align-items: center
 	position: fixed
 	top: 3px * 2
-	left: 3px * 3
-	// left: 3 * 13px
-	// left: 3 * 81px
+	left: 3px * 2
 
 	.Toolbar-ModeSelector
-		display: flex
-		width: 3px * 60
-		align-items: stretch
-		margin-right: 3px
+		pointer-events: none
+		width: 100%
+		justify-content: center
 
-		button
-			flex-grow: 1
+		& > *
+			pointer-events: initial
 
 	.Toolbar-Separator
 		height: 3px * 12

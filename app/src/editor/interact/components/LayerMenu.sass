@@ -3,17 +3,15 @@
 @use '../../../style/def' as *
 
 .LayerMenu
-	position: absolute
-	top: 0
-	right: calc(100% + 6px)
-	width: 400px
-
+	overflow: hidden
+	
 	.LayerMenu-Top
 		display: flex
 		gap: 6px
 
 		.LayerMenu-Actions
 			flex-grow: 0
+			flex-shrink: 0
 
 			.Button
 				width: 60px

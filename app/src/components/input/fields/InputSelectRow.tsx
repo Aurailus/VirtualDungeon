@@ -66,7 +66,9 @@ const InputSelectRow = forwardRef<HTMLDivElement, Props>((props, fRef) => {
 		if (!ref.current) return;
 
 		const wrap = ref.current.getBoundingClientRect();
-		const button = (ref.current.querySelector(`[data-name='${props.value}']`) as any).getBoundingClientRect();
+		const b = (ref.current.querySelector(`[data-name='${props.value}']`) as any);
+		if (!b) return;
+		const button = b.getBoundingClientRect();
 
 		setHighlight({ left: button.left - wrap.left, width: button.width });
 	}, [ props.value ]);

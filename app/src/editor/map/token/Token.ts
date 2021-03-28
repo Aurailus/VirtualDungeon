@@ -75,7 +75,7 @@ export default class Token extends Phaser.GameObjects.Container {
 	// private meta: TokenMetaData = { name: '', note: '', sliders: [] };
 
 	constructor(scene: Phaser.Scene, readonly uuid: string, layer: number, pos?: Vec2,
-		public implicitScale: number = 1, sprite?: string, index?: number) {
+		private implicitScale: number = 1, sprite?: string, index?: number) {
 		super(scene, 0, 0);
 		this.scene.add.existing(this);
 
@@ -93,6 +93,10 @@ export default class Token extends Phaser.GameObjects.Container {
 		this.updateScale();
 
 		this.shadow.y = this.sprite.displayHeight - this.shadow.displayHeight - 0.125;
+	}
+
+	getDimensions() {
+		return new Vec2(this.implicitScale);
 	}
 
 
@@ -186,13 +190,12 @@ export default class Token extends Phaser.GameObjects.Container {
 		return this;
 	}
 
-	setFrame(frame: number): this {
+	setIndex(index: number) {
 		const pre = this.getRenderData();
-		this.sprite.setFrame(frame);
-		this.shadow.setFrame(frame);
+		this.sprite.setFrame(index);
+		this.shadow.setFrame(index);
 		const post = this.getRenderData();
 		this.on_render?.dispatch({ token: this, uuid: this.uuid, pre, post });
-		return this;
 	}
 
 	setTexture(key: string, index?: string | number): this {

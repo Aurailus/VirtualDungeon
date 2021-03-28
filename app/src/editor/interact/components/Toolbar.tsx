@@ -10,9 +10,18 @@ import ButtonGroup from '../../../components/ButtonGroup';
 
 import { TokenModeKey } from '../../mode/TokenMode';
 import ActionManager from '../../action/ActionManager';
+import { LightingModeKey } from '../../mode/LightingMode';
 import DrawMode, { DrawModeKey } from '../../mode/DrawMode';
 import { ArchitectModeKey } from '../../mode/ArchitectMode';
+
 import ModeManager, { ModeSwitchEvent} from '../../mode/ModeManager';
+
+const MODE_ICONS: {[ key: string ]: string } = {
+	[ArchitectModeKey]: 'architect',
+	[LightingModeKey]: 'lighting',
+	[TokenModeKey]: 'token',
+	[DrawModeKey]: 'draw'
+};
 
 interface Props {
 	mode: ModeManager;
@@ -33,15 +42,15 @@ export default bind<Props>(function LayerManager(props: Props) {
 		return () => props.actions.event.unbind(actionCb);
 	}, [ props.actions ]);
 
-	const [ mode, setMode ] = useState<string>(props.mode.getActive());
+	const [ mode, setMode ] = useState<string>(props.mode.getActiveIdentifier());
 
 	useEffect(() => {
 		const modeCb = (evt: ModeSwitchEvent) => {
 			setMode(evt.to);
 		};
 
-		props.mode.bind(modeCb);
-		return () => props.mode.unbind(modeCb);
+		props.mode.on_change.bind(modeCb);
+		return () => props.mode.on_change.unbind(modeCb);
 	});
 
 	const handleSetMode = (mode: string) => {
@@ -51,15 +60,10 @@ export default bind<Props>(function LayerManager(props: Props) {
 	return (
 		<div class='Toolbar'>
 			<ButtonGroup class='Toolbar-ModeSelector'>
-				{props.mode.hasMode(ArchitectModeKey) && <Button icon='architect' alt='Build Map' noFocus={true}
-					inactive={mode !== ArchitectModeKey} onClick={() => handleSetMode(ArchitectModeKey)} />}
-				<Button icon='token' alt='Manage Tokens' noFocus={true}
-					inactive={mode !== TokenModeKey} onClick={() => handleSetMode(TokenModeKey)} />
-				<Button icon='draw' alt='Draw Markup' noFocus={true}
-					inactive={mode !== DrawModeKey} onClick={() => handleSetMode(DrawModeKey)} />
+				{props.mode.listIdentifiers().map(identifier =>
+					<Button icon={MODE_ICONS[identifier]} alt={identifier + ' Mode'} noFocus={true}
+						inactive={mode !== identifier} onClick={() => handleSetMode(identifier)} />)}
 			</ButtonGroup>
-
-			<div class='Toolbar-Separator' />
 
 			<ButtonGroup>
 				<Button icon='undo' alt='Undo' noFocus={true}
@@ -93,9 +97,7 @@ export default bind<Props>(function LayerManager(props: Props) {
 				</Preact.Fragment>
 			}
 
-			{mode === DrawModeKey &&
-				<DrawToolbar mode={props.mode.getActiveInstance() as DrawMode} />
-			}
+			{mode === DrawModeKey && <DrawToolbar mode={props.mode.getActive() as DrawMode} />}
 		</div>
 	);
 });

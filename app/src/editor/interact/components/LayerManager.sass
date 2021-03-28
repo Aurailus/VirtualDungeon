@@ -3,40 +3,64 @@
 @use '../../../style/def' as *
 
 .LayerManager
-	display: grid
-	grid-gap: 6px
-	grid-template-columns: 1fr
+	display: flex
+	align-items: stretch
+	flex-direction: row-reverse
 	position: fixed
-	top: 6px
-	right: 6px
-	width: 230px
+	gap: 9px
+	top: 3px
+	right: 3px
+	padding: 6px
+	width: 242px
 	height: auto
 
-	transition: width 0.2s, right 0.2s
+	transition: width $t-fast, right $t-fast, background-color $t-fast
 
-	&.Collapsed
+	&.collapsed
 		width: 41px
 		right: -6px
 
-	.LayerManager-Layer
-		@include text.line_clamp
+	&.full
+		width: 900px
+		background-color: $neutral-200
+		clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px))
 
-		outline: 0
-		border: none
-		font: inherit
-		text-align: left
-		background-color: transparentize(#000, 0.8)
+	.LayerMenu
+		flex-grow: 1
+		flex-shrink: 1
 
-		&.Active
-			background-color: transparentize(#fff, 0.8)
+	.LayerManager-Separator
+		background-color: $neutral-300
+		width: 3px
+		margin-top: 3px
+		margin-bottom: 3px
 
-	.ButtonGroup
-		width: 100%
+	.LayerManager-Layers
 		display: flex
+		gap: 6px
+		flex-direction: column
+		width: min(230px, 100%)
+		flex-shrink: 0
 
-		.Button
-			flex-grow: 1
-			flex-shrink: 1
+		.LayerManager-Layer
+			@include text.line_clamp
 
-			img
-				margin: -15px -24px
+			outline: 0
+			border: none
+			font: inherit
+			text-align: left
+			background-color: transparentize(#000, 0.8)
+
+			&.Active
+				background-color: transparentize(#fff, 0.8)
+
+		.ButtonGroup
+			width: 100%
+			display: flex
+
+			.Button
+				flex-grow: 1
+				flex-shrink: 1
+
+				img
+					margin: -15px -24px

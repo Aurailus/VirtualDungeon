@@ -10,8 +10,9 @@ import ModeManager from '../mode/ModeManager';
 import CameraControl from '../interact/CameraController';
 
 import { Vec2 } from '../util/Vec';
-import { Asset } from '../../../../common/DBStructs';
 import EditorData from '../EditorData';
+import { Asset } from '../../../../common/DBStructs';
+
 
 export default class MapScene extends Phaser.Scene {
 	assets: Asset[] = [];

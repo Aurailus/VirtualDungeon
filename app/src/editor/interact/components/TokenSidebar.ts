@@ -30,15 +30,14 @@ export default class TokenSidebar extends Sidebar {
 	}
 
 	toggleSelectMode() {
-		if ((this.mode.active as TokenMode).placeTokenType) {
-			(this.mode.active as TokenMode).placeTokenType = '';
+		if ((this.mode.active as TokenMode).getPlaceToken?.()) {
+			(this.mode.active as TokenMode).setPlaceToken?.();
 			this.activeSpriteCursor.setVisible(false);
 		}
 		else {
-			(this.mode.active as TokenMode).placeTokenType = this.elems[this.lastSelectedToken];
+			(this.mode.active as TokenMode).setPlaceToken?.(this.elems[this.lastSelectedToken]);
 			this.activeSpriteCursor.setVisible(true);
 		}
-
 	}
 
 	elemHover(x: number, y: number): void {
@@ -48,19 +47,18 @@ export default class TokenSidebar extends Sidebar {
 		if (this.spinTimer > 20) {
 			let index = hoveredToken.getFrameIndex() + 1;
 			index %= hoveredToken.getFrameCount();
-			hoveredToken.setFrame(index);
+			hoveredToken.setIndex(index);
 			this.spinTimer = 0;
 		}
 	}
 
 	elemUnhover(): void {
-		this.sprites.forEach(t => t.setFrame(0));
+		this.sprites.forEach(t => t.setIndex(0));
 	}
 
 	elemClick(x: number, y: number): void {
 		this.lastSelectedToken = x + (y - 1) * 3;
-		if ((this.mode.active as TokenMode).placeTokenType !== 'undefined')
-			(this.mode.active as TokenMode).placeTokenType = this.elems[x + (y - 1) * 3];
+		(this.mode.active as TokenMode).setPlaceToken?.(this.elems[x + (y - 1) * 3]);
 	}
 
 	addToken(sprite: string) {
