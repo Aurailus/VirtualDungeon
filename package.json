@@ -36,7 +36,7 @@
     "express-fileupload": "^1.2.1",
     "image-size": "^0.9.3",
     "log4js": "^6.3.0",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "mongodb": "^3.6.3",
     "pug": "^3.0.1",
     "socket.io": "^3.0.5",
