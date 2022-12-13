@@ -32,7 +32,7 @@
     "compression": "^1.7.4",
     "cookie": "^0.4.1",
     "cookie-parser": "^1.4.5",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-fileupload": "^1.2.1",
     "image-size": "^0.9.3",
     "log4js": "^6.3.0",
